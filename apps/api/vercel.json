@@ -2,6 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nestjs",
   "buildCommand": "cd ../.. && pnpm turbo run build --filter=@command-center/api",
-  "regions": ["cdg1"],
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/index" }]
+  "regions": ["cdg1"]
 }
