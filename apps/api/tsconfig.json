@@ -1,7 +1,29 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "@command-center/config/tsconfig.nest.json",
+  // Deliberately self-contained (no `extends`): Vercel's nestjs preset
+  // compiles this app itself but cannot resolve package-based extends
+  // (@command-center/config/tsconfig.nest.json), which silently drops
+  // `strict` and `emitDecoratorMetadata`. Options below mirror
+  // tsconfig.nest.json + tsconfig.base.json — keep them in sync.
   "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "strictPropertyInitialization": false,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "incremental": true,
     "outDir": "dist",
     "baseUrl": "."
   },
