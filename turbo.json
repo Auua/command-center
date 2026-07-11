@@ -5,13 +5,28 @@
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
-    "typecheck": {
-      "dependsOn": ["^build"]
+    "@command-center/api#build": {
+      "env": [
+        "PORT",
+        "CORS_ORIGIN",
+        "SUPABASE_URL",
+        "SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_JWT_SECRET",
+        "SUPABASE_JWKS_URL"
+      ]
     },
+    "@command-center/contracts#build": {
+      "env": [
+        "CORS_ORIGIN",
+        "SUPABASE_URL",
+        "SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_JWT_SECRET",
+        "SUPABASE_JWKS_URL"
+      ]
+    },
+    "typecheck": { "dependsOn": ["^build"] },
     "lint": {},
-    "test": {
-      "dependsOn": ["^build"]
-    },
+    "test": { "dependsOn": ["^build"] },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
