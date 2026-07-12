@@ -11,12 +11,19 @@ vi.mock("@/lib/braindump-api", () => ({
   createBraindumpNote: vi.fn(),
   deleteBraindumpNote: vi.fn(),
 }));
+vi.mock("@/lib/mood-api", () => ({
+  fetchMoodCheckins: vi.fn(),
+  createMoodCheckin: vi.fn(),
+  deleteMoodCheckin: vi.fn(),
+}));
 
 import { fetchBraindumpNotes } from "@/lib/braindump-api";
 import { fetchLayout } from "@/lib/layout-api";
+import { fetchMoodCheckins } from "@/lib/mood-api";
 
 const fetchLayoutMock = vi.mocked(fetchLayout);
 const fetchNotesMock = vi.mocked(fetchBraindumpNotes);
+const fetchMoodMock = vi.mocked(fetchMoodCheckins);
 
 function renderGrid(): ReturnType<typeof render> {
   const queryClient = new QueryClient({
@@ -32,6 +39,7 @@ function renderGrid(): ReturnType<typeof render> {
 beforeEach(() => {
   vi.clearAllMocks();
   fetchNotesMock.mockResolvedValue({ items: [] });
+  fetchMoodMock.mockResolvedValue({ items: [] });
 });
 
 describe("DashboardGrid", () => {
@@ -40,12 +48,15 @@ describe("DashboardGrid", () => {
 
     renderGrid();
 
-    // Default layout contains both phase-1 widgets.
+    // Default layout contains the phase-1 widgets.
     expect(
       await screen.findByRole("region", { name: "Clock" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("region", { name: "Braindump" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Mood check-in" }),
     ).toBeInTheDocument();
   });
 

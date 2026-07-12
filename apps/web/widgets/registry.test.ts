@@ -7,6 +7,7 @@ describe("widgetRegistry", () => {
   it("has the phase-1 widgets registered", () => {
     expect(widgetRegistry.get("clock")).toBeDefined();
     expect(widgetRegistry.get("braindump")).toBeDefined();
+    expect(widgetRegistry.get("mood")).toBeDefined();
     expect(widgetRegistry.get("tasks")).toBeDefined();
   });
 
@@ -17,7 +18,7 @@ describe("widgetRegistry", () => {
   it("exposes every registered definition via all()", () => {
     const ids = widgetRegistry.all().map((definition) => definition.id);
     expect(ids).toEqual(
-      expect.arrayContaining(["clock", "braindump", "tasks"]),
+      expect.arrayContaining(["clock", "braindump", "mood", "tasks"]),
     );
   });
 });
