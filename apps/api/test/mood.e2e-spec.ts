@@ -44,16 +44,8 @@ describe('Mood (e2e)', () => {
   describe('request validation (400s, before any DB access)', () => {
     it('rejects a missing or out-of-range score on create', async () => {
       await request(server).post('/api/v1/mood').set(asAnna).send({}).expect(400);
-      await request(server)
-        .post('/api/v1/mood')
-        .set(asAnna)
-        .send({ score: 9 })
-        .expect(400);
-      await request(server)
-        .post('/api/v1/mood')
-        .set(asAnna)
-        .send({ score: 3.5 })
-        .expect(400);
+      await request(server).post('/api/v1/mood').set(asAnna).send({ score: 9 }).expect(400);
+      await request(server).post('/api/v1/mood').set(asAnna).send({ score: 3.5 }).expect(400);
     });
 
     it('rejects unknown top-level fields on create', async () => {

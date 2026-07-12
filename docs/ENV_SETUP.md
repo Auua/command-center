@@ -19,21 +19,21 @@ Secrets never live in the repo (ARD §5.2). Local dev needs two gitignored files
 
 ### `apps/web/.env.local` (Next.js)
 
-| Variable | Value |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL, e.g. `https://abcd1234.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | anon / public key |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:3001` |
+| Variable                               | Value                                            |
+| -------------------------------------- | ------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Project URL, e.g. `https://abcd1234.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | anon / public key                                |
+| `NEXT_PUBLIC_API_URL`                  | `http://localhost:3001`                          |
 
 ### `apps/api/.env` (NestJS API + worker)
 
-| Variable | Value |
-|---|---|
-| `PORT` | `3001` |
-| `CORS_ORIGIN` | `http://localhost:3000` (comma-separate extra origins) |
-| `SUPABASE_URL` | same Project URL |
-| `SUPABASE_PUBLISHABLE_KEY` | same anon key (API queries run under the user's JWT + RLS) |
-| `MONGODB_CONNECT` | MongoDB Atlas connection string (Phase 1: braindump; later journal/content) |
+| Variable                   | Value                                                                       |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `PORT`                     | `3001`                                                                      |
+| `CORS_ORIGIN`              | `http://localhost:3000` (comma-separate extra origins)                      |
+| `SUPABASE_URL`             | same Project URL                                                            |
+| `SUPABASE_PUBLISHABLE_KEY` | same anon key (API queries run under the user's JWT + RLS)                  |
+| `MONGODB_CONNECT`          | MongoDB Atlas connection string (Phase 1: braindump; later journal/content) |
 
 No `service_role` key anywhere — the API deliberately runs RLS-scoped (ARD §5.1).
 

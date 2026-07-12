@@ -1,4 +1,4 @@
-import type { WidgetDefinition } from "./widget";
+import type { WidgetDefinition } from './widget';
 
 // Settings types are heterogeneous across widgets; the registry stores them
 // erased and each widget's component/schema pair stays internally consistent.

@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   BraindumpListResponse,
   BraindumpNote,
   CreateBraindumpNoteRequest,
   UpdateBraindumpNoteRequest,
-} from "@command-center/contracts";
-import type { AuthenticatedUser } from "../auth/auth.types";
-import { BraindumpRepository } from "./braindump.repository";
+} from '@command-center/contracts';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { BraindumpRepository } from './braindump.repository';
 
 /**
  * Business rules for braindump notes (controllers stay thin — ARD §4.1).
@@ -22,10 +22,7 @@ export class BraindumpService {
     return { items };
   }
 
-  createNote(
-    user: AuthenticatedUser,
-    request: CreateBraindumpNoteRequest,
-  ): Promise<BraindumpNote> {
+  createNote(user: AuthenticatedUser, request: CreateBraindumpNoteRequest): Promise<BraindumpNote> {
     return this.braindumpRepository.createForUser(user.id, request.content);
   }
 
@@ -34,11 +31,7 @@ export class BraindumpService {
     id: string,
     request: UpdateBraindumpNoteRequest,
   ): Promise<BraindumpNote> {
-    const note = await this.braindumpRepository.updateContentForUser(
-      user.id,
-      id,
-      request.content,
-    );
+    const note = await this.braindumpRepository.updateContentForUser(user.id, id, request.content);
     if (!note) {
       throw new NotFoundException(`Braindump note "${id}" not found`);
     }

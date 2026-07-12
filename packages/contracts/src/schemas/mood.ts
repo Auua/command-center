@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Mood check-in — a 1 (rough) to 5 (great) score with optional tags and note
@@ -29,9 +29,7 @@ export type MoodCheckin = z.infer<typeof MoodCheckinSchema>;
 export const MoodCheckinListResponseSchema = z.object({
   items: z.array(MoodCheckinSchema),
 });
-export type MoodCheckinListResponse = z.infer<
-  typeof MoodCheckinListResponseSchema
->;
+export type MoodCheckinListResponse = z.infer<typeof MoodCheckinListResponseSchema>;
 
 const MoodTagsSchema = z
   .array(z.string().trim().min(1).max(50))
@@ -49,18 +47,11 @@ export const CreateMoodCheckinRequestSchema = z
     note: z.string().trim().min(1).max(1000).nullable().default(null),
   })
   .strict();
-export type CreateMoodCheckinRequest = z.infer<
-  typeof CreateMoodCheckinRequestSchema
->;
+export type CreateMoodCheckinRequest = z.infer<typeof CreateMoodCheckinRequestSchema>;
 
 /**
  * `?days=` query window for listing check-ins. The API windows by timestamp
  * only — bucketing into calendar days happens client-side, in the user's
  * own timezone (the server can't know it).
  */
-export const MoodWindowDaysSchema = z.coerce
-  .number()
-  .int()
-  .min(1)
-  .max(90)
-  .default(7);
+export const MoodWindowDaysSchema = z.coerce.number().int().min(1).max(90).default(7);

@@ -1,8 +1,8 @@
-import { Module } from "@nestjs/common";
-import { MongoModule } from "../mongo/mongo.module";
-import { BraindumpController } from "./braindump.controller";
-import { BraindumpRepository } from "./braindump.repository";
-import { BraindumpService } from "./braindump.service";
+import { Module } from '@nestjs/common';
+import { MongoModule } from '../mongo/mongo.module';
+import { BraindumpController } from './braindump.controller';
+import { BraindumpRepository } from './braindump.repository';
+import { BraindumpService } from './braindump.service';
 
 /**
  * BraindumpModule (ARD §4.1): first MongoDB-backed domain module — validates

@@ -1,14 +1,10 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from "@nestjs/common";
-import { MoodCheckinSchema, type MoodCheckin } from "@command-center/contracts";
-import type { AuthenticatedUser } from "../auth/auth.types";
-import { SupabaseService } from "../supabase/supabase.service";
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { MoodCheckinSchema, type MoodCheckin } from '@command-center/contracts';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { SupabaseService } from '../supabase/supabase.service';
 
-const TABLE = "mood_checkins";
-const COLUMNS = "id, mood_score, tags, note, created_at";
+const TABLE = 'mood_checkins';
+const COLUMNS = 'id, mood_score, tags, note, created_at';
 
 function toIso(value: string): string {
   const time = Date.parse(value);
@@ -38,21 +34,18 @@ export class MoodRepository {
   constructor(private readonly supabaseService: SupabaseService) {}
 
   /** Check-ins at or after `sinceIso`, newest first. */
-  async listSinceForUser(
-    user: AuthenticatedUser,
-    sinceIso: string,
-  ): Promise<MoodCheckin[]> {
+  async listSinceForUser(user: AuthenticatedUser, sinceIso: string): Promise<MoodCheckin[]> {
     const client = this.supabaseService.forUser(user.token);
     const { data, error } = await client
       .from(TABLE)
       .select(COLUMNS)
-      .eq("user_id", user.id)
-      .gte("created_at", sinceIso)
-      .order("created_at", { ascending: false });
+      .eq('user_id', user.id)
+      .gte('created_at', sinceIso)
+      .order('created_at', { ascending: false });
 
     if (error) {
       this.logger.error(`Failed to list mood check-ins: ${error.message}`);
-      throw new InternalServerErrorException("Failed to list mood check-ins");
+      throw new InternalServerErrorException('Failed to list mood check-ins');
     }
     return ((data ?? []) as MoodCheckinRow[]).map((row) => this.toCheckin(row));
   }
@@ -70,7 +63,7 @@ export class MoodRepository {
 
     if (error || !data) {
       this.logger.error(`Failed to create mood check-in: ${error?.message}`);
-      throw new InternalServerErrorException("Failed to create mood check-in");
+      throw new InternalServerErrorException('Failed to create mood check-in');
     }
     return this.toCheckin(data as MoodCheckinRow);
   }
@@ -81,16 +74,16 @@ export class MoodRepository {
     const { data, error } = await client
       .from(TABLE)
       .delete()
-      .eq("user_id", user.id)
-      .eq("id", id)
-      .select("id")
+      .eq('user_id', user.id)
+      .eq('id', id)
+      .select('id')
       .maybeSingle();
 
     if (error) {
       // A malformed uuid is a "no such check-in", not a server fault.
-      if (error.code === "22P02") return false;
+      if (error.code === '22P02') return false;
       this.logger.error(`Failed to delete mood check-in: ${error.message}`);
-      throw new InternalServerErrorException("Failed to delete mood check-in");
+      throw new InternalServerErrorException('Failed to delete mood check-in');
     }
     return data !== null;
   }
@@ -114,7 +107,7 @@ export class MoodRepository {
       this.logger.error(
         `Stored mood check-in "${row.id}" does not match contract: ${parsed.error.message}`,
       );
-      throw new InternalServerErrorException("Stored mood check-in is invalid");
+      throw new InternalServerErrorException('Stored mood check-in is invalid');
     }
     return parsed.data;
   }

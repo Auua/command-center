@@ -1,4 +1,4 @@
-import type { CreateTaskRequest } from "@command-center/contracts";
+import type { CreateTaskRequest } from '@command-center/contracts';
 
 /**
  * Quick-add syntax parser for the Tasks widget (mock hint: "pay rent friday
@@ -36,8 +36,8 @@ const DAY_ALIASES: Record<string, number> = {
 /** Local calendar date as the contract's plain-date string (YYYY-MM-DD). */
 function toDateString(date: Date): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -52,8 +52,8 @@ function addDays(now: Date, days: number): Date {
  */
 function resolveDayToken(token: string, now: Date): string | null {
   const normalized = token.toLowerCase();
-  if (normalized === "today") return toDateString(addDays(now, 0));
-  if (normalized === "tomorrow") return toDateString(addDays(now, 1));
+  if (normalized === 'today') return toDateString(addDays(now, 0));
+  if (normalized === 'tomorrow') return toDateString(addDays(now, 1));
   const weekday = DAY_ALIASES[normalized];
   if (weekday === undefined) return null;
   const ahead = (weekday - now.getDay() + 7) % 7 || 7;
@@ -66,7 +66,7 @@ export function parseQuickAdd(input: string, now: Date): CreateTaskRequest {
     .trim()
     .split(/\s+/)
     .filter((token) => {
-      if (token.length > 1 && token.startsWith("#")) {
+      if (token.length > 1 && token.startsWith('#')) {
         const tag = token.slice(1);
         if (!tags.includes(tag)) tags.push(tag);
         return false;
@@ -74,8 +74,8 @@ export function parseQuickAdd(input: string, now: Date): CreateTaskRequest {
       return token.length > 0;
     });
 
-  let priority: CreateTaskRequest["priority"] = null;
-  const priorityMatch = /^p([1-3])$/i.exec(words.at(-1) ?? "");
+  let priority: CreateTaskRequest['priority'] = null;
+  const priorityMatch = /^p([1-3])$/i.exec(words.at(-1) ?? '');
   if (priorityMatch) {
     priority = Number(priorityMatch[1]) as 1 | 2 | 3;
     words.pop();
@@ -96,5 +96,5 @@ export function parseQuickAdd(input: string, now: Date): CreateTaskRequest {
     }
   }
 
-  return { title: words.join(" "), priority, tags, deadline };
+  return { title: words.join(' '), priority, tags, deadline };
 }

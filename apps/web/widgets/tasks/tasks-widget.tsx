@@ -118,8 +118,7 @@ export function TasksWidget(): ReactElement {
     queryFn: fetchTasks,
   });
 
-  const invalidate = (): Promise<void> =>
-    queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+  const invalidate = (): Promise<void> => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
   const createMutation = useMutation({
     mutationFn: createTask,

@@ -3,7 +3,7 @@
  * (Phase 2) listens for this to evaluate "after finishing a task" smart
  * reminders; nothing consumes it yet, but the seam is load-bearing.
  */
-export const TASK_COMPLETED_EVENT = "task.completed";
+export const TASK_COMPLETED_EVENT = 'task.completed';
 
 export interface TaskCompletedEvent {
   userId: string;

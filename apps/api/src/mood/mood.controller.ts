@@ -8,16 +8,16 @@ import {
   Param,
   Post,
   Query,
-} from "@nestjs/common";
+} from '@nestjs/common';
 import {
   CreateMoodCheckinRequestSchema,
   MoodWindowDaysSchema,
   type MoodCheckin,
   type MoodCheckinListResponse,
-} from "@command-center/contracts";
-import { CurrentUser } from "../auth/current-user.decorator";
-import type { AuthenticatedUser } from "../auth/auth.types";
-import { MoodService } from "./mood.service";
+} from '@command-center/contracts';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { MoodService } from './mood.service';
 
 /**
  * /api/v1/mood — mood check-ins (ARD §4.1 MoodModule). Validation is
@@ -27,14 +27,14 @@ import { MoodService } from "./mood.service";
  *
  * No PATCH: check-ins are immutable — log a new one, or DELETE to undo.
  */
-@Controller("mood")
+@Controller('mood')
 export class MoodController {
   constructor(private readonly moodService: MoodService) {}
 
   @Get()
   listCheckins(
     @CurrentUser() user: AuthenticatedUser,
-    @Query("days") days?: string,
+    @Query('days') days?: string,
   ): Promise<MoodCheckinListResponse> {
     return this.moodService.listCheckins(user, MoodWindowDaysSchema.parse(days));
   }
@@ -48,11 +48,11 @@ export class MoodController {
     return this.moodService.createCheckin(user, request);
   }
 
-  @Delete(":id")
+  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteCheckin(
     @CurrentUser() user: AuthenticatedUser,
-    @Param("id") id: string,
+    @Param('id') id: string,
   ): Promise<void> {
     await this.moodService.deleteCheckin(user, id);
   }

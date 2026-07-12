@@ -1,4 +1,4 @@
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig, devices } from '@playwright/test';
 
 /**
  * Web e2e (Playwright).
@@ -14,20 +14,20 @@ import { defineConfig, devices } from "@playwright/test";
 const hasCredentials = Boolean(process.env.E2E_EMAIL && process.env.E2E_PASSWORD);
 
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: './e2e',
   fullyParallel: false, // authed tests mutate one user's real data
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? "github" : "list",
+  reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: "http://localhost:3000",
-    trace: "on-first-retry",
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: "pnpm dev",
-      url: "http://localhost:3000/login",
+      command: 'pnpm dev',
+      url: 'http://localhost:3000/login',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
@@ -35,9 +35,9 @@ export default defineConfig({
     ...(hasCredentials
       ? [
           {
-            command: "pnpm --filter @command-center/api dev",
-            cwd: "../..",
-            url: "http://localhost:3001/health",
+            command: 'pnpm --filter @command-center/api dev',
+            cwd: '../..',
+            url: 'http://localhost:3001/health',
             reuseExistingServer: true,
             timeout: 120_000,
           },

@@ -4,8 +4,8 @@ import {
   type CreateMoodCheckinRequest,
   type MoodCheckin,
   type MoodCheckinListResponse,
-} from "@command-center/contracts";
-import { apiFetch } from "@/lib/api";
+} from '@command-center/contracts';
+import { apiFetch } from '@/lib/api';
 
 /**
  * Client for /api/v1/mood (MoodModule). The API windows by timestamp only;
@@ -14,23 +14,19 @@ import { apiFetch } from "@/lib/api";
  * whatever the UTC offset.
  */
 
-export async function fetchMoodCheckins(
-  days = 8,
-): Promise<MoodCheckinListResponse> {
+export async function fetchMoodCheckins(days = 8): Promise<MoodCheckinListResponse> {
   const response = await apiFetch(`/api/v1/mood?days=${days}`);
   return MoodCheckinListResponseSchema.parse(await response.json());
 }
 
-export async function createMoodCheckin(
-  input: CreateMoodCheckinRequest,
-): Promise<MoodCheckin> {
-  const response = await apiFetch("/api/v1/mood", {
-    method: "POST",
+export async function createMoodCheckin(input: CreateMoodCheckinRequest): Promise<MoodCheckin> {
+  const response = await apiFetch('/api/v1/mood', {
+    method: 'POST',
     body: input,
   });
   return MoodCheckinSchema.parse(await response.json());
 }
 
 export async function deleteMoodCheckin(id: string): Promise<void> {
-  await apiFetch(`/api/v1/mood/${id}`, { method: "DELETE" });
+  await apiFetch(`/api/v1/mood/${id}`, { method: 'DELETE' });
 }

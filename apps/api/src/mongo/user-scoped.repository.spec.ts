@@ -1,14 +1,5 @@
-import {
-  ObjectId,
-  type Collection,
-  type Filter,
-  type Sort,
-  type WithId,
-} from "mongodb";
-import {
-  UserScopedRepository,
-  type UserOwnedDocument,
-} from "./user-scoped.repository";
+import { ObjectId, type Collection, type Filter, type Sort, type WithId } from 'mongodb';
+import { UserScopedRepository, type UserOwnedDocument } from './user-scoped.repository';
 
 interface TestDoc extends UserOwnedDocument {
   content: string;
@@ -27,7 +18,7 @@ class TestRepository extends UserScopedRepository<TestDoc> {
   ): Promise<WithId<TestDoc>[]> {
     return this.findForUser(userId, filter, options);
   }
-  insert(userId: string, doc: Omit<TestDoc, "userId">): Promise<WithId<TestDoc>> {
+  insert(userId: string, doc: Omit<TestDoc, 'userId'>): Promise<WithId<TestDoc>> {
     return this.insertForUser(userId, doc);
   }
   update(
@@ -54,28 +45,28 @@ function makeCollectionStub(): {
       insertOne: jest.fn().mockResolvedValue({ insertedId: new ObjectId() }),
       findOneAndUpdate: jest.fn().mockResolvedValue(null),
       deleteOne: jest.fn().mockResolvedValue({ deletedCount: 0 }),
-      createIndex: jest.fn().mockResolvedValue("idx"),
+      createIndex: jest.fn().mockResolvedValue('idx'),
     } as unknown as jest.Mocked<Collection<TestDoc>>,
   };
 }
 
-const USER = "user-a";
-const INTRUDER = "user-b";
+const USER = 'user-a';
+const INTRUDER = 'user-b';
 
-describe("UserScopedRepository", () => {
-  it("always includes userId in find filters", async () => {
+describe('UserScopedRepository', () => {
+  it('always includes userId in find filters', async () => {
     const { collection } = makeCollectionStub();
     const repo = new TestRepository(collection);
 
-    await repo.find(USER, { content: "x" }, { sort: { createdAt: -1 }, limit: 5 });
+    await repo.find(USER, { content: 'x' }, { sort: { createdAt: -1 }, limit: 5 });
 
     expect(collection.find).toHaveBeenCalledWith(
-      { content: "x", userId: USER },
+      { content: 'x', userId: USER },
       { sort: { createdAt: -1 }, limit: 5 },
     );
   });
 
-  it("does not let a caller-supplied filter widen the user scope", async () => {
+  it('does not let a caller-supplied filter widen the user scope', async () => {
     const { collection } = makeCollectionStub();
     const repo = new TestRepository(collection);
 
@@ -86,37 +77,37 @@ describe("UserScopedRepository", () => {
     expect(collection.find).toHaveBeenCalledWith({ userId: USER }, {});
   });
 
-  it("stamps userId onto inserted documents and returns the stored shape", async () => {
+  it('stamps userId onto inserted documents and returns the stored shape', async () => {
     const { collection } = makeCollectionStub();
     const repo = new TestRepository(collection);
 
-    const result = await repo.insert(USER, { content: "hello" } as Omit<TestDoc, "userId">);
+    const result = await repo.insert(USER, { content: 'hello' } as Omit<TestDoc, 'userId'>);
 
     expect(collection.insertOne).toHaveBeenCalledWith(
-      expect.objectContaining({ content: "hello", userId: USER }),
+      expect.objectContaining({ content: 'hello', userId: USER }),
     );
     expect(result.userId).toBe(USER);
     expect(result._id).toBeInstanceOf(ObjectId);
   });
 
-  it("scopes updates to the user and returns the post-update document", async () => {
+  it('scopes updates to the user and returns the post-update document', async () => {
     const { collection } = makeCollectionStub();
     const _id = new ObjectId();
-    const updated = { _id, userId: USER, content: "after" };
+    const updated = { _id, userId: USER, content: 'after' };
     (collection.findOneAndUpdate as jest.Mock).mockResolvedValue(updated);
     const repo = new TestRepository(collection);
 
-    const result = await repo.update(USER, { _id }, { content: "after" });
+    const result = await repo.update(USER, { _id }, { content: 'after' });
 
     expect(collection.findOneAndUpdate).toHaveBeenCalledWith(
       { _id, userId: USER },
-      { $set: { content: "after" } },
-      { returnDocument: "after" },
+      { $set: { content: 'after' } },
+      { returnDocument: 'after' },
     );
     expect(result).toEqual(updated);
   });
 
-  it("scopes deletes to the user and reports whether anything matched", async () => {
+  it('scopes deletes to the user and reports whether anything matched', async () => {
     const { collection } = makeCollectionStub();
     (collection.deleteOne as jest.Mock).mockResolvedValue({ deletedCount: 1 });
     const repo = new TestRepository(collection);

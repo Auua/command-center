@@ -4,14 +4,14 @@ import {
   Injectable,
   Logger,
   UnauthorizedException,
-} from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import type { JWTPayload } from "jose";
-import type { AuthenticatedRequest } from "./auth.types";
-import { JwtVerifierService } from "./jwt-verifier.service";
-import { IS_PUBLIC_KEY } from "./public.decorator";
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import type { JWTPayload } from 'jose';
+import type { AuthenticatedRequest } from './auth.types';
+import { JwtVerifierService } from './jwt-verifier.service';
+import { IS_PUBLIC_KEY } from './public.decorator';
 
-const BEARER_PREFIX = "Bearer ";
+const BEARER_PREFIX = 'Bearer ';
 
 /**
  * Global authentication guard (registered via APP_GUARD in AuthModule).
@@ -39,11 +39,11 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const authorization = request.headers.authorization;
     if (!authorization || !authorization.startsWith(BEARER_PREFIX)) {
-      throw new UnauthorizedException("Missing bearer token");
+      throw new UnauthorizedException('Missing bearer token');
     }
     const token = authorization.slice(BEARER_PREFIX.length).trim();
     if (token.length === 0) {
-      throw new UnauthorizedException("Missing bearer token");
+      throw new UnauthorizedException('Missing bearer token');
     }
 
     let payload: JWTPayload;
@@ -53,12 +53,12 @@ export class JwtAuthGuard implements CanActivate {
       this.logger.debug(
         `JWT verification failed: ${error instanceof Error ? error.message : String(error)}`,
       );
-      throw new UnauthorizedException("Invalid or expired token");
+      throw new UnauthorizedException('Invalid or expired token');
     }
 
     const sub = payload.sub;
-    if (typeof sub !== "string" || sub.length === 0) {
-      throw new UnauthorizedException("Token has no subject claim");
+    if (typeof sub !== 'string' || sub.length === 0) {
+      throw new UnauthorizedException('Token has no subject claim');
     }
 
     request.user = { id: sub, token };

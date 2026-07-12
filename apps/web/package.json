@@ -2,6 +2,7 @@
   "name": "@command-center/web",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -24,7 +25,6 @@
   },
   "devDependencies": {
     "@command-center/config": "workspace:*",
-    "@eslint/eslintrc": "^3.3.1",
     "@playwright/test": "^1.49.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",

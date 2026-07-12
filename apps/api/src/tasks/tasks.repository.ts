@@ -1,13 +1,9 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from "@nestjs/common";
-import { TaskSchema, type Task } from "@command-center/contracts";
-import type { AuthenticatedUser } from "../auth/auth.types";
-import { SupabaseService } from "../supabase/supabase.service";
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { TaskSchema, type Task } from '@command-center/contracts';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { SupabaseService } from '../supabase/supabase.service';
 
-const TABLE = "tasks";
+const TABLE = 'tasks';
 
 function toIsoOrNull(value: string | null): string | null {
   if (value === null) return null;
@@ -15,8 +11,7 @@ function toIsoOrNull(value: string | null): string | null {
   // NaN → keep the raw value so schema validation reports the corruption.
   return Number.isNaN(time) ? value : new Date(time).toISOString();
 }
-const COLUMNS =
-  "id, title, priority, tags, deadline, completed_at, created_at, updated_at";
+const COLUMNS = 'id, title, priority, tags, deadline, completed_at, created_at, updated_at';
 
 /** Column values for an update; keys map 1:1 to the tasks table. */
 export interface TaskPatch {
@@ -62,15 +57,15 @@ export class TasksRepository {
     const { data, error } = await client
       .from(TABLE)
       .select(COLUMNS)
-      .eq("user_id", user.id)
-      .order("completed_at", { ascending: true, nullsFirst: false })
-      .order("priority", { ascending: true, nullsFirst: false })
-      .order("deadline", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
+      .eq('user_id', user.id)
+      .order('completed_at', { ascending: true, nullsFirst: false })
+      .order('priority', { ascending: true, nullsFirst: false })
+      .order('deadline', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
       this.logger.error(`Failed to list tasks: ${error.message}`);
-      throw new InternalServerErrorException("Failed to list tasks");
+      throw new InternalServerErrorException('Failed to list tasks');
     }
     return ((data ?? []) as TaskRow[]).map((row) => this.toTask(row));
   }
@@ -93,31 +88,27 @@ export class TasksRepository {
 
     if (error || !data) {
       this.logger.error(`Failed to create task: ${error?.message}`);
-      throw new InternalServerErrorException("Failed to create task");
+      throw new InternalServerErrorException('Failed to create task');
     }
     return this.toTask(data as TaskRow);
   }
 
   /** Returns the updated task, or null when no owned row matches the id. */
-  async updateForUser(
-    user: AuthenticatedUser,
-    id: string,
-    patch: TaskPatch,
-  ): Promise<Task | null> {
+  async updateForUser(user: AuthenticatedUser, id: string, patch: TaskPatch): Promise<Task | null> {
     const client = this.supabaseService.forUser(user.token);
     const { data, error } = await client
       .from(TABLE)
       .update(patch)
-      .eq("user_id", user.id)
-      .eq("id", id)
+      .eq('user_id', user.id)
+      .eq('id', id)
       .select(COLUMNS)
       .maybeSingle();
 
     if (error) {
       // A malformed uuid is a "no such task", not a server fault.
-      if (error.code === "22P02") return null;
+      if (error.code === '22P02') return null;
       this.logger.error(`Failed to update task: ${error.message}`);
-      throw new InternalServerErrorException("Failed to update task");
+      throw new InternalServerErrorException('Failed to update task');
     }
     return data ? this.toTask(data as TaskRow) : null;
   }
@@ -128,15 +119,15 @@ export class TasksRepository {
     const { data, error } = await client
       .from(TABLE)
       .delete()
-      .eq("user_id", user.id)
-      .eq("id", id)
-      .select("id")
+      .eq('user_id', user.id)
+      .eq('id', id)
+      .select('id')
       .maybeSingle();
 
     if (error) {
-      if (error.code === "22P02") return false;
+      if (error.code === '22P02') return false;
       this.logger.error(`Failed to delete task: ${error.message}`);
-      throw new InternalServerErrorException("Failed to delete task");
+      throw new InternalServerErrorException('Failed to delete task');
     }
     return data !== null;
   }
@@ -160,10 +151,8 @@ export class TasksRepository {
       updatedAt: toIsoOrNull(row.updated_at),
     });
     if (!parsed.success) {
-      this.logger.error(
-        `Stored task "${row.id}" does not match contract: ${parsed.error.message}`,
-      );
-      throw new InternalServerErrorException("Stored task is invalid");
+      this.logger.error(`Stored task "${row.id}" does not match contract: ${parsed.error.message}`);
+      throw new InternalServerErrorException('Stored task is invalid');
     }
     return parsed.data;
   }

@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   CreateMoodCheckinRequest,
   MoodCheckin,
   MoodCheckinListResponse,
-} from "@command-center/contracts";
-import type { AuthenticatedUser } from "../auth/auth.types";
-import { MoodRepository } from "./mood.repository";
+} from '@command-center/contracts';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { MoodRepository } from './mood.repository';
 
 const DAY_MS = 86_400_000;
 
@@ -21,19 +21,13 @@ const DAY_MS = 86_400_000;
 export class MoodService {
   constructor(private readonly moodRepository: MoodRepository) {}
 
-  async listCheckins(
-    user: AuthenticatedUser,
-    days: number,
-  ): Promise<MoodCheckinListResponse> {
+  async listCheckins(user: AuthenticatedUser, days: number): Promise<MoodCheckinListResponse> {
     const since = new Date(Date.now() - days * DAY_MS).toISOString();
     const items = await this.moodRepository.listSinceForUser(user, since);
     return { items };
   }
 
-  createCheckin(
-    user: AuthenticatedUser,
-    request: CreateMoodCheckinRequest,
-  ): Promise<MoodCheckin> {
+  createCheckin(user: AuthenticatedUser, request: CreateMoodCheckinRequest): Promise<MoodCheckin> {
     return this.moodRepository.createForUser(user, {
       mood_score: request.score,
       tags: request.tags,

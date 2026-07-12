@@ -11,8 +11,9 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --fix",
     "test": "vitest run"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@command-center/config": "workspace:*",
+    "eslint": "^9.28.0",
     "typescript": "^5.7.2",
     "vitest": "^3.2.4"
   }

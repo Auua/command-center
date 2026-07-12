@@ -1,17 +1,14 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type {
   CreateTaskRequest,
   Task,
   TaskListResponse,
   UpdateTaskRequest,
-} from "@command-center/contracts";
-import type { AuthenticatedUser } from "../auth/auth.types";
-import {
-  TASK_COMPLETED_EVENT,
-  type TaskCompletedEvent,
-} from "./task-completed.event";
-import { TasksRepository, type TaskPatch } from "./tasks.repository";
+} from '@command-center/contracts';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { TASK_COMPLETED_EVENT, type TaskCompletedEvent } from './task-completed.event';
+import { TasksRepository, type TaskPatch } from './tasks.repository';
 
 /**
  * Business rules for tasks (controllers stay thin — ARD §4.1). A malformed
@@ -34,18 +31,11 @@ export class TasksService {
     return { items };
   }
 
-  createTask(
-    user: AuthenticatedUser,
-    request: CreateTaskRequest,
-  ): Promise<Task> {
+  createTask(user: AuthenticatedUser, request: CreateTaskRequest): Promise<Task> {
     return this.tasksRepository.createForUser(user, request);
   }
 
-  async updateTask(
-    user: AuthenticatedUser,
-    id: string,
-    request: UpdateTaskRequest,
-  ): Promise<Task> {
+  async updateTask(user: AuthenticatedUser, id: string, request: UpdateTaskRequest): Promise<Task> {
     const { completed, ...fields } = request;
     const patch: TaskPatch = { ...fields };
     if (completed !== undefined) {

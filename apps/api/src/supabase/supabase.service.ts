@@ -1,7 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Env } from "../config/env";
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { Env } from '../config/env';
 
 /**
  * Factory for RLS-scoped Supabase clients (ARD §5.1).
@@ -17,8 +17,8 @@ export class SupabaseService {
   private readonly anonKey: string;
 
   constructor(configService: ConfigService<Env, true>) {
-    this.supabaseUrl = configService.get("SUPABASE_URL", { infer: true });
-    this.anonKey = configService.get("SUPABASE_PUBLISHABLE_KEY", { infer: true });
+    this.supabaseUrl = configService.get('SUPABASE_URL', { infer: true });
+    this.anonKey = configService.get('SUPABASE_PUBLISHABLE_KEY', { infer: true });
   }
 
   /** Creates a client that executes queries as the given user (raw JWT). */

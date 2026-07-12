@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from '@playwright/test';
 
 /**
  * Full-stack flow: browser → Next.js → NestJS API → MongoDB Atlas.
@@ -12,27 +12,24 @@ import { expect, test } from "@playwright/test";
 const email = process.env.E2E_EMAIL;
 const password = process.env.E2E_PASSWORD;
 
-test.describe("braindump (authenticated)", () => {
-  test.skip(
-    !email || !password,
-    "Set E2E_EMAIL and E2E_PASSWORD to run authenticated e2e tests",
-  );
+test.describe('braindump (authenticated)', () => {
+  test.skip(!email || !password, 'Set E2E_EMAIL and E2E_PASSWORD to run authenticated e2e tests');
 
   test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
-    await page.getByLabel("Email").fill(email ?? "");
-    await page.getByLabel("Password").fill(password ?? "");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.goto('/login');
+    await page.getByLabel('Email').fill(email ?? '');
+    await page.getByLabel('Password').fill(password ?? '');
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.waitForURL(/\/$/);
   });
 
-  test("captures and deletes a thought end-to-end", async ({ page }) => {
-    const widget = page.getByRole("region", { name: "Braindump" });
+  test('captures and deletes a thought end-to-end', async ({ page }) => {
+    const widget = page.getByRole('region', { name: 'Braindump' });
     await expect(widget).toBeVisible();
 
     const content = `e2e thought ${Date.now()}`;
     await widget.getByLabel(/dump a thought/i).fill(content);
-    await widget.getByRole("button", { name: "Add" }).click();
+    await widget.getByRole('button', { name: 'Add' }).click();
 
     const item = widget.getByText(content);
     await expect(item).toBeVisible();
@@ -42,8 +39,8 @@ test.describe("braindump (authenticated)", () => {
     await expect(widget.getByText(content)).toBeVisible();
 
     await widget
-      .locator("li", { hasText: content })
-      .getByRole("button", { name: /delete note/i })
+      .locator('li', { hasText: content })
+      .getByRole('button', { name: /delete note/i })
       .click();
     await expect(widget.getByText(content)).toHaveCount(0);
 

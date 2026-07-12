@@ -1,5 +1,5 @@
-import type { ComponentType, ReactNode } from "react";
-import type { z } from "zod";
+import type { ComponentType, ReactNode } from 'react';
+import type { z } from 'zod';
 
 /** Grid footprint a widget occupies, in dashboard grid units. */
 export interface WidgetSize {

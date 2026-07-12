@@ -1,0 +1,10 @@
+dist/
+.next/
+coverage/
+.turbo/
+.vercel/
+playwright-report/
+test-results/
+pnpm-lock.yaml
+.claude/
+apps/web/next-env.d.ts

@@ -1,5 +1,5 @@
-import { Module } from "@nestjs/common";
-import { SupabaseService } from "./supabase.service";
+import { Module } from '@nestjs/common';
+import { SupabaseService } from './supabase.service';
 
 /**
  * Infrastructure module: exposes the RLS-scoped Supabase client factory.

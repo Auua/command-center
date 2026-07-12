@@ -3,37 +3,32 @@ import {
   BraindumpNoteSchema,
   type BraindumpListResponse,
   type BraindumpNote,
-} from "@command-center/contracts";
-import { apiFetch } from "@/lib/api";
+} from '@command-center/contracts';
+import { apiFetch } from '@/lib/api';
 
 /** Client for /api/v1/braindump (BraindumpModule). */
 
 export async function fetchBraindumpNotes(): Promise<BraindumpListResponse> {
-  const response = await apiFetch("/api/v1/braindump");
+  const response = await apiFetch('/api/v1/braindump');
   return BraindumpListResponseSchema.parse(await response.json());
 }
 
-export async function createBraindumpNote(
-  content: string,
-): Promise<BraindumpNote> {
-  const response = await apiFetch("/api/v1/braindump", {
-    method: "POST",
+export async function createBraindumpNote(content: string): Promise<BraindumpNote> {
+  const response = await apiFetch('/api/v1/braindump', {
+    method: 'POST',
     body: { content },
   });
   return BraindumpNoteSchema.parse(await response.json());
 }
 
-export async function updateBraindumpNote(
-  id: string,
-  content: string,
-): Promise<BraindumpNote> {
+export async function updateBraindumpNote(id: string, content: string): Promise<BraindumpNote> {
   const response = await apiFetch(`/api/v1/braindump/${id}`, {
-    method: "PATCH",
+    method: 'PATCH',
     body: { content },
   });
   return BraindumpNoteSchema.parse(await response.json());
 }
 
 export async function deleteBraindumpNote(id: string): Promise<void> {
-  await apiFetch(`/api/v1/braindump/${id}`, { method: "DELETE" });
+  await apiFetch(`/api/v1/braindump/${id}`, { method: 'DELETE' });
 }

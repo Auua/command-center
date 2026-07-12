@@ -1,5 +1,5 @@
-import { getApiUrl } from "@/lib/env";
-import { createClient } from "@/lib/supabase/client";
+import { getApiUrl } from '@/lib/env';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * Authenticated fetch against the NestJS API (ARD §3.1: all domain traffic
@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
  */
 export async function apiFetch(
   path: string,
-  init: Omit<RequestInit, "body"> & { body?: unknown } = {},
+  init: Omit<RequestInit, 'body'> & { body?: unknown } = {},
 ): Promise<Response> {
   const supabase = createClient();
   const {
@@ -17,7 +17,7 @@ export async function apiFetch(
   } = await supabase.auth.getSession();
 
   if (!session) {
-    throw new Error("No active session");
+    throw new Error('No active session');
   }
 
   const { body, headers, ...rest } = init;
@@ -25,7 +25,7 @@ export async function apiFetch(
     ...rest,
     headers: {
       Authorization: `Bearer ${session.access_token}`,
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...headers,
     },
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),

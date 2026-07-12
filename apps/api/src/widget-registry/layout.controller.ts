@@ -1,11 +1,8 @@
-import { Body, Controller, Get, Put } from "@nestjs/common";
-import {
-  PutLayoutRequestSchema,
-  type LayoutResponse,
-} from "@command-center/contracts";
-import { CurrentUser } from "../auth/current-user.decorator";
-import type { AuthenticatedUser } from "../auth/auth.types";
-import { LayoutService } from "./layout.service";
+import { Body, Controller, Get, Put } from '@nestjs/common';
+import { PutLayoutRequestSchema, type LayoutResponse } from '@command-center/contracts';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { LayoutService } from './layout.service';
 
 /**
  * Reject unknown top-level fields on the write path (ARD §5.2
@@ -19,7 +16,7 @@ const PutLayoutRequestStrictSchema = PutLayoutRequestSchema.strict();
  * Validation is explicit zod `.parse` (ZodErrors become 400s via the global
  * ZodExceptionFilter); the user always comes from the verified JWT.
  */
-@Controller("layout")
+@Controller('layout')
 export class LayoutController {
   constructor(private readonly layoutService: LayoutService) {}
 

@@ -1,14 +1,12 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
-import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/env";
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { getSupabaseAnonKey, getSupabaseUrl } from '@/lib/env';
 
 /**
  * Server Supabase client bound to the request's cookie store.
  * Next 15: cookies() is async and must be awaited.
  */
-export async function createClient(): Promise<
-  ReturnType<typeof createServerClient>
-> {
+export async function createClient(): Promise<ReturnType<typeof createServerClient>> {
   const cookieStore = await cookies();
 
   return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
@@ -16,9 +14,7 @@ export async function createClient(): Promise<
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(
-        cookiesToSet: { name: string; value: string; options: CookieOptions }[],
-      ) {
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
         try {
           for (const { name, value, options } of cookiesToSet) {
             cookieStore.set(name, value, options);
