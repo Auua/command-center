@@ -8,25 +8,12 @@
     "@command-center/api#build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],
-      "env": [
-        "PORT",
-        "CORS_ORIGIN",
-        "SUPABASE_URL",
-        "SUPABASE_PUBLISHABLE_KEY",
-        "SUPABASE_JWT_SECRET",
-        "SUPABASE_JWKS_URL"
-      ]
+      "env": ["PORT", "CORS_ORIGIN", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "MONGODB_CONNECT"]
     },
     "@command-center/contracts#build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],
-      "env": [
-        "CORS_ORIGIN",
-        "SUPABASE_URL",
-        "SUPABASE_PUBLISHABLE_KEY",
-        "SUPABASE_JWT_SECRET",
-        "SUPABASE_JWKS_URL"
-      ]
+      "env": ["CORS_ORIGIN", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "MONGODB_CONNECT"]
     },
     "typecheck": { "dependsOn": ["^build"] },
     "lint": {

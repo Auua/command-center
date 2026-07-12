@@ -8,7 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current State
 
-This is a greenfield project: the repository currently contains only the README, LICENSE, and a Node-oriented .gitignore. There is no application code, package.json, or build/test tooling yet. When scaffolding begins, update this file with the actual build, lint, and test commands.
+Phase 0 (skeleton) and the start of Phase 1 are in place: pnpm + Turborepo monorepo with `apps/web` (Next.js), `apps/api` (NestJS API + worker entrypoints), and `packages/{contracts,ui,config}`. Auth (Supabase JWT → NestJS guard), the dashboard shell with widget registry, and the first widgets (clock, braindump) exist. Braindump is the first MongoDB-backed module (`braindump_notes` collection).
+
+### Commands (run from repo root)
+
+- `pnpm install` — install workspace deps
+- `pnpm dev` — run everything via Turborepo (web on :3000, api on :3001)
+- `pnpm build` / `pnpm typecheck` / `pnpm lint` / `pnpm test` — per-package via Turborepo; scope with `--filter`, e.g. `pnpm --filter @command-center/api test`
+- `pnpm test:e2e` — API e2e (supertest + mongodb-memory-server + stubbed JWT verifier; hermetic) and web e2e (Playwright; unauthenticated tier always runs, the authed dashboard flow runs only with `E2E_EMAIL`/`E2E_PASSWORD` set and the API running)
+- Env setup: `bash scripts/setup-env.sh`, then see `docs/ENV_SETUP.md` (`apps/web/.env.local`, `apps/api/.env`)
 
 ## What This Project Is
 

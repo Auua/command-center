@@ -47,3 +47,34 @@ jobs:
 
       - name: Audit (non-blocking)
         run: pnpm audit --audit-level high || true
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: pnpm turbo build --filter=@command-center/contracts
+
+      # Hermetic: real HTTP stack + mongodb-memory-server + stubbed JWT crypto.
+      - name: API e2e
+        run: pnpm --filter @command-center/api test:e2e
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @command-center/web exec playwright install --with-deps chromium
+
+      # Unauthenticated tier only: the authed braindump flow is gated on
+      # E2E_EMAIL/E2E_PASSWORD and skips itself here.
+      - name: Web e2e
+        run: pnpm --filter @command-center/web test:e2e
