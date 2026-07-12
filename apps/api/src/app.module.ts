@@ -1,12 +1,14 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { ConfigModule } from "@nestjs/config";
+import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
 import { BraindumpModule } from "./braindump/braindump.module";
 import { UserThrottlerGuard } from "./common/guards/user-throttler.guard";
 import { validateEnv } from "./config/env";
 import { HealthModule } from "./health/health.module";
+import { TasksModule } from "./tasks/tasks.module";
 import { WidgetRegistryModule } from "./widget-registry/widget-registry.module";
 
 /**
@@ -34,9 +36,13 @@ import { WidgetRegistryModule } from "./widget-registry/widget-registry.module";
         },
       ],
     }),
+    // In-process event bus for cross-domain reactions (ARD §4.1) — e.g.
+    // TasksModule emits task.completed; AutomationModule listens in Phase 2.
+    EventEmitterModule.forRoot(),
     AuthModule,
     BraindumpModule,
     HealthModule,
+    TasksModule,
     WidgetRegistryModule,
   ],
   providers: [

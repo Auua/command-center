@@ -216,14 +216,14 @@ erDiagram
     users ||--o{ streaks : owns
     users ||--o{ push_subscriptions : owns
     users ||--o{ calendar_events : owns
-    tasks ||--o{ task_tags : has
     automations ||--o{ automation_runs : logs
 
     tasks {
         uuid id PK
         uuid user_id FK
         text title
-        int priority
+        int priority "1 highest .. 3, null = none"
+        text[] tags
         date deadline
         timestamptz completed_at
     }
