@@ -14,12 +14,6 @@ export const EnvSchema = z.object({
   SUPABASE_URL: z.string().url({ message: "SUPABASE_URL must be a valid URL" }),
   /** Supabase anon (publishable) key — RLS-respecting role, never service_role. */
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1, "SUPABASE_PUBLISHABLE_KEY is required"),
-  /**
-   * Optional legacy shared JWT secret (HS256). If set, tokens are verified
-   * with it; otherwise verification uses the project's JWKS endpoint
-   * (asymmetric keys, the default for new Supabase projects).
-   */
-  SUPABASE_JWT_SECRET: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
