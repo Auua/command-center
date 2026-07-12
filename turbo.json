@@ -29,8 +29,19 @@
       ]
     },
     "typecheck": { "dependsOn": ["^build"] },
-    "lint": {},
-    "test": { "dependsOn": ["^build"] },
+    "lint": {
+      "cache": false,
+      "persistent": false,
+      "dependsOn": ["^lint"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,

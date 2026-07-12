@@ -10,9 +10,13 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "test": "turbo test"
+    "test": "turbo test",
+    "test:e2e": "turbo test:e2e"
   },
   "devDependencies": {
-    "turbo": "^2.3.3"
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.7.0",
+    "turbo": "^2.3.3",
+    "typescript-eslint": "^8.63.0"
   }
 }
