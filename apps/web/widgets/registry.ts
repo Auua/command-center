@@ -1,4 +1,5 @@
 import { WidgetRegistry } from "@command-center/ui";
+import { braindumpWidgetDefinition } from "./braindump";
 import { clockWidgetDefinition } from "./clock";
 
 /**
@@ -7,4 +8,5 @@ import { clockWidgetDefinition } from "./clock";
  */
 export const widgetRegistry = new WidgetRegistry();
 
+widgetRegistry.register(braindumpWidgetDefinition);
 widgetRegistry.register(clockWidgetDefinition);
