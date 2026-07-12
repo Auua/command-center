@@ -29,9 +29,10 @@ CORS_ORIGIN=http://localhost:3000
 SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
 SUPABASE_PUBLISHABLE_KEY=REPLACE_WITH_ANON_PUBLIC_KEY
 
-# Only for legacy projects still on HS256 JWTs (Dashboard → API → JWT Settings).
-# Leave commented out on new projects — the API verifies tokens via JWKS.
-# SUPABASE_JWT_SECRET=
+# MongoDB Atlas → Database → Connect → Drivers. Use a dedicated app user
+# scoped to one database (docs/ENV_SETUP.md §2). Database name defaults to
+# "command_center" when the URI has no path.
+MONGODB_CONNECT=mongodb+srv://USER:PASSWORD@YOUR-CLUSTER.mongodb.net/command_center
 EOF
 
 echo "Created apps/web/.env.local and apps/api/.env — now fill in the Supabase URL + anon key."

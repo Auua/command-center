@@ -9,7 +9,8 @@ Secrets never live in the repo (ARD §5.2). Local dev needs two gitignored files
 2. Enable 2FA on your Supabase account (NFR-6).
 3. Project Settings → API: copy the **Project URL** and the **anon / public** key.
    The anon key is safe in the browser — Row Level Security does the real gating.
-4. SQL Editor → run `supabase/migrations/0001_widget_layouts.sql`.
+4. SQL Editor → run every file in `supabase/migrations/` in order
+   (`0001_widget_layouts.sql`, `0002_tasks.sql`, …).
 5. Authentication → Providers → Email: enabled by default. For fastest first
    sign-in you can disable "Confirm email" (single-user app), or keep it on and
    use the `/auth/callback` confirmation flow.
@@ -32,13 +33,25 @@ Secrets never live in the repo (ARD §5.2). Local dev needs two gitignored files
 | `CORS_ORIGIN` | `http://localhost:3000` (comma-separate extra origins) |
 | `SUPABASE_URL` | same Project URL |
 | `SUPABASE_PUBLISHABLE_KEY` | same anon key (API queries run under the user's JWT + RLS) |
-| `SUPABASE_JWT_SECRET` | **only** legacy HS256 projects; leave unset on new projects (JWKS is used) |
+| `MONGODB_CONNECT` | MongoDB Atlas connection string (Phase 1: braindump; later journal/content) |
 
 No `service_role` key anywhere — the API deliberately runs RLS-scoped (ARD §5.1).
 
+### MongoDB Atlas (Phase 1)
+
+1. <https://cloud.mongodb.com> → create a free **M0** cluster (NFR-8). Enable 2FA (NFR-6).
+2. Database Access → create a dedicated user for this app, **read/write scoped to
+   one database only** (ARD §5.1) — not `atlasAdmin`.
+3. Network Access → allow your dev IP (and later the backend host's egress IPs).
+4. Copy the connection string into `MONGODB_CONNECT`. If the URI path names a
+   database (`…mongodb.net/command_center`), that database is used; without a
+   path the API defaults to `command_center`.
+
+Collections (`braindump_notes`, …) and indexes are created on first use — no
+migration step.
+
 ## 3. Later phases (not needed yet)
 
-- `MONGODB_URI` — Atlas cluster, Phase 1 (journal/braindump).
 - `DATABASE_URL` — direct Postgres connection for pg-boss, Phase 2.
 - VAPID keypair for Web Push, Phase 2.
 
