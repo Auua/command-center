@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import type { ComponentType, CSSProperties } from "react";
+import type { ComponentType, CSSProperties, ReactElement } from "react";
 import type { WidgetLayoutItem } from "@command-center/contracts";
 import {
   WidgetCard,
@@ -31,7 +31,7 @@ function gridPlacement(item: WidgetLayoutItem): CSSProperties {
   } as CSSProperties;
 }
 
-function DashboardWidget({ item }: { item: WidgetLayoutItem }) {
+function DashboardWidget({ item }: { item: WidgetLayoutItem }): ReactElement {
   const definition = widgetRegistry.get(item.widgetId);
 
   if (!definition) {
@@ -58,7 +58,11 @@ function DashboardWidget({ item }: { item: WidgetLayoutItem }) {
 
   return (
     <WidgetErrorBoundary widgetTitle={definition.title}>
-      <WidgetCard title={definition.title}>
+      <WidgetCard
+        title={definition.title}
+        icon={definition.icon}
+        accent={definition.accent}
+      >
         <Widget
           settings={settings}
           size={{ w: item.gridPos.w, h: item.gridPos.h }}
@@ -68,7 +72,7 @@ function DashboardWidget({ item }: { item: WidgetLayoutItem }) {
   );
 }
 
-export function DashboardGrid() {
+export function DashboardGrid(): ReactElement {
   const { data, isPending, isError } = useQuery({
     queryKey: ["layout"],
     queryFn: fetchLayout,
