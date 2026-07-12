@@ -14,6 +14,17 @@ export const EnvSchema = z.object({
   SUPABASE_URL: z.string().url({ message: "SUPABASE_URL must be a valid URL" }),
   /** Supabase anon (publishable) key — RLS-respecting role, never service_role. */
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1, "SUPABASE_PUBLISHABLE_KEY is required"),
+  /**
+   * MongoDB Atlas connection string (ARD §4.3 — document store). May omit a
+   * database name in the path; MongoService then falls back to
+   * "command_center".
+   */
+  MONGODB_CONNECT: z
+    .string()
+    .regex(
+      /^mongodb(\+srv)?:\/\//,
+      "MONGODB_CONNECT must be a mongodb:// or mongodb+srv:// URI",
+    ),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
