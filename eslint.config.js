@@ -4,6 +4,21 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
+  // 0. Never lint build output or generated files
+  {
+    ignores: [
+      '**/dist/**',
+      '**/.next/**',
+      '**/coverage/**',
+      '**/.turbo/**',
+      '**/.vercel/**',
+      '**/playwright-report/**',
+      '**/test-results/**',
+      'apps/web/next-env.d.ts',
+      '.claude/**',
+    ],
+  },
+
   // 1. Apply recommended JS and TS rules
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -31,8 +46,14 @@ export default tseslint.config(
 
       // General code quality rules
       'no-unused-vars': 'off', // Turn off base rule as TS handles it
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
       eqeqeq: ['error', 'always'],
+
+      // NestJS modules/guards are decorated, intentionally empty classes
+      '@typescript-eslint/no-extraneous-class': ['error', { allowWithDecorator: true }],
     },
   },
 

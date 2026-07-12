@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   description: "Personal dashboard: learning, tasks, automations, mood, journal.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}): ReactElement {
   return (
     <html lang="en">
       <body>

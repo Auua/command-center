@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
  * Email-confirmation / OAuth code exchange endpoint.
  * Supabase redirects here with ?code=…; we exchange it for a cookie session.
  */
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const rawNext = searchParams.get("next");

@@ -6,7 +6,9 @@ import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/env";
  * Server Supabase client bound to the request's cookie store.
  * Next 15: cookies() is async and must be awaited.
  */
-export async function createClient() {
+export async function createClient(): Promise<
+  ReturnType<typeof createServerClient>
+> {
   const cookieStore = await cookies();
 
   return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
