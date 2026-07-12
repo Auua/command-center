@@ -15,4 +15,9 @@ export const DEFAULT_LAYOUT: WidgetLayoutItem[] = [
     gridPos: { x: 2, y: 0, w: 2, h: 2 },
     settings: {},
   },
+  {
+    widgetId: "tasks",
+    gridPos: { x: 0, y: 1, w: 2, h: 2 },
+    settings: {},
+  },
 ];
