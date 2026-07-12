@@ -1,19 +1,15 @@
-"use client";
+'use client';
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent, type ReactElement } from "react";
-import { z } from "zod";
-import {
-  createBraindumpNote,
-  deleteBraindumpNote,
-  fetchBraindumpNotes,
-} from "@/lib/braindump-api";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, type FormEvent, type ReactElement } from 'react';
+import { z } from 'zod';
+import { createBraindumpNote, deleteBraindumpNote, fetchBraindumpNotes } from '@/lib/braindump-api';
 
 export const braindumpSettingsSchema = z.object({});
 
 export type BraindumpSettings = z.input<typeof braindumpSettingsSchema>;
 
-const QUERY_KEY = ["braindump"];
+const QUERY_KEY = ['braindump'];
 
 /**
  * Casual note age, per the design mock: "20 minutes ago", "yesterday, 21:14",
@@ -22,26 +18,24 @@ const QUERY_KEY = ["braindump"];
 function formatTimestamp(iso: string, now: Date = new Date()): string {
   const then = new Date(iso);
   const minutes = Math.floor((now.getTime() - then.getTime()) / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
 
   const time = then.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
+    hour: '2-digit',
+    minute: '2-digit',
   });
   const startOfDay = (d: Date): number =>
     new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const dayDiff = Math.round(
-    (startOfDay(now) - startOfDay(then)) / 86_400_000,
-  );
+  const dayDiff = Math.round((startOfDay(now) - startOfDay(then)) / 86_400_000);
   if (dayDiff === 0) {
     const hours = Math.floor(minutes / 60);
-    return hours === 1 ? "1 hour ago" : `${hours} hours ago`;
+    return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
   }
   if (dayDiff === 1) return `yesterday, ${time}`;
   const date = then.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
+    month: 'short',
+    day: 'numeric',
   });
   return `${date}, ${time}`;
 }
@@ -72,20 +66,19 @@ function PencilIcon(): ReactElement {
  */
 export function BraindumpWidget(): ReactElement {
   const queryClient = useQueryClient();
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState('');
 
   const notesQuery = useQuery({
     queryKey: QUERY_KEY,
     queryFn: fetchBraindumpNotes,
   });
 
-  const invalidate = (): Promise<void> =>
-    queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+  const invalidate = (): Promise<void> => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
   const createMutation = useMutation({
     mutationFn: createBraindumpNote,
     onSuccess: () => {
-      setDraft("");
+      setDraft('');
       return invalidate();
     },
   });
@@ -120,7 +113,7 @@ export function BraindumpWidget(): ReactElement {
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             // Enter submits; Shift+Enter makes a newline.
-            if (event.key === "Enter" && !event.shiftKey) {
+            if (event.key === 'Enter' && !event.shiftKey) {
               event.preventDefault();
               event.currentTarget.form?.requestSubmit();
             }
@@ -160,10 +153,7 @@ export function BraindumpWidget(): ReactElement {
             <li key={note.id} className="cc-braindump-item">
               <div className="cc-braindump-item-main">
                 <p className="cc-braindump-item-content">{note.content}</p>
-                <time
-                  className="cc-braindump-item-time"
-                  dateTime={note.createdAt}
-                >
+                <time className="cc-braindump-item-time" dateTime={note.createdAt}>
                   {formatTimestamp(note.createdAt)}
                 </time>
               </div>

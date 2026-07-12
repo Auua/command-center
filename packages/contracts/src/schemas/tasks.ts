@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Task — todo item with optional priority, tags, and deadline (ARD §4.4:
@@ -8,9 +8,7 @@ import { z } from "zod";
  */
 export const TASK_PRIORITIES = [1, 2, 3] as const;
 
-export const TaskPrioritySchema = z
-  .union([z.literal(1), z.literal(2), z.literal(3)])
-  .nullable();
+export const TaskPrioritySchema = z.union([z.literal(1), z.literal(2), z.literal(3)]).nullable();
 
 export const TaskSchema = z.object({
   id: z.string().uuid(),
@@ -65,6 +63,6 @@ export const UpdateTaskRequestSchema = z
   .strict()
   .partial()
   .refine((value) => Object.keys(value).length > 0, {
-    message: "Update must change at least one field",
+    message: 'Update must change at least one field',
   });
 export type UpdateTaskRequest = z.infer<typeof UpdateTaskRequestSchema>;

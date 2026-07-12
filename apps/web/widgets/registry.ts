@@ -1,8 +1,8 @@
-import { WidgetRegistry } from "@command-center/ui";
-import { braindumpWidgetDefinition } from "./braindump";
-import { clockWidgetDefinition } from "./clock";
-import { moodWidgetDefinition } from "./mood";
-import { tasksWidgetDefinition } from "./tasks";
+import { WidgetRegistry } from '@command-center/ui';
+import { braindumpWidgetDefinition } from './braindump';
+import { clockWidgetDefinition } from './clock';
+import { moodWidgetDefinition } from './mood';
+import { tasksWidgetDefinition } from './tasks';
 
 /**
  * Client-side widget registry (ARD §4.2). Adding a widget = one folder under

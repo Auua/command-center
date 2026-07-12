@@ -70,11 +70,7 @@ describe('Tasks (e2e)', () => {
     });
 
     it('rejects an empty update', async () => {
-      await request(server)
-        .patch('/api/v1/tasks/some-id')
-        .set(asAnna)
-        .send({})
-        .expect(400);
+      await request(server).patch('/api/v1/tasks/some-id').set(asAnna).send({}).expect(400);
     });
   });
 });

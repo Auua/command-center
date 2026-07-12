@@ -1,9 +1,5 @@
-import {
-  createParamDecorator,
-  ExecutionContext,
-  UnauthorizedException,
-} from "@nestjs/common";
-import type { AuthenticatedRequest, AuthenticatedUser } from "./auth.types";
+import { createParamDecorator, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import type { AuthenticatedRequest, AuthenticatedUser } from './auth.types';
 
 /**
  * Injects the authenticated user ({ id, token }) resolved by JwtAuthGuard.
@@ -14,7 +10,7 @@ export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthenticatedUser => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     if (!request.user) {
-      throw new UnauthorizedException("No authenticated user in request context");
+      throw new UnauthorizedException('No authenticated user in request context');
     }
     return request.user;
   },

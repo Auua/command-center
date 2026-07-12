@@ -1,8 +1,5 @@
-import {
-  LayoutResponseSchema,
-  type LayoutResponse,
-} from "@command-center/contracts";
-import { apiFetch } from "@/lib/api";
+import { LayoutResponseSchema, type LayoutResponse } from '@command-center/contracts';
+import { apiFetch } from '@/lib/api';
 
 /**
  * Fetch the user's persisted widget layout from the NestJS API
@@ -10,6 +7,6 @@ import { apiFetch } from "@/lib/api";
  * the default layout.
  */
 export async function fetchLayout(): Promise<LayoutResponse> {
-  const response = await apiFetch("/api/v1/layout");
+  const response = await apiFetch('/api/v1/layout');
   return LayoutResponseSchema.parse(await response.json());
 }

@@ -1,4 +1,4 @@
-import type { WidgetLayoutItem } from "@command-center/contracts";
+import type { WidgetLayoutItem } from '@command-center/contracts';
 
 /**
  * Fallback layout used when the API is unreachable or the user has no
@@ -6,22 +6,22 @@ import type { WidgetLayoutItem } from "@command-center/contracts";
  */
 export const DEFAULT_LAYOUT: WidgetLayoutItem[] = [
   {
-    widgetId: "clock",
+    widgetId: 'clock',
     gridPos: { x: 0, y: 0, w: 2, h: 1 },
     settings: {},
   },
   {
-    widgetId: "braindump",
+    widgetId: 'braindump',
     gridPos: { x: 2, y: 0, w: 2, h: 2 },
     settings: {},
   },
   {
-    widgetId: "tasks",
+    widgetId: 'tasks',
     gridPos: { x: 0, y: 1, w: 2, h: 2 },
     settings: {},
   },
   {
-    widgetId: "mood",
+    widgetId: 'mood',
     gridPos: { x: 4, y: 0, w: 2, h: 2 },
     settings: {},
   },

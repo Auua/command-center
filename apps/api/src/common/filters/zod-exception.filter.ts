@@ -1,6 +1,6 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from "@nestjs/common";
-import type { Response } from "express";
-import { ZodError } from "zod";
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
+import type { Response } from 'express';
+import { ZodError } from 'zod';
 
 /**
  * Maps ZodErrors thrown by explicit `schema.parse(...)` calls in controllers
@@ -18,10 +18,10 @@ export class ZodExceptionFilter implements ExceptionFilter<ZodError> {
     const response = host.switchToHttp().getResponse<Response>();
     response.status(HttpStatus.BAD_REQUEST).json({
       statusCode: HttpStatus.BAD_REQUEST,
-      error: "Bad Request",
-      message: "Validation failed",
+      error: 'Bad Request',
+      message: 'Validation failed',
       issues: exception.issues.map((issue) => ({
-        path: issue.path.join("."),
+        path: issue.path.join('.'),
         code: issue.code,
         message: issue.message,
       })),

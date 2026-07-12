@@ -12,20 +12,17 @@ function required(name: string, value: string | undefined): string {
 }
 
 export function getSupabaseUrl(): string {
-  return required(
-    "NEXT_PUBLIC_SUPABASE_URL",
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-  );
+  return required('NEXT_PUBLIC_SUPABASE_URL', process.env.NEXT_PUBLIC_SUPABASE_URL);
 }
 
 export function getSupabaseAnonKey(): string {
   return required(
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+    'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   );
 }
 
 /** Base URL of the NestJS API, e.g. http://localhost:3001 */
 export function getApiUrl(): string {
-  return required("NEXT_PUBLIC_API_URL", process.env.NEXT_PUBLIC_API_URL);
+  return required('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL);
 }

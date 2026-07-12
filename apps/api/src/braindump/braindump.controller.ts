@@ -8,16 +8,16 @@ import {
   Param,
   Patch,
   Post,
-} from "@nestjs/common";
+} from '@nestjs/common';
 import {
   CreateBraindumpNoteRequestSchema,
   UpdateBraindumpNoteRequestSchema,
   type BraindumpListResponse,
   type BraindumpNote,
-} from "@command-center/contracts";
-import { CurrentUser } from "../auth/current-user.decorator";
-import type { AuthenticatedUser } from "../auth/auth.types";
-import { BraindumpService } from "./braindump.service";
+} from '@command-center/contracts';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { BraindumpService } from './braindump.service';
 
 /**
  * Reject unknown top-level fields on write paths (ARD §5.2
@@ -31,14 +31,12 @@ const UpdateStrictSchema = UpdateBraindumpNoteRequestSchema.strict();
  * Validation is explicit zod `.parse` (ZodErrors become 400s via the global
  * ZodExceptionFilter); the user always comes from the verified JWT.
  */
-@Controller("braindump")
+@Controller('braindump')
 export class BraindumpController {
   constructor(private readonly braindumpService: BraindumpService) {}
 
   @Get()
-  listNotes(
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<BraindumpListResponse> {
+  listNotes(@CurrentUser() user: AuthenticatedUser): Promise<BraindumpListResponse> {
     return this.braindumpService.listNotes(user);
   }
 
@@ -51,22 +49,19 @@ export class BraindumpController {
     return this.braindumpService.createNote(user, request);
   }
 
-  @Patch(":id")
+  @Patch(':id')
   updateNote(
     @CurrentUser() user: AuthenticatedUser,
-    @Param("id") id: string,
+    @Param('id') id: string,
     @Body() body: unknown,
   ): Promise<BraindumpNote> {
     const request = UpdateStrictSchema.parse(body);
     return this.braindumpService.updateNote(user, id, request);
   }
 
-  @Delete(":id")
+  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteNote(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param("id") id: string,
-  ): Promise<void> {
+  async deleteNote(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
     await this.braindumpService.deleteNote(user, id);
   }
 }

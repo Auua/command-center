@@ -18,12 +18,8 @@
   --cc-text: #191a20;
   --cc-text-muted: #5c5e6a;
   --cc-text-faint: #9092a0;
-  --cc-shadow:
-    0 1px 2px rgba(25, 26, 32, 0.04),
-    0 8px 24px -12px rgba(25, 26, 32, 0.1);
-  --cc-shadow-lift:
-    0 2px 4px rgba(25, 26, 32, 0.05),
-    0 14px 32px -12px rgba(25, 26, 32, 0.16);
+  --cc-shadow: 0 1px 2px rgba(25, 26, 32, 0.04), 0 8px 24px -12px rgba(25, 26, 32, 0.1);
+  --cc-shadow-lift: 0 2px 4px rgba(25, 26, 32, 0.05), 0 14px 32px -12px rgba(25, 26, 32, 0.16);
 
   /* Accent palette (mock: --c-*) */
   --cc-coral: #e85a4f;
@@ -56,12 +52,8 @@
     --cc-text: #f1f1ef;
     --cc-text-muted: #b7b9c4;
     --cc-text-faint: #7d7f8a;
-    --cc-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.25),
-      0 8px 24px -12px rgba(0, 0, 0, 0.45);
-    --cc-shadow-lift:
-      0 2px 4px rgba(0, 0, 0, 0.3),
-      0 14px 32px -12px rgba(0, 0, 0, 0.6);
+    --cc-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px -12px rgba(0, 0, 0, 0.45);
+    --cc-shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.3), 0 14px 32px -12px rgba(0, 0, 0, 0.6);
 
     --cc-coral: #e05a4e;
     --cc-sky: #3e86e0;
@@ -98,7 +90,7 @@ body {
   font:
     14px/1.55 ui-sans-serif,
     -apple-system,
-    "Segoe UI",
+    'Segoe UI',
     Roboto,
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -718,7 +710,7 @@ p {
   cursor: pointer;
 }
 
-.cc-mood-face[aria-pressed="true"] {
+.cc-mood-face[aria-pressed='true'] {
   background: color-mix(in srgb, var(--cc-wc) 18%, var(--cc-bg-raised));
   border-color: color-mix(in srgb, var(--cc-wc) 55%, var(--cc-bg-raised));
 }
@@ -833,7 +825,9 @@ p {
 }
 
 .cc-mood-axis-lbl {
-  font: 600 9.5px ui-sans-serif, sans-serif;
+  font:
+    600 9.5px ui-sans-serif,
+    sans-serif;
   fill: var(--cc-text-faint);
 }
 

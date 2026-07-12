@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * Email-confirmation / OAuth code exchange endpoint.
@@ -7,13 +7,10 @@ import { createClient } from "@/lib/supabase/server";
  */
 export async function GET(request: Request): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const rawNext = searchParams.get("next");
+  const code = searchParams.get('code');
+  const rawNext = searchParams.get('next');
   // Only allow same-origin relative paths (no open redirect).
-  const next =
-    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
-      ? rawNext
-      : "/";
+  const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
 
   if (code) {
     const supabase = await createClient();

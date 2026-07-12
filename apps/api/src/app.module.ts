@@ -1,16 +1,16 @@
-import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
-import { ConfigModule } from "@nestjs/config";
-import { EventEmitterModule } from "@nestjs/event-emitter";
-import { ThrottlerModule } from "@nestjs/throttler";
-import { AuthModule } from "./auth/auth.module";
-import { BraindumpModule } from "./braindump/braindump.module";
-import { UserThrottlerGuard } from "./common/guards/user-throttler.guard";
-import { validateEnv } from "./config/env";
-import { HealthModule } from "./health/health.module";
-import { MoodModule } from "./mood/mood.module";
-import { TasksModule } from "./tasks/tasks.module";
-import { WidgetRegistryModule } from "./widget-registry/widget-registry.module";
+import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AuthModule } from './auth/auth.module';
+import { BraindumpModule } from './braindump/braindump.module';
+import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
+import { validateEnv } from './config/env';
+import { HealthModule } from './health/health.module';
+import { MoodModule } from './mood/mood.module';
+import { TasksModule } from './tasks/tasks.module';
+import { WidgetRegistryModule } from './widget-registry/widget-registry.module';
 
 /**
  * API process root module — modular monolith (ADR-002). Domain modules never
@@ -31,7 +31,7 @@ import { WidgetRegistryModule } from "./widget-registry/widget-registry.module";
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          name: "default",
+          name: 'default',
           ttl: 60_000, // 1 minute window
           limit: 100, // 100 requests/min per user (ARD §5.2)
         },

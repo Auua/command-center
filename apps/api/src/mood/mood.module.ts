@@ -1,8 +1,8 @@
-import { Module } from "@nestjs/common";
-import { SupabaseModule } from "../supabase/supabase.module";
-import { MoodController } from "./mood.controller";
-import { MoodRepository } from "./mood.repository";
-import { MoodService } from "./mood.service";
+import { Module } from '@nestjs/common';
+import { SupabaseModule } from '../supabase/supabase.module';
+import { MoodController } from './mood.controller';
+import { MoodRepository } from './mood.repository';
+import { MoodService } from './mood.service';
 
 /**
  * MoodModule (ARD §4.1): mood check-ins + the data behind the trend chart.

@@ -1,10 +1,10 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/env";
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
+import { getSupabaseAnonKey, getSupabaseUrl } from '@/lib/env';
 
 /** Routes reachable without a session. */
 function isPublicPath(pathname: string): boolean {
-  return pathname === "/login" || pathname.startsWith("/auth");
+  return pathname === '/login' || pathname.startsWith('/auth');
 }
 
 /**
@@ -13,9 +13,7 @@ function isPublicPath(pathname: string): boolean {
  * - unauthenticated users are redirected to /login (except /login, /auth/*)
  * - authenticated users are redirected away from /login
  */
-export async function updateSession(
-  request: NextRequest,
-): Promise<NextResponse> {
+export async function updateSession(request: NextRequest): Promise<NextResponse> {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
@@ -23,9 +21,7 @@ export async function updateSession(
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(
-        cookiesToSet: { name: string; value: string; options: CookieOptions }[],
-      ) {
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
         for (const { name, value } of cookiesToSet) {
           request.cookies.set(name, value);
         }
@@ -46,11 +42,11 @@ export async function updateSession(
   const { pathname } = request.nextUrl;
 
   if (!user && !isPublicPath(pathname)) {
-    return redirectPreservingCookies(request, supabaseResponse, "/login");
+    return redirectPreservingCookies(request, supabaseResponse, '/login');
   }
 
-  if (user && pathname === "/login") {
-    return redirectPreservingCookies(request, supabaseResponse, "/");
+  if (user && pathname === '/login') {
+    return redirectPreservingCookies(request, supabaseResponse, '/');
   }
 
   return supabaseResponse;
@@ -67,7 +63,7 @@ function redirectPreservingCookies(
 ): NextResponse {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
-  url.search = "";
+  url.search = '';
 
   const response = NextResponse.redirect(url);
   for (const cookie of baseResponse.cookies.getAll()) {

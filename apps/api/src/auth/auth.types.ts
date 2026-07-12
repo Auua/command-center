@@ -1,4 +1,4 @@
-import type { Request } from "express";
+import type { Request } from 'express';
 
 /**
  * User identity extracted from a verified Supabase JWT.

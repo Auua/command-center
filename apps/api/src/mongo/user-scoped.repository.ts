@@ -8,7 +8,7 @@ import type {
   OptionalUnlessRequiredId,
   Sort,
   WithId,
-} from "mongodb";
+} from 'mongodb';
 
 /**
  * Every MongoDB document carries the owning user's id (ARD §4.4) — the
@@ -45,10 +45,7 @@ export abstract class UserScopedRepository<TDoc extends UserOwnedDocument> {
     return this.collection.find(this.scope(userId, filter), findOptions).toArray();
   }
 
-  protected async insertForUser(
-    userId: string,
-    doc: Omit<TDoc, "userId">,
-  ): Promise<WithId<TDoc>> {
+  protected async insertForUser(userId: string, doc: Omit<TDoc, 'userId'>): Promise<WithId<TDoc>> {
     const stamped = { ...doc, userId } as OptionalUnlessRequiredId<TDoc>;
     const { insertedId } = await this.collection.insertOne(stamped);
     return { ...stamped, _id: insertedId } as WithId<TDoc>;
@@ -63,7 +60,7 @@ export abstract class UserScopedRepository<TDoc extends UserOwnedDocument> {
     return this.collection.findOneAndUpdate(
       this.scope(userId, filter),
       { $set: set },
-      { returnDocument: "after" },
+      { returnDocument: 'after' },
     );
   }
 
@@ -73,13 +70,8 @@ export abstract class UserScopedRepository<TDoc extends UserOwnedDocument> {
   }
 
   /** Returns false when no owned document matched. */
-  protected async deleteOneForUser(
-    userId: string,
-    filter: Filter<TDoc>,
-  ): Promise<boolean> {
-    const { deletedCount } = await this.collection.deleteOne(
-      this.scope(userId, filter),
-    );
+  protected async deleteOneForUser(userId: string, filter: Filter<TDoc>): Promise<boolean> {
+    const { deletedCount } = await this.collection.deleteOne(this.scope(userId, filter));
     return deletedCount > 0;
   }
 }

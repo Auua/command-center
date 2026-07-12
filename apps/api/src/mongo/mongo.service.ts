@@ -1,10 +1,10 @@
-import { Injectable, Logger, type OnApplicationShutdown } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { MongoClient, type Collection, type Db, type Document } from "mongodb";
-import type { Env } from "../config/env";
+import { Injectable, Logger, type OnApplicationShutdown } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { MongoClient, type Collection, type Db, type Document } from 'mongodb';
+import type { Env } from '../config/env';
 
 /** Used when MONGODB_CONNECT carries no database name in its path. */
-const DEFAULT_DB_NAME = "command_center";
+const DEFAULT_DB_NAME = 'command_center';
 
 /** Extracts the database name from a mongodb(+srv):// URI path, if present. */
 export function dbNameFromUri(uri: string): string | undefined {
@@ -30,7 +30,7 @@ export class MongoService implements OnApplicationShutdown {
   private readonly db: Db;
 
   constructor(configService: ConfigService<Env, true>) {
-    const uri = configService.get("MONGODB_CONNECT", { infer: true });
+    const uri = configService.get('MONGODB_CONNECT', { infer: true });
     this.client = new MongoClient(uri, {
       // Fail operations fast instead of stalling widget requests (NFR-2).
       serverSelectionTimeoutMS: 5_000,

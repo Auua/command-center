@@ -1,13 +1,10 @@
-import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
-import type { BraindumpNote } from "@command-center/contracts";
-import { ObjectId, type WithId } from "mongodb";
-import { MongoService } from "../mongo/mongo.service";
-import {
-  UserScopedRepository,
-  type UserOwnedDocument,
-} from "../mongo/user-scoped.repository";
+import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import type { BraindumpNote } from '@command-center/contracts';
+import { ObjectId, type WithId } from 'mongodb';
+import { MongoService } from '../mongo/mongo.service';
+import { UserScopedRepository, type UserOwnedDocument } from '../mongo/user-scoped.repository';
 
-const COLLECTION = "braindump_notes";
+const COLLECTION = 'braindump_notes';
 
 /** Newest first; capped so a runaway braindump can't blow up the widget. */
 const LIST_LIMIT = 200;
@@ -56,11 +53,7 @@ export class BraindumpRepository
   }
 
   async listForUser(userId: string): Promise<BraindumpNote[]> {
-    const docs = await this.findForUser(
-      userId,
-      {},
-      { sort: { createdAt: -1 }, limit: LIST_LIMIT },
-    );
+    const docs = await this.findForUser(userId, {}, { sort: { createdAt: -1 }, limit: LIST_LIMIT });
     return docs.map((doc) => this.toNote(doc));
   }
 
@@ -82,11 +75,7 @@ export class BraindumpRepository
   ): Promise<BraindumpNote | null> {
     const _id = this.parseId(id);
     if (!_id) return null;
-    const doc = await this.updateOneForUser(
-      userId,
-      { _id },
-      { content, updatedAt: new Date() },
-    );
+    const doc = await this.updateOneForUser(userId, { _id }, { content, updatedAt: new Date() });
     return doc ? this.toNote(doc) : null;
   }
 

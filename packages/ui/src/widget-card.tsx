@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type { CSSProperties, ReactElement, ReactNode } from 'react';
 
 interface WidgetCardProps {
   title: string;
@@ -13,15 +13,8 @@ interface WidgetCardProps {
  * Shared widget chrome, per the design mock's .card: accent-tinted icon
  * chip + uppercase kicker title, then the content area.
  */
-export function WidgetCard({
-  title,
-  icon,
-  accent,
-  children,
-}: WidgetCardProps): ReactElement {
-  const style = accent
-    ? ({ "--cc-wc": accent } as CSSProperties)
-    : undefined;
+export function WidgetCard({ title, icon, accent, children }: WidgetCardProps): ReactElement {
+  const style = accent ? ({ '--cc-wc': accent } as CSSProperties) : undefined;
 
   return (
     <section className="cc-widget-card" aria-label={title} style={style}>

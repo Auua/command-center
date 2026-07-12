@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 /**
  * Braindump note — quick, unstructured capture (ARD §4.3: document-shaped,
@@ -22,13 +22,9 @@ export type BraindumpListResponse = z.infer<typeof BraindumpListResponseSchema>;
 export const CreateBraindumpNoteRequestSchema = z.object({
   content: z.string().trim().min(1).max(20_000),
 });
-export type CreateBraindumpNoteRequest = z.infer<
-  typeof CreateBraindumpNoteRequestSchema
->;
+export type CreateBraindumpNoteRequest = z.infer<typeof CreateBraindumpNoteRequestSchema>;
 
 export const UpdateBraindumpNoteRequestSchema = z.object({
   content: z.string().trim().min(1).max(20_000),
 });
-export type UpdateBraindumpNoteRequest = z.infer<
-  typeof UpdateBraindumpNoteRequestSchema
->;
+export type UpdateBraindumpNoteRequest = z.infer<typeof UpdateBraindumpNoteRequestSchema>;

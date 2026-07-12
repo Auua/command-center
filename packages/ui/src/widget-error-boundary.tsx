@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Component, type ReactNode } from "react";
+import { Component, type ReactNode } from 'react';
 
 interface Props {
   widgetTitle: string;

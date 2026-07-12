@@ -1,8 +1,8 @@
-import { Module } from "@nestjs/common";
-import { SupabaseModule } from "../supabase/supabase.module";
-import { LayoutController } from "./layout.controller";
-import { LayoutRepository } from "./layout.repository";
-import { LayoutService } from "./layout.service";
+import { Module } from '@nestjs/common';
+import { SupabaseModule } from '../supabase/supabase.module';
+import { LayoutController } from './layout.controller';
+import { LayoutRepository } from './layout.repository';
+import { LayoutService } from './layout.service';
 
 /**
  * WidgetRegistryModule (ARD §4.1): owns dashboard layout + per-widget

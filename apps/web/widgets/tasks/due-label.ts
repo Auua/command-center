@@ -12,12 +12,12 @@ export interface DueLabel {
 
 /** Parse the contract's plain-date string (YYYY-MM-DD) as a local date. */
 function parseLocalDate(deadline: string): Date {
-  const [year = 0, month = 1, day = 1] = deadline.split("-").map(Number);
+  const [year = 0, month = 1, day = 1] = deadline.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
 
 function shortDate(date: Date): string {
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export function formatDueLabel(deadline: string, now: Date): DueLabel {
@@ -28,11 +28,11 @@ export function formatDueLabel(deadline: string, now: Date): DueLabel {
   if (dayDiff < 0) {
     return { label: `overdue · ${shortDate(due)}`, isOverdue: true };
   }
-  if (dayDiff === 0) return { label: "today", isOverdue: false };
-  if (dayDiff === 1) return { label: "tomorrow", isOverdue: false };
+  if (dayDiff === 0) return { label: 'today', isOverdue: false };
+  if (dayDiff === 1) return { label: 'tomorrow', isOverdue: false };
   if (dayDiff <= 6) {
     return {
-      label: due.toLocaleDateString(undefined, { weekday: "short" }),
+      label: due.toLocaleDateString(undefined, { weekday: 'short' }),
       isOverdue: false,
     };
   }

@@ -1,8 +1,8 @@
-import { Module } from "@nestjs/common";
-import { SupabaseModule } from "../supabase/supabase.module";
-import { TasksController } from "./tasks.controller";
-import { TasksRepository } from "./tasks.repository";
-import { TasksService } from "./tasks.service";
+import { Module } from '@nestjs/common';
+import { SupabaseModule } from '../supabase/supabase.module';
+import { TasksController } from './tasks.controller';
+import { TasksRepository } from './tasks.repository';
+import { TasksService } from './tasks.service';
 
 /**
  * TasksModule (ARD §4.1): first Postgres-backed domain module — validates

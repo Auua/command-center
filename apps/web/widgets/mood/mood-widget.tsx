@@ -1,32 +1,26 @@
-"use client";
+'use client';
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type ReactElement } from "react";
-import { z } from "zod";
-import type { MoodCheckin, MoodScore } from "@command-center/contracts";
-import type { WidgetProps } from "@command-center/ui";
-import {
-  createMoodCheckin,
-  deleteMoodCheckin,
-  fetchMoodCheckins,
-} from "@/lib/mood-api";
-import { MOOD_FACES, buildTrend, latestToday, moodLabel, type TrendDay } from "./trend";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, type ReactElement } from 'react';
+import { z } from 'zod';
+import type { MoodCheckin, MoodScore } from '@command-center/contracts';
+import type { WidgetProps } from '@command-center/ui';
+import { createMoodCheckin, deleteMoodCheckin, fetchMoodCheckins } from '@/lib/mood-api';
+import { MOOD_FACES, buildTrend, latestToday, moodLabel, type TrendDay } from './trend';
 
 /** The mock's tag set; customizable per-widget via settings later. */
-export const DEFAULT_MOOD_TAGS = [
-  "focused",
-  "energetic",
-  "stressed",
-  "tired",
-] as const;
+export const DEFAULT_MOOD_TAGS = ['focused', 'energetic', 'stressed', 'tired'] as const;
 
 export const moodSettingsSchema = z.object({
-  tags: z.array(z.string().min(1)).max(12).default([...DEFAULT_MOOD_TAGS]),
+  tags: z
+    .array(z.string().min(1))
+    .max(12)
+    .default([...DEFAULT_MOOD_TAGS]),
 });
 
 export type MoodSettings = z.input<typeof moodSettingsSchema>;
 
-const QUERY_KEY = ["mood"];
+const QUERY_KEY = ['mood'];
 
 /* Chart geometry lifted from the design mock's trend SVG: 280×92 viewBox,
    gridlines at scores 5/3/1 (y 10/37/64), 7 points 44px apart. */
@@ -44,17 +38,16 @@ function chartY(average: number): number {
 function TrendChart({ trend }: { trend: TrendDay[] }): ReactElement {
   const points = trend
     .map((day, index) => ({ day, index }))
-    .filter((entry): entry is { day: TrendDay & { average: number }; index: number } =>
-      entry.day.average !== null,
+    .filter(
+      (entry): entry is { day: TrendDay & { average: number }; index: number } =>
+        entry.day.average !== null,
     )
     .map(({ day, index }) => ({
       x: chartX(index, trend.length),
       y: chartY(day.average),
     }));
 
-  const line = points
-    .map((point, i) => `${i === 0 ? "M" : "L"}${point.x} ${point.y}`)
-    .join(" ");
+  const line = points.map((point, i) => `${i === 0 ? 'M' : 'L'}${point.x} ${point.y}`).join(' ');
   const first = points[0];
   const last = points[points.length - 1];
   const area =
@@ -63,8 +56,8 @@ function TrendChart({ trend }: { trend: TrendDay[] }): ReactElement {
       : null;
 
   const description = trend
-    .map((day) => (day.average === null ? "no entry" : day.average.toFixed(1)))
-    .join(", ");
+    .map((day) => (day.average === null ? 'no entry' : day.average.toFixed(1)))
+    .join(', ');
 
   return (
     <svg
@@ -130,8 +123,7 @@ export function MoodWidget({ settings }: WidgetProps<MoodSettings>): ReactElemen
     queryFn: () => fetchMoodCheckins(),
   });
 
-  const invalidate = (): Promise<void> =>
-    queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+  const invalidate = (): Promise<void> => queryClient.invalidateQueries({ queryKey: QUERY_KEY });
 
   const logMutation = useMutation({
     mutationFn: createMoodCheckin,
@@ -193,7 +185,7 @@ export function MoodWidget({ settings }: WidgetProps<MoodSettings>): ReactElemen
             <button
               key={tag}
               type="button"
-              className={on ? "cc-mood-tag on" : "cc-mood-tag"}
+              className={on ? 'cc-mood-tag on' : 'cc-mood-tag'}
               aria-pressed={on}
               onClick={() => toggleTag(tag)}
             >
@@ -209,7 +201,7 @@ export function MoodWidget({ settings }: WidgetProps<MoodSettings>): ReactElemen
         </p>
       ) : lastLogged ? (
         <p className="cc-mood-status" role="status">
-          Logged {moodLabel(lastLogged.score)}.{" "}
+          Logged {moodLabel(lastLogged.score)}.{' '}
           <button
             type="button"
             className="cc-mood-undo"
@@ -225,7 +217,7 @@ export function MoodWidget({ settings }: WidgetProps<MoodSettings>): ReactElemen
         <div className="cc-mood-trend-head">
           <span className="cc-mood-trend-lbl">7-day trend</span>
           <span className="cc-mood-trend-val">
-            {latest ? `${moodLabel(latest.score)} · ${latest.score}/5` : "—"}
+            {latest ? `${moodLabel(latest.score)} · ${latest.score}/5` : '—'}
           </span>
         </div>
         {moodQuery.isPending ? (

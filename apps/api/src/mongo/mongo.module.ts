@@ -1,5 +1,5 @@
-import { Module } from "@nestjs/common";
-import { MongoService } from "./mongo.service";
+import { Module } from '@nestjs/common';
+import { MongoService } from './mongo.service';
 
 /**
  * Core MongoDB access (ARD §4.3). Domain modules import this to obtain their

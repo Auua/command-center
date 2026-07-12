@@ -1,7 +1,7 @@
-import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-import { validateEnv } from "../config/env";
-import { HeartbeatService } from "./heartbeat.service";
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { validateEnv } from '../config/env';
+import { HeartbeatService } from './heartbeat.service';
 
 /**
  * Worker process root module (ARD §3.1): same codebase as the API, separate

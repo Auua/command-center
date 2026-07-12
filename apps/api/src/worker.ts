@@ -1,7 +1,7 @@
-import "reflect-metadata";
-import { ConsoleLogger } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { WorkerModule } from "./worker/worker.module";
+import 'reflect-metadata';
+import { ConsoleLogger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { WorkerModule } from './worker/worker.module';
 
 /**
  * Worker entrypoint (ARD §3.1): boots a NestJS application context — no HTTP
