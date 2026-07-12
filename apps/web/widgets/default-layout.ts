@@ -20,4 +20,9 @@ export const DEFAULT_LAYOUT: WidgetLayoutItem[] = [
     gridPos: { x: 0, y: 1, w: 2, h: 2 },
     settings: {},
   },
+  {
+    widgetId: "mood",
+    gridPos: { x: 4, y: 0, w: 2, h: 2 },
+    settings: {},
+  },
 ];

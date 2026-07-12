@@ -8,6 +8,7 @@ import { BraindumpModule } from "./braindump/braindump.module";
 import { UserThrottlerGuard } from "./common/guards/user-throttler.guard";
 import { validateEnv } from "./config/env";
 import { HealthModule } from "./health/health.module";
+import { MoodModule } from "./mood/mood.module";
 import { TasksModule } from "./tasks/tasks.module";
 import { WidgetRegistryModule } from "./widget-registry/widget-registry.module";
 
@@ -42,6 +43,7 @@ import { WidgetRegistryModule } from "./widget-registry/widget-registry.module";
     AuthModule,
     BraindumpModule,
     HealthModule,
+    MoodModule,
     TasksModule,
     WidgetRegistryModule,
   ],

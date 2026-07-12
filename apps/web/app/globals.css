@@ -684,6 +684,164 @@ p {
   font-size: 12.5px;
 }
 
+/* ---- Mood widget ----
+   Mock's .mood-* + .trend: emoji face scale, amber tag pills, 7-day area
+   chart. Selected states tint with the widget accent (--cc-wc, amber). */
+
+.cc-mood {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.cc-mood-q {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.cc-mood-scale {
+  display: flex;
+  gap: 8px;
+}
+
+.cc-mood-face {
+  flex: 1;
+  aspect-ratio: 1;
+  max-width: 52px;
+  border-radius: 14px;
+  font-size: 22px;
+  background: var(--cc-bg-inset);
+  border: 1px solid var(--cc-border);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.cc-mood-face[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--cc-wc) 18%, var(--cc-bg-raised));
+  border-color: color-mix(in srgb, var(--cc-wc) 55%, var(--cc-bg-raised));
+}
+
+.cc-mood-face:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cc-mood-face {
+    transition: transform 0.15s ease;
+  }
+
+  .cc-mood-face:hover:not(:disabled) {
+    transform: scale(1.1);
+  }
+}
+
+.cc-mood-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cc-mood-tag {
+  border-radius: 999px;
+  padding: 3px 11px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: 1px solid var(--cc-border);
+  color: var(--cc-text-muted);
+  background: var(--cc-bg-raised);
+  cursor: pointer;
+}
+
+.cc-mood-tag.on {
+  background: color-mix(in srgb, var(--cc-wc) 15%, var(--cc-bg-raised));
+  border-color: transparent;
+  color: var(--cc-amber-ink);
+  font-weight: 600;
+}
+
+.cc-mood-status {
+  font-size: 12.5px;
+  color: var(--cc-text-muted);
+}
+
+.cc-mood-undo {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--cc-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cc-mood-undo:disabled {
+  color: var(--cc-text-faint);
+  cursor: default;
+}
+
+.cc-mood-trend {
+  margin-top: auto;
+}
+
+.cc-mood-trend-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.cc-mood-trend-lbl {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--cc-text-faint);
+  font-weight: 600;
+}
+
+.cc-mood-trend-val {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cc-mood-trend svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.cc-mood-grid-line {
+  stroke: var(--cc-border);
+}
+
+.cc-mood-trend-area {
+  fill: var(--cc-wc);
+  opacity: 0.13;
+}
+
+.cc-mood-trend-line {
+  stroke: var(--cc-wc);
+}
+
+.cc-mood-trend-dot {
+  fill: var(--cc-wc);
+  stroke: var(--cc-bg-raised);
+}
+
+.cc-mood-axis-lbl {
+  font: 600 9.5px ui-sans-serif, sans-serif;
+  fill: var(--cc-text-faint);
+}
+
+.cc-mood-error {
+  color: var(--cc-danger);
+  font-size: 12.5px;
+}
+
 /* Screen-reader-only content (NFR-11). */
 .cc-visually-hidden {
   position: absolute;
