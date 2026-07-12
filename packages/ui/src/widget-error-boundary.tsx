@@ -22,7 +22,7 @@ export class WidgetErrorBoundary extends Component<Props, State> {
     return { hasError: true };
   }
 
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
       return (
         <div role="alert" className="cc-widget-error">

@@ -13,7 +13,9 @@ function isPublicPath(pathname: string): boolean {
  * - unauthenticated users are redirected to /login (except /login, /auth/*)
  * - authenticated users are redirected away from /login
  */
-export async function updateSession(request: NextRequest) {
+export async function updateSession(
+  request: NextRequest,
+): Promise<NextResponse> {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
