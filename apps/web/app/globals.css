@@ -1,26 +1,81 @@
 /* ============================================================
-   Command Center — phase 0 global styles (plain CSS, dark theme)
+   Command Center — global styles, translated from the design
+   mock (docs/design/dashboard-mock.html). Light theme by
+   default, dark via prefers-color-scheme; per-widget accent
+   colors ride on --cc-wc.
    NFR-11: keyboard-accessible focus states, WCAG AA contrast,
    prefers-reduced-motion respected.
    ============================================================ */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --cc-bg: #0e1116;
-  --cc-bg-raised: #161b22;
-  --cc-bg-inset: #0a0d12;
-  --cc-border: #2b3340;
-  --cc-text: #e6e8ec;
-  --cc-text-muted: #9aa4b2;
-  --cc-accent: #6ea8fe;
-  --cc-accent-contrast: #0a1a33;
-  --cc-danger: #f28b82;
-  --cc-danger-bg: #3a1f1e;
-  --cc-notice: #8ddb9f;
-  --cc-notice-bg: #1c2f22;
-  --cc-radius: 10px;
-  --cc-gap: 1rem;
+  /* Surfaces & ink (mock: --bg / --card / --card-2 / --ink…) */
+  --cc-bg: #f6f5f2;
+  --cc-bg-raised: #ffffff;
+  --cc-bg-inset: #fbfaf8;
+  --cc-border: rgba(25, 26, 32, 0.09);
+  --cc-text: #191a20;
+  --cc-text-muted: #5c5e6a;
+  --cc-text-faint: #9092a0;
+  --cc-shadow:
+    0 1px 2px rgba(25, 26, 32, 0.04),
+    0 8px 24px -12px rgba(25, 26, 32, 0.1);
+  --cc-shadow-lift:
+    0 2px 4px rgba(25, 26, 32, 0.05),
+    0 14px 32px -12px rgba(25, 26, 32, 0.16);
+
+  /* Accent palette (mock: --c-*) */
+  --cc-coral: #e85a4f;
+  --cc-sky: #2e7fe6;
+  --cc-green: #17a05e;
+  --cc-amber: #eea200;
+  --cc-violet: #7b5be6;
+  --cc-pink: #e06a9f;
+  --cc-amber-ink: #9a6a02;
+
+  --cc-accent: var(--cc-sky);
+  --cc-accent-contrast: #ffffff;
+  --cc-danger: #c23a30;
+  --cc-danger-bg: rgba(232, 90, 79, 0.12);
+  --cc-notice: #116e42;
+  --cc-notice-bg: rgba(23, 160, 94, 0.12);
+  --cc-radius: 12px;
+  --cc-radius-card: 20px;
+  --cc-gap: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --cc-bg: #131417;
+    --cc-bg-raised: #1e2027;
+    --cc-bg-inset: #23252d;
+    --cc-border: rgba(241, 241, 239, 0.09);
+    --cc-text: #f1f1ef;
+    --cc-text-muted: #b7b9c4;
+    --cc-text-faint: #7d7f8a;
+    --cc-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.25),
+      0 8px 24px -12px rgba(0, 0, 0, 0.45);
+    --cc-shadow-lift:
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      0 14px 32px -12px rgba(0, 0, 0, 0.6);
+
+    --cc-coral: #e05a4e;
+    --cc-sky: #3e86e0;
+    --cc-green: #21a468;
+    --cc-amber: #bc8305;
+    --cc-violet: #8a6fe3;
+    --cc-pink: #d9639a;
+    --cc-amber-ink: #e0af45;
+
+    --cc-danger: #f28b82;
+    --cc-danger-bg: rgba(224, 90, 78, 0.16);
+    --cc-notice: #6fd0a0;
+    --cc-notice-bg: rgba(33, 164, 104, 0.16);
+  }
 }
 
 /* ---- Minimal reset ---- */
@@ -40,16 +95,13 @@ body {
 body {
   background: var(--cc-bg);
   color: var(--cc-text);
-  font-family:
-    system-ui,
+  font:
+    14px/1.55 ui-sans-serif,
     -apple-system,
     "Segoe UI",
     Roboto,
-    "Helvetica Neue",
-    Arial,
     sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
 
@@ -64,7 +116,7 @@ p {
 :focus-visible {
   outline: 2px solid var(--cc-accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -91,15 +143,15 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: var(--cc-gap);
-  padding: 0.75rem 1.25rem;
+  padding: 0.85rem 1.5rem;
   border-bottom: 1px solid var(--cc-border);
   background: var(--cc-bg-raised);
 }
 
 .cc-header h1 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .cc-header-actions {
@@ -115,29 +167,33 @@ p {
 
 .cc-main {
   flex: 1;
-  padding: 1.25rem;
-  max-width: 1400px;
+  padding: 1.5rem 1.75rem 3rem;
+  max-width: 1240px;
   width: 100%;
   margin: 0 auto;
 }
 
-/* ---- Buttons ---- */
+/* ---- Buttons (mock's .btn — pill-shaped) ---- */
 
 .cc-btn {
   appearance: none;
-  border: 1px solid var(--cc-accent);
-  background: var(--cc-accent);
-  color: var(--cc-accent-contrast);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  background: var(--cc-coral);
+  color: #ffffff;
   font: inherit;
   font-weight: 600;
-  padding: 0.45rem 1rem;
-  border-radius: var(--cc-radius);
+  font-size: 13.5px;
+  padding: 8px 17px;
+  border-radius: 999px;
   cursor: pointer;
   transition: filter 120ms ease;
 }
 
 .cc-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.06);
 }
 
 .cc-btn:disabled {
@@ -146,9 +202,9 @@ p {
 }
 
 .cc-btn-ghost {
-  background: transparent;
+  background: var(--cc-bg-raised);
   border-color: var(--cc-border);
-  color: var(--cc-text);
+  color: var(--cc-text-muted);
 }
 
 /* ---- Dashboard grid (ARD §4.2) ----
@@ -190,34 +246,77 @@ p {
   text-align: center;
 }
 
-/* ---- Widget chrome (classes consumed by @command-center/ui) ---- */
+/* ---- Widget chrome (classes consumed by @command-center/ui) ----
+   Mock's .card + .card-head: soft-shadowed 20px-radius card, accent-tinted
+   chip icon, uppercase kicker title. --cc-wc is the widget accent. */
 
 .cc-widget-card {
+  --cc-wc: var(--cc-sky);
   display: flex;
   flex-direction: column;
+  gap: 14px;
   height: 100%;
   background: var(--cc-bg-raised);
   border: 1px solid var(--cc-border);
-  border-radius: var(--cc-radius);
-  overflow: hidden;
+  border-radius: var(--cc-radius-card);
+  padding: 18px 20px;
+  box-shadow: var(--cc-shadow);
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cc-widget-card {
+    transition:
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+    animation: cc-rise 0.45s ease backwards;
+  }
+
+  .cc-widget-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--cc-shadow-lift);
+  }
+
+  @keyframes cc-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 .cc-widget-card-header {
-  padding: 0.6rem 0.9rem;
-  border-bottom: 1px solid var(--cc-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cc-widget-chip {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--cc-wc) 15%, var(--cc-bg-raised));
+  color: var(--cc-wc);
+  flex: none;
 }
 
 .cc-widget-card-header h2 {
-  font-size: 0.85rem;
+  font-size: 10.5px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--cc-text-muted);
+  letter-spacing: 0.09em;
+  color: var(--cc-text-faint);
 }
 
 .cc-widget-card-body {
   flex: 1;
-  padding: 0.9rem;
   min-height: 0;
 }
 
@@ -229,14 +328,14 @@ p {
   padding: 0.9rem;
   background: var(--cc-danger-bg);
   border: 1px solid var(--cc-danger);
-  border-radius: var(--cc-radius);
+  border-radius: var(--cc-radius-card);
   color: var(--cc-danger);
   text-align: center;
 }
 
 .cc-widget-placeholder {
-  color: var(--cc-text-muted);
-  font-size: 0.9rem;
+  color: var(--cc-text-faint);
+  font-size: 13px;
 }
 
 /* ---- Clock widget ---- */
@@ -254,12 +353,348 @@ p {
   font-size: 2.2rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.03em;
+  letter-spacing: -0.02em;
 }
 
 .cc-clock-date {
   color: var(--cc-text-muted);
   font-size: 0.9rem;
+}
+
+/* ---- Braindump widget (mock's .dump-input / .dump-note) ---- */
+
+.cc-braindump {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Pill-shaped capture input with the pencil icon inside. */
+.cc-braindump-form {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--cc-bg-inset);
+  border: 1px solid var(--cc-border);
+  border-radius: 999px;
+  padding: 9px 16px;
+  color: var(--cc-text-faint);
+}
+
+.cc-braindump-form:focus-within {
+  border-color: var(--cc-accent);
+}
+
+.cc-braindump-form-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.cc-braindump-input {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--cc-text);
+  background: transparent;
+  border: none;
+  padding: 0;
+  field-sizing: content;
+  max-height: 6lh;
+}
+
+.cc-braindump-input::placeholder {
+  color: var(--cc-text-faint);
+}
+
+.cc-braindump-input:focus-visible {
+  /* Focus is shown by the pill's :focus-within border above. */
+  outline: none;
+}
+
+/* Flat note rows separated by hairlines, timestamp underneath. */
+.cc-braindump-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.cc-braindump-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--cc-border);
+}
+
+.cc-braindump-item:last-child {
+  border-bottom: none;
+}
+
+.cc-braindump-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cc-braindump-item-content {
+  font-size: 13.5px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cc-braindump-item-time {
+  display: block;
+  color: var(--cc-text-faint);
+  font-size: 11px;
+  margin-top: 1px;
+}
+
+.cc-braindump-delete {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--cc-text-faint);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cc-braindump-delete:hover:not(:disabled) {
+  color: var(--cc-danger);
+  background: var(--cc-danger-bg);
+}
+
+.cc-braindump-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cc-braindump-error {
+  color: var(--cc-danger);
+  font-size: 12.5px;
+}
+
+/* ---- Tasks widget ----
+   Translation of the mock's "Today's tasks" card (.task-list/.task/.cbx/
+   .pill/.due/.quick-add). */
+
+.cc-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+}
+
+.cc-tasks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.cc-tasks-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--cc-border);
+}
+
+.cc-tasks-item:last-child {
+  border-bottom: none;
+}
+
+/* Rounded-square checkbox toggle (mock's .cbx). The check icon is inside
+   but transparent until the task is done. */
+.cc-tasks-cbx {
+  appearance: none;
+  width: 19px;
+  height: 19px;
+  border-radius: 7px;
+  border: 1.5px solid color-mix(in srgb, var(--cc-text-faint) 70%, transparent);
+  background: none;
+  color: transparent;
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.cc-tasks-cbx:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cc-tasks-item.done .cc-tasks-cbx {
+  background: var(--cc-sky);
+  border-color: var(--cc-sky);
+  color: #ffffff;
+}
+
+.cc-tasks-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-tasks-item.done .cc-tasks-name {
+  text-decoration: line-through;
+  color: var(--cc-text-faint);
+}
+
+.cc-tasks-tag {
+  margin-left: 0.45rem;
+  font-size: 11.5px;
+  color: var(--cc-text-faint);
+}
+
+/* Priority pill (mock's .pill): text label so color is never the only
+   signal. Coral P1, amber P2, sky P3. */
+.cc-tasks-pill {
+  --cc-pill: var(--cc-sky);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--cc-pill);
+  background: color-mix(in srgb, var(--cc-pill) 13%, var(--cc-bg-raised));
+}
+
+.cc-tasks-pill-p1 {
+  --cc-pill: var(--cc-coral);
+}
+
+/* Amber needs darker ink for contrast on the tinted pill (mock's
+   --amber-ink). */
+.cc-tasks-pill-p2 {
+  --cc-pill: var(--cc-amber);
+  color: var(--cc-amber-ink);
+}
+
+.cc-tasks-pill-p3 {
+  --cc-pill: var(--cc-sky);
+}
+
+.cc-tasks-due {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--cc-text-faint);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Overdue is signalled by the word "overdue" in the label, not color alone. */
+.cc-tasks-due-overdue {
+  color: var(--cc-danger);
+  font-weight: 600;
+}
+
+.cc-tasks-delete {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--cc-text-faint);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: none;
+}
+
+.cc-tasks-delete:hover:not(:disabled) {
+  color: var(--cc-danger);
+  background: var(--cc-danger-bg);
+}
+
+.cc-tasks-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dashed quick-add row (mock's .quick-add). The dashed border turns solid
+   accent on focus-within — the visible focus indicator for the inner input. */
+.cc-tasks-quick-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed color-mix(in srgb, var(--cc-text-faint) 45%, transparent);
+  border-radius: 12px;
+  padding: 8px 13px;
+  color: var(--cc-text-faint);
+}
+
+.cc-tasks-quick-add:focus-within {
+  border-style: solid;
+  border-color: var(--cc-accent);
+}
+
+.cc-tasks-quick-add-plus {
+  font-weight: 600;
+  line-height: 1;
+}
+
+.cc-tasks-quick-add-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--cc-text);
+}
+
+.cc-tasks-quick-add-input::placeholder {
+  color: var(--cc-text-faint);
+}
+
+.cc-tasks-quick-add-input:focus-visible {
+  /* Focus is shown by the container's :focus-within border above. */
+  outline: none;
+}
+
+.cc-tasks-error {
+  color: var(--cc-danger);
+  font-size: 12.5px;
+}
+
+/* Screen-reader-only content (NFR-11). */
+.cc-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ---- Login ---- */
@@ -277,7 +712,8 @@ p {
   max-width: 380px;
   background: var(--cc-bg-raised);
   border: 1px solid var(--cc-border);
-  border-radius: var(--cc-radius);
+  border-radius: var(--cc-radius-card);
+  box-shadow: var(--cc-shadow);
   padding: 1.75rem;
   display: flex;
   flex-direction: column;
@@ -329,6 +765,7 @@ p {
 
 .cc-login-actions .cc-btn {
   flex: 1;
+  justify-content: center;
 }
 
 .cc-alert {

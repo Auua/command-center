@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, type FormEvent } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState, type FormEvent, type ReactElement } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
-function LoginForm() {
+function LoginForm(): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(
-    searchParams.get("error") === "auth-callback"
-      ? "Email confirmation failed. Please try signing in, or sign up again."
+    searchParams.get('error') === 'auth-callback'
+      ? 'Email confirmation failed. Please try signing in, or sign up again.'
       : null,
   );
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function handleSignIn(event: FormEvent<HTMLFormElement>) {
+  async function handleSignIn(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setPending(true);
     setError(null);
@@ -36,43 +36,8 @@ function LoginForm() {
       return;
     }
 
-    router.replace("/");
+    router.replace('/');
     router.refresh();
-  }
-
-  async function handleSignUp() {
-    if (!email || !password) {
-      setError("Enter an email and a password first, then choose sign up.");
-      return;
-    }
-    setPending(true);
-    setError(null);
-    setNotice(null);
-
-    const supabase = createClient();
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (signUpError) {
-      setError(signUpError.message);
-      setPending(false);
-      return;
-    }
-
-    if (data.session) {
-      // Email confirmation disabled in Supabase — signed in immediately.
-      router.replace("/");
-      router.refresh();
-      return;
-    }
-
-    setNotice("Account created. Check your email for a confirmation link.");
-    setPending(false);
   }
 
   return (
@@ -121,15 +86,7 @@ function LoginForm() {
 
         <div className="cc-login-actions">
           <button type="submit" className="cc-btn" disabled={pending}>
-            {pending ? "Working…" : "Sign in"}
-          </button>
-          <button
-            type="button"
-            className="cc-btn cc-btn-ghost"
-            disabled={pending}
-            onClick={handleSignUp}
-          >
-            Sign up
+            {pending ? 'Working…' : 'Sign in'}
           </button>
         </div>
       </form>
@@ -137,7 +94,7 @@ function LoginForm() {
   );
 }
 
-export default function LoginPage() {
+export default function LoginPage(): ReactElement {
   // useSearchParams requires a Suspense boundary during prerendering.
   return (
     <Suspense fallback={null}>
