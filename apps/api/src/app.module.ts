@@ -3,6 +3,7 @@ import { APP_GUARD } from "@nestjs/core";
 import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
+import { BraindumpModule } from "./braindump/braindump.module";
 import { UserThrottlerGuard } from "./common/guards/user-throttler.guard";
 import { validateEnv } from "./config/env";
 import { HealthModule } from "./health/health.module";
@@ -34,6 +35,7 @@ import { WidgetRegistryModule } from "./widget-registry/widget-registry.module";
       ],
     }),
     AuthModule,
+    BraindumpModule,
     HealthModule,
     WidgetRegistryModule,
   ],
