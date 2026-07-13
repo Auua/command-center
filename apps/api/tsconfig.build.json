@@ -3,7 +3,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
-    "types": ["node"]
+    "types": ["node"],
+    // TS 6 writes the .tsbuildinfo next to the tsconfig by default; it must
+    // live inside dist so nest's deleteOutDir clears it — otherwise a stale
+    // buildinfo makes tsc skip emit into the freshly wiped dist entirely.
+    "tsBuildInfoFile": "dist/tsconfig.build.tsbuildinfo"
   },
   "exclude": ["node_modules", "dist", "test", "**/*.spec.ts"]
 }
