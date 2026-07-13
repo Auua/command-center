@@ -1,7 +1,6 @@
 {
   "extends": "@command-center/config/tsconfig.next.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     },
