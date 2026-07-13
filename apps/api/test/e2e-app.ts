@@ -49,10 +49,16 @@ export async function createE2eApp(): Promise<E2eContext> {
   process.env.MONGODB_CONNECT = mongo.getUri();
   process.env.CORS_ORIGIN = 'http://localhost:3000';
 
-  // Import after env setup so nothing captures a half-configured process.env.
-  const { AppModule } = await import('../src/app.module');
-  const { configureApp } = await import('../src/bootstrap');
-  const { JwtVerifierService } = await import('../src/auth/jwt-verifier.service');
+  // Load after env setup so nothing captures a half-configured process.env.
+  // Deferred require() rather than import(): under module=nodenext, tsc keeps
+  // dynamic import() as a real ESM import in CommonJS output (extension
+  // required, and Jest's CJS runtime can't execute it).
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const { AppModule } = require('../src/app.module') as typeof import('../src/app.module');
+  const { configureApp } = require('../src/bootstrap') as typeof import('../src/bootstrap');
+  const { JwtVerifierService } =
+    require('../src/auth/jwt-verifier.service') as typeof import('../src/auth/jwt-verifier.service');
+  /* eslint-enable @typescript-eslint/no-require-imports */
 
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule],

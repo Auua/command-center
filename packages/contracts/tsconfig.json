@@ -1,8 +1,8 @@
 {
   "extends": "@command-center/config/tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "declaration": true,
     "outDir": "dist",
     "rootDir": "src"

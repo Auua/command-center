@@ -3,12 +3,11 @@
   "compilerOptions": {
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "target": "ES2022",
-    "lib": ["ES2022"]
+    "target": "ES2023",
+    "lib": ["ES2023"]
   }
 }
