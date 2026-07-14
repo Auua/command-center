@@ -1,0 +1,1752 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Command Center — new widgets mock (ADR-019…023)</title>
+    <style>
+      /* ── Design tokens: copied from docs/design/dashboard-mock.html ───────── */
+      :root {
+        --bg: #f6f5f2;
+        --card: #ffffff;
+        --card-2: #fbfaf8;
+        --ink: #191a20;
+        --ink-2: #5c5e6a;
+        --ink-3: #9092a0;
+        --line: rgba(25, 26, 32, 0.09);
+        --shadow: 0 1px 2px rgba(25, 26, 32, 0.04), 0 8px 24px -12px rgba(25, 26, 32, 0.1);
+        --shadow-lift: 0 2px 4px rgba(25, 26, 32, 0.05), 0 14px 32px -12px rgba(25, 26, 32, 0.16);
+        --c-coral: #e85a4f;
+        --c-sky: #2e7fe6;
+        --c-green: #17a05e;
+        --c-amber: #eea200;
+        --c-violet: #7b5be6;
+        --c-pink: #e06a9f;
+        --amber-ink: #9a6a02;
+        --grid-line: rgba(25, 26, 32, 0.07);
+        --up: #0f7a48;
+        --down: #b8362c;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #131417;
+          --card: #1e2027;
+          --card-2: #23252d;
+          --ink: #f1f1ef;
+          --ink-2: #b7b9c4;
+          --ink-3: #7d7f8a;
+          --line: rgba(241, 241, 239, 0.09);
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px -12px rgba(0, 0, 0, 0.45);
+          --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.3), 0 14px 32px -12px rgba(0, 0, 0, 0.6);
+          --c-coral: #e05a4e;
+          --c-sky: #3e86e0;
+          --c-green: #21a468;
+          --c-amber: #bc8305;
+          --c-violet: #8a6fe3;
+          --c-pink: #d9639a;
+          --amber-ink: #e0af45;
+          --grid-line: rgba(241, 241, 239, 0.08);
+          --up: #46c98b;
+          --down: #f08078;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg: #131417;
+        --card: #1e2027;
+        --card-2: #23252d;
+        --ink: #f1f1ef;
+        --ink-2: #b7b9c4;
+        --ink-3: #7d7f8a;
+        --line: rgba(241, 241, 239, 0.09);
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 24px -12px rgba(0, 0, 0, 0.45);
+        --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.3), 0 14px 32px -12px rgba(0, 0, 0, 0.6);
+        --c-coral: #e05a4e;
+        --c-sky: #3e86e0;
+        --c-green: #21a468;
+        --c-amber: #bc8305;
+        --c-violet: #8a6fe3;
+        --c-pink: #d9639a;
+        --amber-ink: #e0af45;
+        --grid-line: rgba(241, 241, 239, 0.08);
+        --up: #46c98b;
+        --down: #f08078;
+      }
+      :root[data-theme='light'] {
+        --bg: #f6f5f2;
+        --card: #ffffff;
+        --card-2: #fbfaf8;
+        --ink: #191a20;
+        --ink-2: #5c5e6a;
+        --ink-3: #9092a0;
+        --line: rgba(25, 26, 32, 0.09);
+        --shadow: 0 1px 2px rgba(25, 26, 32, 0.04), 0 8px 24px -12px rgba(25, 26, 32, 0.1);
+        --shadow-lift: 0 2px 4px rgba(25, 26, 32, 0.05), 0 14px 32px -12px rgba(25, 26, 32, 0.16);
+        --c-coral: #e85a4f;
+        --c-sky: #2e7fe6;
+        --c-green: #17a05e;
+        --c-amber: #eea200;
+        --c-violet: #7b5be6;
+        --c-pink: #e06a9f;
+        --amber-ink: #9a6a02;
+        --grid-line: rgba(25, 26, 32, 0.07);
+        --up: #0f7a48;
+        --down: #b8362c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          14px/1.55 ui-sans-serif,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .display {
+        font-family: 'Bricolage Grotesque', ui-sans-serif, sans-serif;
+        font-weight: 800;
+      }
+      button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+      :focus-visible {
+        outline: 2px solid var(--c-sky);
+        outline-offset: 2px;
+        border-radius: 6px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .frame {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 20px 28px 48px;
+      }
+
+      /* ── Top bar ─────────────────────────────── */
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 0 22px;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
+        background: linear-gradient(135deg, var(--c-coral), var(--c-pink));
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-family: 'Bricolage Grotesque', sans-serif;
+        font-weight: 800;
+        font-size: 17px;
+      }
+      .logo-name {
+        font-family: 'Bricolage Grotesque', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        letter-spacing: -0.01em;
+      }
+      .topbar-actions {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: var(--card);
+        border: 1px solid var(--line);
+        color: var(--ink-2);
+      }
+      .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--c-violet) 18%, var(--card));
+        color: var(--c-violet);
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      /* ── Greeting ────────────────────────────── */
+      .greeting {
+        display: flex;
+        align-items: flex-end;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin: 6px 0 24px;
+      }
+      .greeting h1 {
+        margin: 0;
+        font-size: clamp(24px, 3.2vw, 33px);
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      .greeting .sub {
+        color: var(--ink-2);
+        margin-top: 5px;
+      }
+      .greeting .sub b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        padding: 9px 18px;
+        font-weight: 600;
+        font-size: 13.5px;
+        border: 1px solid transparent;
+      }
+      .btn-primary {
+        background: var(--c-coral);
+        color: #fff;
+      }
+      .btn-ghost {
+        background: var(--card);
+        border-color: var(--line);
+        color: var(--ink-2);
+      }
+      .btn-sm {
+        padding: 6px 13px;
+        font-size: 12.5px;
+      }
+
+      /* ── Grid & cards ────────────────────────── */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 18px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        padding: 18px 20px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+      }
+      .span-3 {
+        grid-column: span 3;
+      }
+      .span-4 {
+        grid-column: span 4;
+      }
+      .span-5 {
+        grid-column: span 5;
+      }
+      .span-6 {
+        grid-column: span 6;
+      }
+      @media (max-width: 1000px) {
+        .span-3,
+        .span-4,
+        .span-5,
+        .span-6 {
+          grid-column: span 6;
+        }
+      }
+      @media (max-width: 640px) {
+        .frame {
+          padding-inline: 16px;
+        }
+        .span-3,
+        .span-4,
+        .span-5,
+        .span-6 {
+          grid-column: span 12;
+        }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .card {
+          transition:
+            box-shadow 0.25s ease,
+            transform 0.25s ease;
+        }
+        .card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-lift);
+        }
+      }
+
+      .card-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .chip-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--wc, var(--c-sky)) 15%, var(--card));
+        color: var(--wc, var(--c-sky));
+        flex: none;
+      }
+      .card-kicker {
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: var(--ink-3);
+        font-weight: 600;
+      }
+      .card-title {
+        font-weight: 600;
+        font-size: 14.5px;
+        letter-spacing: -0.01em;
+      }
+      .card-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 2px;
+      }
+      .ghost-ic {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        color: var(--ink-3);
+      }
+      .card-foot {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: auto;
+      }
+      .foot-note {
+        margin-left: auto;
+        font-size: 11.5px;
+        color: var(--ink-3);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 11.5px;
+        font-weight: 600;
+        background: color-mix(in srgb, var(--pc, var(--c-sky)) 13%, var(--card));
+        color: var(--pc, var(--c-sky));
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 7px;
+        padding: 2px 8px;
+        font-size: 11.5px;
+        font-weight: 600;
+        background: var(--card-2);
+        border: 1px solid var(--line);
+        color: var(--ink-2);
+      }
+      .lede {
+        font-size: 13px;
+        color: var(--ink-2);
+      }
+      .strong-line {
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: -0.01em;
+      }
+      .divider {
+        height: 1px;
+        background: var(--line);
+      }
+
+      /* ── System design ───────────────────────── */
+      .diagram-wrap {
+        background: var(--card-2);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px;
+        overflow-x: auto;
+      }
+      .diagram {
+        display: block;
+        min-width: 380px;
+      }
+      .diagram .node-box {
+        fill: var(--card);
+        stroke: var(--c-violet);
+        stroke-width: 1.5;
+      }
+      .diagram .node-box.secondary {
+        stroke: var(--ink-3);
+      }
+      .diagram .node-label {
+        fill: var(--ink);
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .diagram .edge {
+        stroke: var(--ink-3);
+        stroke-width: 1.4;
+        fill: none;
+      }
+      .diagram .edge.dashed {
+        stroke-dasharray: 4 3;
+      }
+      .diagram .edge-label {
+        fill: var(--ink-2);
+        font-size: 9.5px;
+      }
+      table.tradeoffs {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12.5px;
+      }
+      table.tradeoffs th {
+        text-align: left;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-3);
+        font-weight: 600;
+        padding: 4px 8px 6px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      table.tradeoffs td {
+        padding: 7px 8px 7px 0;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        color: var(--ink-2);
+      }
+      table.tradeoffs td:first-child {
+        color: var(--ink);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .selfcheck {
+        background: var(--card-2);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 11px 14px;
+      }
+      .selfcheck .q {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .selfcheck .a {
+        margin-top: 7px;
+        font-size: 12.5px;
+        color: var(--ink-2);
+      }
+      .selfcheck .a[hidden] {
+        display: none;
+      }
+
+      /* ── Post reader ─────────────────────────── */
+      ul.posts {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      ul.posts li {
+        padding: 11px 0;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      ul.posts li:last-child {
+        border-bottom: 0;
+      }
+      .post-main {
+        min-width: 0;
+        flex: 1;
+      }
+      .post-title {
+        font-weight: 600;
+        font-size: 13.5px;
+        color: var(--ink);
+        text-decoration: none;
+        display: inline-block;
+      }
+      .post-title:hover {
+        text-decoration: underline;
+      }
+      .post-meta {
+        font-size: 11.5px;
+        color: var(--ink-3);
+        margin-top: 3px;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .unread-mark {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--c-sky);
+        border: 1px solid color-mix(in srgb, var(--c-sky) 40%, transparent);
+        border-radius: 999px;
+        padding: 1px 7px;
+      }
+      .post-actions {
+        display: flex;
+        gap: 4px;
+        flex: none;
+      }
+      .mini-btn {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--ink-2);
+        background: var(--card-2);
+      }
+      .mini-btn[aria-pressed='true'] {
+        background: color-mix(in srgb, var(--c-sky) 14%, var(--card));
+        border-color: color-mix(in srgb, var(--c-sky) 45%, var(--card));
+        color: var(--c-sky);
+      }
+      .feed-broken {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--ink-2);
+        background: color-mix(in srgb, var(--c-amber) 10%, var(--card));
+        border: 1px solid color-mix(in srgb, var(--c-amber) 35%, var(--card));
+        border-radius: 12px;
+        padding: 8px 12px;
+      }
+
+      /* ── Stocks ──────────────────────────────── */
+      table.quotes {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 13px;
+      }
+      table.quotes th {
+        text-align: left;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-3);
+        font-weight: 600;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--line);
+      }
+      table.quotes th.num,
+      table.quotes td.num {
+        text-align: right;
+      }
+      table.quotes td {
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      table.quotes tr:last-child td {
+        border-bottom: 0;
+      }
+      .sym-name {
+        font-weight: 600;
+      }
+      .sym-code {
+        font-size: 11.5px;
+        color: var(--ink-3);
+      }
+      .price {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+      }
+      .chg {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .chg.up {
+        color: var(--up);
+      }
+      .chg.down {
+        color: var(--down);
+      }
+      .fav {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        color: var(--ink-3);
+        border: 1px solid transparent;
+      }
+      .fav[aria-pressed='true'] {
+        color: var(--c-amber);
+        border-color: color-mix(in srgb, var(--c-amber) 40%, transparent);
+      }
+      .spark {
+        display: block;
+      }
+      .stale-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--amber-ink);
+        background: color-mix(in srgb, var(--c-amber) 14%, var(--card));
+        border: 1px solid color-mix(in srgb, var(--c-amber) 30%, var(--card));
+        border-radius: 999px;
+        padding: 2px 9px;
+      }
+      .disclaimer {
+        font-size: 11px;
+        color: var(--ink-3);
+        line-height: 1.5;
+      }
+
+      /* ── Weather ─────────────────────────────── */
+      .wx-now {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .wx-temp {
+        font-family: 'Bricolage Grotesque', ui-sans-serif, sans-serif;
+        font-weight: 800;
+        font-size: 40px;
+        letter-spacing: -0.03em;
+        line-height: 1;
+      }
+      .wx-now-meta {
+        font-size: 12.5px;
+        color: var(--ink-2);
+      }
+      .wx-now-meta b {
+        color: var(--ink);
+        font-weight: 600;
+        display: block;
+        font-size: 14px;
+      }
+      table.wx {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 12.5px;
+      }
+      table.wx th {
+        text-align: left;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-3);
+        font-weight: 600;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--line);
+      }
+      table.wx th.num,
+      table.wx td.num {
+        text-align: right;
+      }
+      table.wx td {
+        padding: 8px 6px 8px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      table.wx tr:last-child td {
+        border-bottom: 0;
+      }
+      table.wx td:first-child {
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .rainbar {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .rainbar .track {
+        width: 42px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--grid-line);
+        overflow: hidden;
+      }
+      .rainbar .fill {
+        display: block;
+        height: 100%;
+        background: var(--c-sky);
+      }
+      .rainbar .pct {
+        font-variant-numeric: tabular-nums;
+        color: var(--ink-2);
+        min-width: 30px;
+      }
+      .wx-cond {
+        color: var(--ink-2);
+      }
+
+      /* ── Work tracker ────────────────────────── */
+      .quickadd {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .quickadd input {
+        flex: 1;
+        min-width: 0;
+        background: var(--card-2);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 13px;
+        color: var(--ink);
+        font: inherit;
+      }
+      .quickadd input::placeholder {
+        color: var(--ink-3);
+      }
+      ul.wins {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      ul.wins li {
+        padding: 11px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      ul.wins li:last-child {
+        border-bottom: 0;
+      }
+      .win-title {
+        font-weight: 600;
+        font-size: 13.5px;
+      }
+      .win-meta {
+        margin-top: 5px;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        font-size: 11.5px;
+        color: var(--ink-3);
+      }
+      .impact {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border-radius: 7px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        background: color-mix(in srgb, var(--c-green) 13%, var(--card));
+        color: var(--c-green);
+        border: 1px solid color-mix(in srgb, var(--c-green) 30%, var(--card));
+      }
+      .impact.mentored {
+        background: color-mix(in srgb, var(--c-violet) 13%, var(--card));
+        color: var(--c-violet);
+        border-color: color-mix(in srgb, var(--c-violet) 30%, var(--card));
+      }
+      .impact.fixed {
+        background: color-mix(in srgb, var(--c-coral) 13%, var(--card));
+        color: var(--c-coral);
+        border-color: color-mix(in srgb, var(--c-coral) 30%, var(--card));
+      }
+      .win-link {
+        color: var(--c-sky);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .win-link:hover {
+        text-decoration: underline;
+      }
+      .period-line {
+        font-size: 12px;
+        color: var(--ink-2);
+      }
+      .period-line b {
+        color: var(--ink);
+      }
+
+      .mock-note {
+        margin: 28px 0 0;
+        padding: 14px 18px;
+        border: 1px dashed var(--line);
+        border-radius: 14px;
+        color: var(--ink-2);
+        font-size: 12.5px;
+        background: var(--card-2);
+      }
+      .mock-note code {
+        font:
+          12px ui-monospace,
+          Menlo,
+          monospace;
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <header class="topbar">
+        <div class="logo">
+          <div class="logo-mark">C</div>
+          <div class="logo-name">Command Center</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="theme-toggle" aria-label="Toggle light and dark theme">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+              />
+            </svg>
+          </button>
+          <div class="avatar">A</div>
+        </div>
+      </header>
+
+      <section class="greeting">
+        <div>
+          <h1 class="display">New widgets — design mock</h1>
+          <div class="sub">
+            Tuesday 14 July · proposals <b>ADR-019</b> system design · <b>ADR-020</b> post reader ·
+            <b>ADR-021</b> stocks · <b>ADR-022</b> weather · <b>ADR-023</b> work tracker
+          </div>
+        </div>
+      </section>
+
+      <main class="grid">
+        <!-- ════════ ADR-019 · System design lesson ════════ -->
+        <article class="card span-5" style="--wc: var(--c-violet)">
+          <div class="card-head">
+            <div class="chip-icon">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                <path d="M10 6.5h4a3 3 0 0 1 3 3V14" />
+              </svg>
+            </div>
+            <div>
+              <div class="card-kicker">System design · Lesson 12 of 24</div>
+              <div class="card-title">Load balancing: what the balancer actually knows</div>
+            </div>
+            <span class="pill" style="--pc: var(--c-violet)">6-day streak</span>
+            <div class="card-actions">
+              <button class="ghost-ic" aria-label="System design widget settings">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <circle cx="5" cy="12" r="1.7" />
+                  <circle cx="12" cy="12" r="1.7" />
+                  <circle cx="19" cy="12" r="1.7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <p class="lede" style="margin: 0">
+            A round-robin balancer knows nothing about your servers except that they answered the
+            last health check. Least-connections knows how busy they are. That difference is the
+            whole lesson.
+          </p>
+
+          <!-- Diagram: rendered from the API's node/edge IR — role=img + hidden outline (ADR-019) -->
+          <div
+            class="diagram-wrap"
+            tabindex="0"
+            role="region"
+            aria-label="Diagram: request path through a load balancer"
+          >
+            <svg
+              class="diagram"
+              viewBox="0 0 420 132"
+              width="100%"
+              height="132"
+              role="img"
+              aria-label="Client requests reach a load balancer, which forwards them to app server 1 or app server 2; both app servers read from a shared cache, and the load balancer polls each app server with health checks."
+            >
+              <!-- edges -->
+              <path class="edge" d="M74 40 H130" marker-end="url(#arw)" />
+              <path class="edge" d="M204 32 C232 32 232 24 258 24" marker-end="url(#arw)" />
+              <path class="edge" d="M204 48 C232 48 232 72 258 72" marker-end="url(#arw)" />
+              <path class="edge dashed" d="M336 24 C368 24 368 72 336 72" />
+              <path class="edge" d="M300 96 V110 H180 V96" marker-end="url(#arw)" />
+              <defs>
+                <marker
+                  id="arw"
+                  viewBox="0 0 8 8"
+                  refX="7"
+                  refY="4"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto"
+                >
+                  <path
+                    d="M0 0 L8 4 L0 8 z"
+                    fill="currentColor"
+                    class="edge"
+                    style="stroke: none; fill: var(--ink-3)"
+                  />
+                </marker>
+              </defs>
+              <text class="edge-label" x="86" y="32">HTTPS</text>
+              <text class="edge-label" x="344" y="52">health check</text>
+              <text class="edge-label" x="196" y="124">reads</text>
+
+              <!-- nodes -->
+              <rect class="node-box secondary" x="8" y="26" width="66" height="28" rx="8" />
+              <text class="node-label" x="41" y="44" text-anchor="middle">Client</text>
+
+              <rect class="node-box" x="130" y="26" width="74" height="28" rx="8" />
+              <text class="node-label" x="167" y="44" text-anchor="middle">Balancer</text>
+
+              <rect class="node-box" x="258" y="10" width="78" height="28" rx="8" />
+              <text class="node-label" x="297" y="28" text-anchor="middle">App 1</text>
+
+              <rect class="node-box" x="258" y="58" width="78" height="28" rx="8" />
+              <text class="node-label" x="297" y="76" text-anchor="middle">App 2</text>
+
+              <rect class="node-box secondary" x="132" y="96" width="96" height="28" rx="8" />
+              <text class="node-label" x="180" y="114" text-anchor="middle">Shared cache</text>
+            </svg>
+            <!-- Non-visual equivalent, generated from diagram.outline -->
+            <ol class="sr-only">
+              <li>Client sends HTTPS requests to Balancer.</li>
+              <li>Balancer forwards requests to App 1.</li>
+              <li>Balancer forwards requests to App 2.</li>
+              <li>Balancer polls App 1 and App 2 with health checks (asynchronous).</li>
+              <li>App 1 and App 2 read from Shared cache.</li>
+            </ol>
+          </div>
+
+          <table class="tradeoffs">
+            <caption class="sr-only">
+              Load balancing strategies compared
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Strategy</th>
+                <th scope="col">Upside</th>
+                <th scope="col">Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Round robin</td>
+                <td>Stateless, trivially correct, no per-server bookkeeping.</td>
+                <td>One slow server keeps getting its share of traffic.</td>
+              </tr>
+              <tr>
+                <td>Least connections</td>
+                <td>Routes away from a struggling node automatically.</td>
+                <td>Balancer must track live connection counts per node.</td>
+              </tr>
+              <tr>
+                <td>Consistent hashing</td>
+                <td>Same key lands on the same node — cache locality.</td>
+                <td>Hot keys become hot nodes; rebalancing is a real event.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="selfcheck">
+            <div class="q" id="sd-q">
+              Self-check: why must a health check be cheaper than the request it guards?
+            </div>
+            <button
+              class="btn btn-ghost btn-sm"
+              id="sd-toggle"
+              aria-expanded="false"
+              aria-controls="sd-a"
+              style="margin-top: 8px"
+            >
+              Reveal answer
+            </button>
+            <div class="a" id="sd-a" role="region" aria-labelledby="sd-q" hidden>
+              Because the balancer runs it against every node on every interval. If the check does
+              real work, you have built a self-inflicted load generator that gets heavier exactly
+              when the fleet is sick.
+            </div>
+          </div>
+
+          <div class="card-foot">
+            <button class="btn btn-primary btn-sm">Mark learned</button>
+            <button class="btn btn-ghost btn-sm">Add to Anki</button>
+            <span class="foot-note">Yesterday: caching strategies</span>
+          </div>
+        </article>
+
+        <!-- ════════ ADR-022 · Weather ════════ -->
+        <article class="card span-4" style="--wc: var(--c-sky)">
+          <div class="card-head">
+            <div class="chip-icon">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.2 9.4 4.3 4.3 0 0 0 6.5 19h11Z"
+                />
+              </svg>
+            </div>
+            <div>
+              <div class="card-kicker">Weather · Helsinki</div>
+              <div class="card-title">Overcast, light rain later</div>
+            </div>
+            <div class="card-actions">
+              <button class="ghost-ic" aria-label="Weather widget settings">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <circle cx="5" cy="12" r="1.7" />
+                  <circle cx="12" cy="12" r="1.7" />
+                  <circle cx="19" cy="12" r="1.7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="wx-now">
+            <svg
+              width="46"
+              height="46"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--c-sky)"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M17.5 17a4.5 4.5 0 0 0 .5-8.97A6 6 0 0 0 6.2 7.4 4.3 4.3 0 0 0 6.5 17h11Z" />
+              <path d="M8 20l-.8 2M12 20l-.8 2M16 20l-.8 2" />
+            </svg>
+            <div>
+              <div class="wx-temp">17°<span class="sr-only">Celsius</span></div>
+            </div>
+            <div class="wx-now-meta">
+              <b>Overcast</b>
+              Feels like 16° · wind 4 m/s SW<br />
+              Humidity 78 %
+            </div>
+          </div>
+          <p class="sr-only">
+            Currently 17 degrees Celsius, overcast, feels like 16, wind 4 metres per second from the
+            south-west, as of 08:40.
+          </p>
+
+          <table class="wx">
+            <caption class="sr-only">
+              Five-day forecast for Helsinki
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Day</th>
+                <th scope="col">Conditions</th>
+                <th scope="col">Rain</th>
+                <th scope="col" class="num">Low / High</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Tue</td>
+                <td class="wx-cond">Light rain</td>
+                <td>
+                  <span class="rainbar"
+                    ><span class="track"><span class="fill" style="width: 60%"></span></span>
+                    <span class="pct">60 %<span class="sr-only"> chance of rain</span></span></span
+                  >
+                </td>
+                <td class="num">13° / 18°</td>
+              </tr>
+              <tr>
+                <td>Wed</td>
+                <td class="wx-cond">Cloudy</td>
+                <td>
+                  <span class="rainbar"
+                    ><span class="track"><span class="fill" style="width: 20%"></span></span>
+                    <span class="pct">20 %<span class="sr-only"> chance of rain</span></span></span
+                  >
+                </td>
+                <td class="num">12° / 19°</td>
+              </tr>
+              <tr>
+                <td>Thu</td>
+                <td class="wx-cond">Rain showers</td>
+                <td>
+                  <span class="rainbar"
+                    ><span class="track"><span class="fill" style="width: 75%"></span></span>
+                    <span class="pct">75 %<span class="sr-only"> chance of rain</span></span></span
+                  >
+                </td>
+                <td class="num">12° / 16°</td>
+              </tr>
+              <tr>
+                <td>Fri</td>
+                <td class="wx-cond">Partly cloudy</td>
+                <td>
+                  <span class="rainbar"
+                    ><span class="track"><span class="fill" style="width: 15%"></span></span>
+                    <span class="pct">15 %<span class="sr-only"> chance of rain</span></span></span
+                  >
+                </td>
+                <td class="num">14° / 22°</td>
+              </tr>
+              <tr>
+                <td>Sat</td>
+                <td class="wx-cond">Clear</td>
+                <td>
+                  <span class="rainbar"
+                    ><span class="track"><span class="fill" style="width: 5%"></span></span>
+                    <span class="pct">5 %<span class="sr-only"> chance of rain</span></span></span
+                  >
+                </td>
+                <td class="num">15° / 24°</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="card-foot">
+            <span class="foot-note" style="margin-left: 0">
+              Updated <time datetime="2026-07-14T08:40:00+03:00">08:40</time> · Open-Meteo
+            </span>
+          </div>
+        </article>
+
+        <!-- ════════ ADR-021 · Stocks & FX watchlist ════════ -->
+        <article class="card span-3" style="--wc: var(--c-green)">
+          <div class="card-head">
+            <div class="chip-icon">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 17l5-6 4 4 5-7 4 5" />
+                <path d="M3 21h18" />
+              </svg>
+            </div>
+            <div class="card-kicker">Watchlist</div>
+            <span class="stale-chip">Delayed 15 min</span>
+            <div class="card-actions">
+              <button class="ghost-ic" aria-label="Watchlist widget settings">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <circle cx="5" cy="12" r="1.7" />
+                  <circle cx="12" cy="12" r="1.7" />
+                  <circle cx="19" cy="12" r="1.7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <table class="quotes">
+            <caption class="sr-only">
+              Watchlist quotes, delayed 15 minutes
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col"><span class="sr-only">Favourite</span></th>
+                <th scope="col">Instrument</th>
+                <th scope="col" class="num">Price</th>
+                <th scope="col" class="num">Change</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <button
+                    class="fav"
+                    aria-pressed="true"
+                    aria-label="Favourite: Euro / Japanese Yen"
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9L12 3Z"
+                      />
+                    </svg>
+                  </button>
+                </td>
+                <td>
+                  <div class="sym-name">Euro / Japanese Yen</div>
+                  <div class="sym-code">EUR/JPY · FX</div>
+                </td>
+                <td class="num">
+                  <span class="price">172.43</span>
+                  <div class="sym-code">JPY</div>
+                </td>
+                <td class="num">
+                  <span class="chg up">▲ +0.31 %</span>
+                  <span class="sr-only">up 0.31 percent, plus 0.53 yen</span>
+                  <div class="sym-code">+0.53</div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button class="fav" aria-pressed="true" aria-label="Favourite: Apple Inc.">
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9L12 3Z"
+                      />
+                    </svg>
+                  </button>
+                </td>
+                <td>
+                  <div class="sym-name">Apple Inc.</div>
+                  <div class="sym-code">AAPL · NASDAQ</div>
+                </td>
+                <td class="num">
+                  <span class="price">214.60</span>
+                  <div class="sym-code">USD</div>
+                </td>
+                <td class="num">
+                  <span class="chg up">▲ +0.42 %</span>
+                  <span class="sr-only">up 0.42 percent, plus 0.90 dollars</span>
+                  <div class="sym-code">+0.90</div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button class="fav" aria-pressed="false" aria-label="Favourite: Euro / US Dollar">
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9L12 3Z"
+                      />
+                    </svg>
+                  </button>
+                </td>
+                <td>
+                  <div class="sym-name">Euro / US Dollar</div>
+                  <div class="sym-code">EUR/USD · FX</div>
+                </td>
+                <td class="num">
+                  <span class="price">1.0914</span>
+                  <div class="sym-code">USD</div>
+                </td>
+                <td class="num">
+                  <span class="chg down">▼ −0.18 %</span>
+                  <span class="sr-only">down 0.18 percent, minus 0.0020 dollars</span>
+                  <div class="sym-code">−0.0020</div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <button class="fav" aria-pressed="false" aria-label="Favourite: Nokia Oyj">
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 9.6l6.2-.9L12 3Z"
+                      />
+                    </svg>
+                  </button>
+                </td>
+                <td>
+                  <div class="sym-name">Nokia Oyj</div>
+                  <div class="sym-code">NOKIA · HEL</div>
+                </td>
+                <td class="num">
+                  <span class="price">4.12</span>
+                  <div class="sym-code">EUR</div>
+                </td>
+                <td class="num">
+                  <span class="chg down">▼ −1.20 %</span>
+                  <span class="sr-only">down 1.20 percent, minus 0.05 euro</span>
+                  <div class="sym-code">−0.05</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div>
+            <div class="card-kicker" style="margin-bottom: 6px">AAPL · last 7 closes</div>
+            <svg
+              class="spark"
+              viewBox="0 0 240 44"
+              width="100%"
+              height="44"
+              role="img"
+              aria-label="Apple Inc. closing prices for the last 7 sessions: 209.10, 211.40, 210.20, 212.80, 213.05, 213.70, 214.60 US dollars — an upward trend."
+            >
+              <polyline
+                fill="none"
+                stroke="var(--up)"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                points="4,34 43,24 82,29 121,17 160,15 199,11 236,6"
+              />
+              <circle cx="236" cy="6" r="3" fill="var(--up)" />
+            </svg>
+            <table class="sr-only">
+              <caption>
+                Apple Inc. closing prices, last 7 sessions
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Session</th>
+                  <th scope="col">Close (USD)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Jul 4</td>
+                  <td>209.10</td>
+                </tr>
+                <tr>
+                  <td>Jul 7</td>
+                  <td>211.40</td>
+                </tr>
+                <tr>
+                  <td>Jul 8</td>
+                  <td>210.20</td>
+                </tr>
+                <tr>
+                  <td>Jul 9</td>
+                  <td>212.80</td>
+                </tr>
+                <tr>
+                  <td>Jul 10</td>
+                  <td>213.05</td>
+                </tr>
+                <tr>
+                  <td>Jul 11</td>
+                  <td>213.70</td>
+                </tr>
+                <tr>
+                  <td>Jul 14</td>
+                  <td>214.60</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="divider"></div>
+          <p class="disclaimer" style="margin: 0">
+            Delayed market data, as of <time datetime="2026-07-14T17:32:00+03:00">17:32</time>.
+            Informational only — <strong>not investment advice</strong>.
+          </p>
+        </article>
+
+        <!-- ════════ ADR-020 · Post reader ════════ -->
+        <article class="card span-6" style="--wc: var(--c-amber)">
+          <div class="card-head">
+            <div class="chip-icon">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M4 4h11a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4Z" />
+                <path d="M17 8h3v10a2 2 0 0 1-2 2h-1" />
+                <path d="M8 8h6M8 12h6M8 16h4" />
+              </svg>
+            </div>
+            <div>
+              <div class="card-kicker">Reader · 5 feeds</div>
+              <div class="card-title">Unread posts</div>
+            </div>
+            <span class="pill" style="--pc: var(--c-amber)">4 unread</span>
+            <div class="card-actions">
+              <button class="ghost-ic" aria-label="Reader widget settings">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <circle cx="5" cy="12" r="1.7" />
+                  <circle cx="12" cy="12" r="1.7" />
+                  <circle cx="19" cy="12" r="1.7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <ul class="posts">
+            <li>
+              <div class="post-main">
+                <a class="post-title" href="#">What actually happens during an incident</a>
+                <div class="post-meta">
+                  <span class="unread-mark">Unread</span>
+                  <span>The Pragmatic Engineer</span><span aria-hidden="true">·</span>
+                  <span>11 min read</span><span aria-hidden="true">·</span>
+                  <time datetime="2026-07-14T06:10:00+03:00">2 hours ago</time>
+                </div>
+              </div>
+              <div class="post-actions">
+                <button
+                  class="mini-btn"
+                  aria-pressed="false"
+                  aria-label="Save: What actually happens during an incident"
+                >
+                  Save
+                </button>
+              </div>
+            </li>
+            <li>
+              <div class="post-main">
+                <a class="post-title" href="#">Debugging a mystery latency spike with strace</a>
+                <div class="post-meta">
+                  <span class="unread-mark">Unread</span>
+                  <span>Julia Evans</span><span aria-hidden="true">·</span> <span>7 min read</span
+                  ><span aria-hidden="true">·</span>
+                  <time datetime="2026-07-13T19:02:00+03:00">yesterday</time>
+                </div>
+              </div>
+              <div class="post-actions">
+                <button
+                  class="mini-btn"
+                  aria-pressed="true"
+                  aria-label="Saved: Debugging a mystery latency spike with strace"
+                >
+                  Saved
+                </button>
+              </div>
+            </li>
+            <li>
+              <div class="post-main">
+                <a class="post-title" href="#">Postgres index-only scans, explained slowly</a>
+                <div class="post-meta">
+                  <span class="unread-mark">Unread</span>
+                  <span>Crunchy Data Blog</span><span aria-hidden="true">·</span>
+                  <span>9 min read</span><span aria-hidden="true">·</span>
+                  <time datetime="2026-07-12T10:30:00+03:00">2 days ago</time>
+                </div>
+              </div>
+              <div class="post-actions">
+                <button
+                  class="mini-btn"
+                  aria-pressed="false"
+                  aria-label="Save: Postgres index-only scans, explained slowly"
+                >
+                  Save
+                </button>
+              </div>
+            </li>
+            <li>
+              <div class="post-main">
+                <a class="post-title" href="#">日本語 shadowing: 30 days of talking to myself</a>
+                <div class="post-meta">
+                  <span>Tofugu</span><span aria-hidden="true">·</span> <span>5 min read</span
+                  ><span aria-hidden="true">·</span>
+                  <time datetime="2026-07-10T09:00:00+03:00">4 days ago</time>
+                  <span aria-hidden="true">·</span><span>Read</span>
+                </div>
+              </div>
+              <div class="post-actions">
+                <button
+                  class="mini-btn"
+                  aria-pressed="false"
+                  aria-label="Save: Japanese shadowing, 30 days of talking to myself"
+                >
+                  Save
+                </button>
+              </div>
+            </li>
+          </ul>
+
+          <div class="feed-broken" role="status">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 9v4m0 4h.01M10.3 3.9 2.5 17.5A2 2 0 0 0 4.2 20.5h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
+              />
+            </svg>
+            <span
+              ><strong>High Scalability</strong> couldn't be fetched — last succeeded 3 days
+              ago.</span
+            >
+            <button class="mini-btn" style="margin-left: auto">Retry</button>
+          </div>
+
+          <div class="card-foot">
+            <button class="btn btn-ghost btn-sm">Add feed</button>
+            <button class="btn btn-ghost btn-sm">Refresh</button>
+            <span class="foot-note">Images off · load per feed in settings</span>
+          </div>
+        </article>
+
+        <!-- ════════ ADR-023 · Work tracker ════════ -->
+        <article class="card span-6" style="--wc: var(--c-pink)">
+          <div class="card-head">
+            <div class="chip-icon">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M8 21h8M12 17v4" />
+                <path d="M17 4h3v3a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V4h3" />
+                <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" />
+              </svg>
+            </div>
+            <div>
+              <div class="card-kicker">Work tracker · H1 2026</div>
+              <div class="card-title">Wins &amp; impact</div>
+            </div>
+            <span class="pill" style="--pc: var(--c-pink)">14 this period</span>
+            <div class="card-actions">
+              <button class="ghost-ic" aria-label="Work tracker widget settings">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <circle cx="5" cy="12" r="1.7" />
+                  <circle cx="12" cy="12" r="1.7" />
+                  <circle cx="19" cy="12" r="1.7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="quickadd">
+            <label class="sr-only" for="win-input">Log a win</label>
+            <input id="win-input" type="text" placeholder="What went well? (Enter to log)" />
+            <button class="btn btn-ghost btn-sm" aria-expanded="false" aria-controls="win-detail">
+              Add detail
+            </button>
+          </div>
+          <p class="sr-only" id="win-detail">
+            Expands to impact type, project, skills, links and notes.
+          </p>
+
+          <ul class="wins">
+            <li>
+              <div class="win-title">Cut checkout p95 from 900 ms to 310 ms</div>
+              <div class="win-meta">
+                <span class="impact">Shipped</span>
+                <span class="tag">Checkout</span>
+                <span class="tag">Postgres</span>
+                <span class="tag">Profiling</span>
+                <a class="win-link" href="#">PR&nbsp;#4821</a>
+                <span aria-hidden="true">·</span>
+                <time datetime="2026-07-09">9 Jul</time>
+              </div>
+            </li>
+            <li>
+              <div class="win-title">Mentored Ville through his first on-call week</div>
+              <div class="win-meta">
+                <span class="impact mentored">Mentored</span>
+                <span class="tag">Platform</span>
+                <span class="tag">Incident response</span>
+                <a class="win-link" href="#">Runbook</a>
+                <span aria-hidden="true">·</span>
+                <time datetime="2026-06-27">27 Jun</time>
+              </div>
+            </li>
+            <li>
+              <div class="win-title">Found and fixed the double-charge race in refunds</div>
+              <div class="win-meta">
+                <span class="impact fixed">Fixed</span>
+                <span class="tag">Payments</span>
+                <span class="tag">Concurrency</span>
+                <a class="win-link" href="#">INC-2291</a>
+                <span aria-hidden="true">·</span>
+                <time datetime="2026-06-14">14 Jun</time>
+              </div>
+            </li>
+            <li>
+              <div class="win-title">Wrote the ADR that settled the dual-database argument</div>
+              <div class="win-meta">
+                <span class="impact">Shipped</span>
+                <span class="tag">Architecture</span>
+                <span class="tag">Writing</span>
+                <span aria-hidden="true">·</span>
+                <time datetime="2026-05-30">30 May</time>
+              </div>
+            </li>
+          </ul>
+
+          <div class="divider"></div>
+          <div class="card-foot">
+            <label class="sr-only" for="period">Review period</label>
+            <select id="period" class="mini-btn" style="padding: 6px 10px">
+              <option selected>H1 2026 (Jan–Jun)</option>
+              <option>Q2 2026</option>
+              <option>All time</option>
+            </select>
+            <button class="btn btn-primary btn-sm">Export markdown</button>
+            <button class="btn btn-ghost btn-sm">Export JSON</button>
+            <span class="foot-note">Shipped 6 · Fixed 4 · Mentored 3 · Learned 1</span>
+          </div>
+        </article>
+      </main>
+
+      <p class="mock-note">
+        Mock only — static content, no network calls. Accessibility rules the ADRs commit to are
+        honoured here: the diagram carries a <code>role="img"</code> label <em>and</em> a hidden
+        step-by-step outline; forecast rows and quote rows are real tables with text labels beside
+        every icon; price direction is a sign + glyph + hidden text, never colour alone; the
+        sparkline has an <code>aria-label</code> series and a visually-hidden data table; no control
+        is hover-only.
+      </p>
+    </div>
+
+    <script>
+      // Theme toggle (mirrors dashboard-mock.html)
+      const root = document.documentElement;
+      document.getElementById('theme-toggle').addEventListener('click', () => {
+        const now = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', now);
+      });
+
+      // Self-check disclosure — focus-visible, keyboard-operable, no hover dependency
+      const toggle = document.getElementById('sd-toggle');
+      const answer = document.getElementById('sd-a');
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!open));
+        answer.hidden = open;
+        toggle.textContent = open ? 'Reveal answer' : 'Hide answer';
+      });
+
+      // Favourite + save toggles
+      document.querySelectorAll('.fav, .mini-btn[aria-pressed]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const on = btn.getAttribute('aria-pressed') === 'true';
+          btn.setAttribute('aria-pressed', String(!on));
+          if (btn.classList.contains('mini-btn')) btn.textContent = on ? 'Save' : 'Saved';
+        });
+      });
+    </script>
+  </body>
+</html>
