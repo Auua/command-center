@@ -43,7 +43,7 @@ history as the starting point if in-app reading is ever wanted.
 | ADR | Title                      | Review state    | Approved          |
 | --- | -------------------------- | --------------- | ----------------- |
 | 027 | Habit tracking             | claude-reviewed | ✓ 2026-07-16      |
-| 028 | Pomodoro timer             | claude-reviewed |                   |
+| 028 | Pomodoro timer             | claude-reviewed | ✓ 2026-07-16      |
 | 029 | Fitness & health           | claude-reviewed | ✓ 2026-07-16      |
 | 030 | Finance dashboard          | claude-reviewed | parked 2026-07-16 |
 | 031 | Home Assistant integration | claude-reviewed | parked 2026-07-16 |
