@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -89,7 +89,7 @@ This **narrows ADR-011's worker "content-pool refresh" job**: there is no recurr
   transform → emit. Bumping the pin is a PR, and therefore reviewable, revertable, and visible in git —
   which is the correct control for the data that _is_ the product. _(Revised 2026-07-16 with ADR-024's
   rewrite: the v1 target is the learning repo's `pool/japanese/` — manifest + JSONL shards emitted by
-  `tools/jmdict-ingest` and committed by Anna — not Mongo `jp_content`. If the daily-content widgets
+  `tools/jmdict-ingest` and committed by the user — not Mongo `jp_content`. If the daily-content widgets
   of ADR-011/012 later need a server-side store, that is their migration to propose; the pinned-ingest,
   fail-closed, licence-typed rules here apply to either target.)_
 - Why not a worker cron: dictionary data changes weekly and nobody would notice if we were a year behind,
@@ -179,7 +179,7 @@ CC BY-SA"` — in the same footer slot ADR-021 uses for "not investment advice".
 (ruby alignment, curated JLPT tags, curated example selection) are adaptations. Consequences we accept and
 must not forget:
 
-- **Distribution triggers SA, use does not.** Rendering to Anna is not distribution. Three things could be:
+- **Distribution triggers SA, use does not.** Rendering to the user is not distribution. Three things could be:
   1. **NFR-7's export endpoint** — a JSON dump containing `jp_content`-derived fields must carry the licence
      block (it already will, since `license` is on the document — this is a second reason the field is
      required rather than optional).
@@ -187,7 +187,7 @@ must not forget:
      made public, JMdict-derived fields in a saved item become SA-encumbered and the repo must carry CC BY-SA.
      Recorded here so that "make the vault public" is a decision with a known consequence rather than a
      surprise.
-  3. **ADR-026's Anki decks** — cards in Anna's personal collection are private use. **Sharing a deck on
+  3. **ADR-026's Anki decks** — cards in the user's personal collection are private use. **Sharing a deck on
      AnkiWeb is distribution**, and such a deck's description must carry the JMdict attribution.
 - Mixing CC BY-SA (JMdict) with CC BY 2.0 FR (Tatoeba) in one document makes the **document** BY-SA. Our own
   authored lessons stay unencumbered because they never touch JMdict.
@@ -211,7 +211,7 @@ must not forget:
 - **Committed to:** JLPT levels are approximations and are labelled as such (`≈ N4`).
 - **Committed to:** ShareAlike travels with any distribution of derived content — export, a public vault, a
   shared Anki deck.
-- **Open questions for Anna:** (1) The Japanese content is BY-SA and the authored content is ours — do we
+- **Open questions for the product owner:** (1) The Japanese content is BY-SA and the authored content is ours — do we
   want the ingest to keep them in separate collections to make a future "publish the curriculum" clean, or
   is the per-document licence block enough? (2) Which community JLPT list do we seed levels from, and is
   "≈ N4" acceptable UI copy or should levels be hidden entirely until curated? (3) The attribution line on
@@ -238,7 +238,7 @@ must not forget:
 - **Machine-generating grammar points / lessons with an LLM.** Rejected: the output has no provenance to
   record, no licence to cite, and no reviewer; R5's second word is "quality", and a plausible-sounding wrong
   grammar explanation is precisely the failure this ADR is meant to prevent. (Using an LLM as an _authoring
-  assistant_ whose output Anna reviews and signs is fine — that produces `proprietary-own` content with a
+  assistant_ whose output the user reviews and signs is fine — that produces `proprietary-own` content with a
   human author, which is a different thing.)
 - **Scraping a grammar reference site.** Rejected on the same ToS principle the ARD applies to AnkiWeb (R2)
   and ADR-021 applies to Yahoo — a line we do not cross even when it is convenient.

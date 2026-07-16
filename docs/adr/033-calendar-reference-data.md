@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -12,14 +12,14 @@ of proportion to the feature (G2, NFR-8, §5.2). That deferral was right. It als
 gap that has nothing to do with sync:
 
 **A calendar that doesn't know about public holidays is wrong in a way you notice on the first day you
-use it.** Anna plans around vappu and juhannus; the Japanese half of this dashboard cares about Golden
-Week and 天皇誕生日. Neither is Anna's event, neither is a task, and neither should be typed in by hand
+use it.** Planning happens around vappu and juhannus; the Japanese half of this dashboard cares about Golden
+Week and 天皇誕生日. Neither is the user's event, neither is a task, and neither should be typed in by hand
 every year.
 
 Forces:
 
 - **Holidays are reference data, not user data.** The moment a holiday becomes a `calendar_events` row it
-  becomes editable, deletable, duplicable on re-import, and part of Anna's NFR-7 export — four bugs from
+  becomes editable, deletable, duplicable on re-import, and part of the user's NFR-7 export — four bugs from
   one modelling mistake. ADR-021 and ADR-022 already established the shape for public, non-user-scoped
   cached data (`market_quotes`, `weather_cache`); this is a third instance and should look like them.
 - **This is the cheapest possible third-party integration**, and that shapes the design: a country-year is
@@ -100,7 +100,7 @@ demonstrated that storing an all-day thing as a timestamp is how you ship a cale
 on the 24th for anyone east of London. The PK includes `english_name` because two distinct holidays can
 land on the same date in some countries, and the composite key makes the upsert idempotent.
 
-**Which countries Anna sees is settings, not data**: the calendar widget's `settingsSchema` gains
+**Which countries the user sees is settings, not data**: the calendar widget's `settingsSchema` gains
 `holidayCountries: string[] (≤ 3, default ['FI'])` and `showRegionalHolidays: boolean (default false)`.
 This is presentation config in `widget_layouts.settings` — the ADR-022 precedent (a location) rather than
 the ADR-021 precedent (a watchlist), because there is no per-holiday user state to preserve. If holidays
@@ -138,7 +138,7 @@ established (and because a free service that saved us a week deserves a line).
 ### Name days: seeded, not called — and the rule that generalises
 
 Finnish calendars print **nimipäivät**, and a Finnish personal dashboard that omits them is missing
-something Anna would notice. There is a live free API for it: `nameday.abalin.net`
+something the user would notice. There is a live free API for it: `nameday.abalin.net`
 (`GET /api/V2/today?country=fi` — verified working on 2026-07-14, returns `"fi": "Aliisa"` for 14 July,
 which is correct; no auth).
 
@@ -167,13 +167,13 @@ correctly, so it is worth fetching; a nameday almanac is a CSV.
 - **Easier:** the integration is ~2 requests/month and one table. There is no realistic future in which this
   costs money, breaks under load, or needs monitoring.
 - **Committed to:** holidays are **reference data, not events** — a separate table, a separate endpoint, no
-  write surface, `date`-typed, composed on the client. If a future feature wants "Anna's own day off" that is
-  a `calendar_events` row she owns, and it is a different thing wearing similar clothes.
+  write surface, `date`-typed, composed on the client. If a future feature wants "the user's own day off" that is
+  a user-owned `calendar_events` row, and it is a different thing wearing similar clothes.
 - **Committed to:** local names are rendered (`Vappu`, not "May Day") — NFR-12 with teeth.
 - **Harder:** regional holidays (`isGlobal: false`) are real and vary by subdivision; v1 hides them behind a
   setting and defaults to national ones only, because getting Finnish regional holidays subtly wrong is worse
   than not showing them.
-- **Open questions for Anna:** (1) Should holidays feed **automations** — "don't fire work reminders on a
+- **Open questions for the product owner:** (1) Should holidays feed **automations** — "don't fire work reminders on a
   public holiday"? That is a cross-module read and belongs behind the event bus rather than an import (§4.1),
   and it is a bigger feature than it looks — the same shape as ADR-022's "should weather adjust the calendar"
   question, and probably the same answer: later, deliberately. (2) Name days: worth the 365-row seed, or is
@@ -184,7 +184,7 @@ correctly, so it is worth fetching; a nameday almanac is a CSV.
 
 - **Google Calendar's holiday calendars via OAuth.** Rejected: it is exactly the token-custody cost ADR-018
   deliberately deferred — and it would be paid for **data that has no privacy dimension whatsoever**. Buying
-  a public-domain fact with an OAuth grant to Anna's entire calendar is the worst trade in this document.
+  a public-domain fact with an OAuth grant to the user's entire calendar is the worst trade in this document.
 - **Subscribing to a public ICS holiday feed.** Rejected: unversioned, unlicensed, published by whoever, and
   a user-supplied-URL fetch means inheriting ADR-020's whole SSRF-hardening apparatus (private-IP rejection,
   redirect limits, body caps) for a use case that a typed JSON endpoint solves without any of it.
@@ -198,7 +198,7 @@ correctly, so it is worth fetching; a nameday almanac is a CSV.
   wrong in 2031. It also gives us nothing for Japan.
 - **Storing holidays as `calendar_events` rows for the user.** The lazy path, and the one that costs the most
   later: they duplicate on every re-import, they become editable and deletable, they pollute the NFR-7 export
-  with data that isn't Anna's, and they make "delete all my events" delete Christmas. The separate table with
+  with data that isn't the user's, and they make "delete all my events" delete Christmas. The separate table with
   no write surface makes all of that unrepresentable rather than merely discouraged.
 - **A `nameday.abalin.net` runtime integration.** Rejected — see above. The dataset is smaller than the
   client that would fetch it.

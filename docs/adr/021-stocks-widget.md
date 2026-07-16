@@ -2,18 +2,18 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
-A watchlist card: a handful of instruments Anna follows — FX pairs (EUR/JPY, because of the Japan
+A watchlist card: a handful of instruments the user follows — FX pairs (EUR/JPY, because of the Japan
 habit) alongside equities (AAPL) — each with a current price, the day's change, a small sparkline, and
 favourites pinned to the top. Read-only. No orders, no holdings, no portfolio value.
 
 Forces:
 
 - **Market data is the first thing this dashboard cannot generate itself.** Every other widget's data
-  is authored by Anna (tasks, mood) or ingested curriculum we control. Quotes come from a vendor with a
+  is authored by the user (tasks, mood) or ingested curriculum we control. Quotes come from a vendor with a
   rate limit, a licence, and an opinion about what we do with them. That makes the _provider_ decision
   the ADR, and everything else follows.
 - **NFR-8 (≤ €20/mo total).** The market-data budget is effectively €0, which rules out every real
@@ -24,8 +24,8 @@ Forces:
 - **Honesty about staleness.** Free tiers serve delayed data (typically 15 min for equities). A price
   rendered without a timestamp is a lie of omission, and a _stale cached_ price rendered as if live is
   a worse one. `asOf` is part of the data, not decoration.
-- **Boundary with ADR-030 (finance dashboard, in progress).** That widget is about Anna's _own money_ —
-  accounts, spending, net worth. This one is about _instruments she watches_. They must not merge: see
+- **Boundary with ADR-030 (finance dashboard, in progress).** That widget is about the user's _own money_ —
+  accounts, spending, net worth. This one is about _instruments on a watchlist_. They must not merge: see
   Consequences.
 - NFR-2 (< 200 ms p95 reads), NFR-11 (no colour-only encoding — and a red/green market widget is the
   canonical violation), NFR-12.
@@ -199,10 +199,10 @@ surfaced verbatim (they can contain the API key in the URL).
   alerts in v1; no colour-only direction.
 - **Boundary with ADR-030 (finance dashboard, in progress):** this widget stores **no quantities, no
   cost basis, no P&L** — the moment a row grows a "shares held" column it has become a portfolio, which
-  is Anna's own financial data (a §5.3-class asset with a very different privacy posture) and belongs to
+  is the user's own financial data (a §5.3-class asset with a very different privacy posture) and belongs to
   the finance module. If a portfolio view is ever wanted, it composes: finance owns holdings, calls
   `MarketsModule`'s quote read through the API layer, and this widget stays a watchlist.
-- **Open questions for Anna:** (1) Twelve Data's free tier forbids some redistribution and can change —
+- **Open questions for the product owner:** (1) Twelve Data's free tier forbids some redistribution and can change —
   do we want the Finnhub/Alpha Vantage adapters written up-front as a hedge, or written the day we need
   them? (2) Is a 7-day daily sparkline enough, or is intraday wanted (it is a per-symbol call per
   interval — a materially different budget)? (3) Should FX pairs be a separate widget instance from

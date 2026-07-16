@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -53,8 +53,8 @@ A small `WeatherModule` (§4.1: controller → service → provider adapter → 
 job, no events.
 
 - **The API proxies Open-Meteo; the client never calls it.** Even though it would work in the browser:
-  (1) a client-side call sends Anna's **IP address and her coordinates** to a third party on every
-  dashboard load — NFR-7's "no third-party trackers" is about who gets to observe her, and a weather
+  (1) a client-side call sends the user's **IP address and coordinates** to a third party on every
+  dashboard load — NFR-7's "no third-party trackers" is about who gets to observe the user, and a weather
   provider watching every page open is exactly that observation; (2) a server cache serves every device
   and every reload from one upstream call, which is both politeness and NFR-2 (a cached read is a
   Postgres hit, not a 300 ms round trip to Germany); (3) provider swap stays an adapter change
@@ -159,7 +159,7 @@ weather service" rather than rendering a generic crash; a warm cache never error
 - **Privacy rules (§5, NFR-7):** coordinates are stored rounded and only in the user's own widget
   settings; `navigator.geolocation` is called only from an explicit button press and never on mount; no
   third-party script or beacon runs on the dashboard for this widget (Open-Meteo is called
-  server-to-server and never sees Anna's browser); the weather cache holds no user identifier at all.
+  server-to-server and never sees the user's browser); the weather cache holds no user identifier at all.
 - **Attribution:** Open-Meteo's data is CC BY 4.0 and its free tier is non-commercial — the attribution
   line lives in the widget's about panel and the app's about page (ADR-011's placement rule), and the
   non-commercial condition is recorded as a licence constraint on the project, not just a footnote.
@@ -177,7 +177,7 @@ weather service" rather than rendering a generic crash; a warm cache never error
   instantly. The `stale` flag and `fetchedAt` in the contract exist so the UI is never confidently wrong.
 - **Committed to:** rounded coordinates end-to-end (client, API, cache key); geolocation only behind an
   explicit action; icons never carrying meaning alone; units requested upstream rather than converted.
-- **Open questions for Anna:** (1) Open-Meteo's free tier is non-commercial — fine forever for a personal
+- **Open questions for the product owner:** (1) Open-Meteo's free tier is non-commercial — fine forever for a personal
   dashboard, but it forecloses a future "publish this as a product" turn; is that worth a second adapter
   now? (2) Severe-weather warnings (FMI publishes them for Finland; Open-Meteo does not carry them) —
   worth a second provider, or is a forecast card enough? (3) Should the widget auto-adjust the calendar
@@ -189,12 +189,12 @@ weather service" rather than rendering a generic crash; a warm cache never error
 - **Browser geolocation as the primary location source.** Rejected: it prompts on load (the
   denial-by-reflex antipattern ADR-015 already refused), it yields far more precision than a forecast
   needs, and it makes the widget useless on a desktop with a denied permission. It survives as an
-  explicit, opt-in convenience button that writes a _rounded_ coordinate — the accuracy Anna gets is
+  explicit, opt-in convenience button that writes a _rounded_ coordinate — the accuracy the user gets is
   identical; the data we hold is dramatically less.
 - **Server-side IP geolocation as a fallback ("we'll just guess").** Rejected: an un-consented location
   inference, and wrong often enough (VPN, mobile carrier NAT) to be annoying as well as creepy.
 - **Direct client → Open-Meteo fetch (no proxy).** The genuinely tempting one: keyless, CORS-enabled,
-  zero backend work. Rejected: it hands Anna's IP + coordinates to a third party on every dashboard
+  zero backend work. Rejected: it hands the user's IP + coordinates to a third party on every dashboard
   load, it defeats shared caching (every device and reload is an upstream call), it puts a
   cross-continent round trip in the widget's critical path, and it carves an exception into ADR-004 for
   the one case where the exception is easy — which is how single-authorization-point architectures rot.

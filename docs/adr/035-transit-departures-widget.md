@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -12,7 +12,7 @@ different axis from everything else in the dashboard: it is the only card whose 
 Every other widget answers a question that is true all day — what are my tasks, what is the word of the day,
 how did I feel this week. A departures board answers "should I put my shoes on **now**", and on a personal
 dashboard in Helsinki that is plausibly the single most-looked-at number of the morning. It sits in the same
-quadrant as the weather card (ADR-022): ambient, glanceable, home-shaped, not something Anna authors.
+quadrant as the weather card (ADR-022): ambient, glanceable, home-shaped, not something the user authors.
 
 Forces, and they cut against the established patterns in interesting ways:
 
@@ -22,8 +22,8 @@ Forces, and they cut against the established patterns in interesting ways:
   not stale, it is **wrong**, and a wrong departure time makes you miss a bus. So this widget must be the
   documented exception, and the ADR has to justify why the exception is safe here and not there.
 - **A transit query is a location disclosure.** A home stop plus a time-of-day access pattern is a decent
-  proxy for where Anna lives and when she leaves the house — §5.3-adjacent. ADR-022 already established the
-  answer to this exact shape of problem (the API proxies; the provider sees our backend, never Anna's browser),
+  proxy for where the user lives and when they leave the house — §5.3-adjacent. ADR-022 already established the
+  answer to this exact shape of problem (the API proxies; the provider sees our backend, never the user's browser),
   and it applies here with more force, not less.
 - **Digitransit is public-sector infrastructure, not a startup's free tier.** That changes the risk calculus
   in a way NFR-8 cares about: the failure mode of a free tier is "the terms change and the widget dies", and a
@@ -71,7 +71,7 @@ cache-aside shape is right — but with a much shorter TTL and one extra guard.
 - **The client polls only while the tab is visible and focused** (Page Visibility API) — a background tab
   polls **zero** times. This is the guard that makes the exception safe: without it, an open laptop would
   quietly hammer a public service all night for a card nobody is looking at. With the server cache in front,
-  every device Anna owns shares one upstream call per 30 s while she is actually looking.
+  every device the user owns shares one upstream call per 30 s while the card is actually being watched.
 - **Stale-while-revalidate on top:** a slow upstream never blanks the card; the previous departures stay with
   their retrieval time visible.
 - **Why this is allowed to differ from ADR-021.** Three reasons, and all three must hold for any future widget
@@ -112,7 +112,7 @@ The cache **holds no user identifier at all** — it is keyed by stop, and a sto
 The same "a dump of this table reveals that _someone_ asked about Helsinki, and nothing else" property that
 ADR-022 designed for, achieved the same way and for the same reason.
 
-**Which stops Anna watches lives in `widget_layouts.settings`** (`settingsSchema`:
+**Which stops the user watches lives in `widget_layouts.settings`** (`settingsSchema`:
 `{ stops: { id, name }[] (≤ 3), modes: ('BUS'|'TRAM'|'SUBWAY'|'RAIL'|'FERRY')[], rowCount: 3–8 (default 5),
 walkMinutes: 0–20 (default 0) }`) — presentation config, the ADR-022 precedent, not the ADR-021 one: there is
 no per-stop user state (no favourites, no ordering that outlives the setting) worth a table. `walkMinutes`
@@ -128,7 +128,7 @@ reject-unknown-fields on:
   `{ stop: { id, name }, departures: [{ routeShortName, mode, headsign, scheduledAt, realtimeAt, isRealtime,
 cancelled, minutesUntil }], asOf, fetchedAt, stale: boolean, attribution }`.
   `minutesUntil` is **computed server-side** from `realtimeAt ?? scheduledAt` — the client does not do
-  clock arithmetic against a possibly-skewed device clock to decide whether Anna can catch a bus.
+  clock arithmetic against a possibly-skewed device clock to decide whether the user can catch a bus.
 - `GET /stops/search?q=` → `{ results: [{ id, name, code, mode, zone }] }` — used only while typing in the
   settings panel, cached 30 days per query (stops do not move), throttled hard.
 - No writes. The module owns no user data.
@@ -176,8 +176,8 @@ departures with `stale: true` and its `fetchedAt`, and the UI is required to sho
 - **Attribution:** a persistent card footer — **"© Digitransit · data retrieved 08:41"** — satisfying CC BY 4.0
   and being genuinely useful at the same time. Same slot as ADR-021's "not investment advice" line and
   ADR-032's JMdict line; this is now an established piece of card furniture.
-- **Privacy:** the provider is called server-to-server and never sees Anna's browser, her IP, or her session
-  (ADR-022's argument, reused); the cache holds no user id; the stop id lives in her own widget settings.
+- **Privacy:** the provider is called server-to-server and never sees the user's browser, IP, or session
+  (ADR-022's argument, reused); the cache holds no user id; the stop id lives in the user's own widget settings.
 
 ## Consequences
 
@@ -198,7 +198,7 @@ departures with `stale: true` and its `fetchedAt`, and the UI is required to sho
   and the ODbL/CC BY split means the geographic data has a share-alike condition we do not currently trigger
   (we store no OSM-derived geometry — only stop ids, names and times, which are the CC BY 4.0 half). If the
   widget ever renders a map or a route geometry, **ODbL attaches** and that is a new decision.
-- **Open questions for Anna:** (1) Is one home stop enough, or do you want a home/work pair (the cap is 3)?
+- **Open questions for the product owner:** (1) Is one home stop enough, or do you want a home/work pair (the cap is 3)?
   (2) `walkMinutes` — should the card show "leave in 2 min" (walk-adjusted) as the primary number, which is
   the genuinely useful framing, or the raw departure time? (3) Is a departures board actually something you
   want on the dashboard, or is it something your phone's map app already does better at the moment you need it?
@@ -213,7 +213,7 @@ departures with `stale: true` and its `fetchedAt`, and the UI is required to sho
   short-TTL, shared cache-aside read is the shape that matches the data's actual half-life.
 - **Client-direct calls to Digitransit.** Rejected: the subscription key would ship to the browser (§5.2 —
   and a leaked key on a public API is our name attached to someone else's abuse), it defeats the shared cache
-  so every tab is an upstream call, and it hands Anna's IP and morning routine to a third party on every
+  so every tab is an upstream call, and it hands the user's IP and morning routine to a third party on every
   dashboard load (NFR-7, ADR-022's argument). ADR-004 forbids it anyway.
 - **A "leave now" push notification / automation.** Rejected for v1: NFR-3's 60-second automation SLO is not
   tight enough to be trusted with a bus, it needs a per-minute evaluator against a deliberately coarse cache,
@@ -228,11 +228,11 @@ departures with `stale: true` and its `fetchedAt`, and the UI is required to sho
   state with its own lifecycle (no favourites, no history, nothing queryable) — it is a location preference,
   which is the ADR-022 precedent (settings JSONB), not the ADR-021 one.
 - **Geolocating the nearest stop on load.** Rejected: prompt-on-load is ADR-015's denial-by-reflex, and a
-  dashboard is a fixed-context surface — Anna's home stop does not move. It survives as an opt-in button
+  dashboard is a fixed-context surface — the user's home stop does not move. It survives as an opt-in button
   inside the settings panel that resolves to a **stop id**, which is a far coarser thing to store than a
   coordinate.
 - **Doing nothing** (not building this widget). The honest baseline, and a legitimate outcome of the review:
-  every other ADR in this batch improves a widget Anna already decided she wants, whereas this one proposes a
+  every other ADR in this batch improves an already-requested widget, whereas this one proposes a
   new one. It is here because the API is genuinely excellent and the widget is genuinely useful every single
   morning — but it is the one item in the sweep that should be dropped if the answer is "my phone already
   does that".

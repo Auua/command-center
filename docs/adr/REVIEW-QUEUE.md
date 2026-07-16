@@ -9,38 +9,38 @@ States:
 - `claude-reviewed` — checked against the ARD's hard rails (§4.1 module boundaries, §4.3 data-ownership
   split, §4.2 widget SDK, §5 security, §6 NFRs) and against the other new ADRs for cross-references.
   Ready to walk through together.
-- `approved` — Anna signed off; the ADR's `Status:` flips to `accepted`.
+- `approved` — the product owner signed off; the ADR's `Status:` flips to `accepted`.
 
 Reviewing an ADR is not approving it: `claude-reviewed` means the decisions are internally consistent
-and don't violate the architecture, **not** that they're the decisions Anna wants.
+and don't violate the architecture, **not** that they're the decisions the product owner will endorse.
 
 ## Batch 1 — new widgets (mock: `docs/design/new-widgets-mock.html`)
 
-| ADR | Title                      | Review state    | Anna |
-| --- | -------------------------- | --------------- | ---- |
-| 019 | System-design micro-lesson | claude-reviewed |      |
-| 020 | Post reader (RSS/Atom)     | claude-reviewed |      |
-| 021 | Stock & FX watchlist       | claude-reviewed |      |
-| 022 | Weather forecast           | claude-reviewed |      |
-| 023 | Work tracker (perf review) | claude-reviewed |      |
+| ADR | Title                      | Review state    | Approved |
+| --- | -------------------------- | --------------- | -------- |
+| 019 | System-design micro-lesson | claude-reviewed |          |
+| 020 | Post reader (RSS/Atom)     | claude-reviewed |          |
+| 021 | Stock & FX watchlist       | claude-reviewed |          |
+| 022 | Weather forecast           | claude-reviewed |          |
+| 023 | Work tracker (perf review) | claude-reviewed |          |
 
 ## Batch 2 — learning center
 
-| ADR | Title                                   | Review state    | Anna |
-| --- | --------------------------------------- | --------------- | ---- |
-| 024 | GitHub learning-center repo (the store) | claude-reviewed |      |
-| 025 | Spaced-repetition review widget         | claude-reviewed |      |
-| 026 | Anki deck sync via learning-repo Action | claude-reviewed |      |
+| ADR | Title                                   | Review state    | Approved |
+| --- | --------------------------------------- | --------------- | -------- |
+| 024 | GitHub learning-center repo (the store) | claude-reviewed |          |
+| 025 | Spaced-repetition review widget         | claude-reviewed |          |
+| 026 | Anki deck sync via learning-repo Action | claude-reviewed |          |
 
 ## Batch 3 — README future extensions
 
-| ADR | Title                      | Review state    | Anna |
-| --- | -------------------------- | --------------- | ---- |
-| 027 | Habit tracking             | claude-reviewed |      |
-| 028 | Pomodoro timer             | claude-reviewed |      |
-| 029 | Fitness & health           | claude-reviewed |      |
-| 030 | Finance dashboard          | claude-reviewed |      |
-| 031 | Home Assistant integration | claude-reviewed |      |
+| ADR | Title                      | Review state    | Approved |
+| --- | -------------------------- | --------------- | -------- |
+| 027 | Habit tracking             | claude-reviewed |          |
+| 028 | Pomodoro timer             | claude-reviewed |          |
+| 029 | Fitness & health           | claude-reviewed |          |
+| 030 | Finance dashboard          | claude-reviewed |          |
+| 031 | Home Assistant integration | claude-reviewed |          |
 
 ## Batch 4 — public-API enhancements
 
@@ -49,12 +49,12 @@ make a widget materially better. Every provider proposed below was called or had
 2026-07-14 before being written up; the "verified" column of each ADR records what was checked. Four ADRs,
 not one per API — the sweep produced more candidates than it kept.
 
-| ADR | Title                                           | Review state    | Anna |
-| --- | ----------------------------------------------- | --------------- | ---- |
-| 032 | Content sourcing & licensing (learning widgets) | claude-reviewed |      |
-| 033 | Public holidays in the calendar                 | claude-reviewed |      |
-| 034 | FX from central-bank reference rates            | claude-reviewed |      |
-| 035 | Transit departures widget (HSL/Digitransit)     | claude-reviewed |      |
+| ADR | Title                                           | Review state    | Approved |
+| --- | ----------------------------------------------- | --------------- | -------- |
+| 032 | Content sourcing & licensing (learning widgets) | claude-reviewed |          |
+| 033 | Public holidays in the calendar                 | claude-reviewed |          |
+| 034 | FX from central-bank reference rates            | claude-reviewed |          |
+| 035 | Transit departures widget (HSL/Digitransit)     | claude-reviewed |          |
 
 Three of the four **change ADRs that are already in this queue** — worth reading in that order:
 
@@ -85,7 +85,7 @@ One conflict found and fixed during review: ADR-019 (written in parallel with ba
 "Add to Anki" at ADR-011's `POST /api/v1/japanese/anki/queue`, which ADR-026 superseded. (ADR-019
 has since been re-aligned again to ADR-026's 2026-07-16 rewrite — see below.)
 
-**ADR-024 and ADR-026 were rewritten on 2026-07-16 at Anna's direction** (planning session for the
+**ADR-024 and ADR-026 were rewritten on 2026-07-16 by product-owner decision** (planning session for the
 learning-center v1 slice):
 
 - ADR-024: the Mongo-record + GitHub-mirror design is replaced by **GitHub as the store** — the
@@ -94,7 +94,7 @@ learning-center v1 slice):
 - ADR-026: the AnkiConnect queue-and-flush design is replaced by a GitHub Action in the learning
   repo (composite action in this monorepo) running the official `anki` library straight against
   AnkiWeb — no desktop in the loop; results land in `sync/state.json`, not a report endpoint; a
-  dispatch-only import mode brings her existing deck content into the repo.
+  dispatch-only import mode brings existing deck content into the repo.
 - ADR-019, ADR-032 were edited in place to match; ADR-025 got a light touch and owes a full
   re-alignment when the review widget is picked up (all still unapproved). Setup steps live in
   `docs/runbook-learning-center.md`.
@@ -123,7 +123,7 @@ a dictionary function or an on-screen display of words from the files, the ackno
 on each screen display, e.g. in the form of a message at the foot of the screen or page."_ ADR-032's
 persistent card-footer attribution is therefore a legal requirement, not a stylistic preference — and the
 about-panel placement in ADR-011/012 does not satisfy it. The ShareAlike consequence is the part worth
-Anna's explicit attention: it travels with _distribution_, so a public learning vault (ADR-024) or a
+explicit product-owner attention: it travels with _distribution_, so a public learning vault (ADR-024) or a
 shared AnkiWeb deck (ADR-026) would be encumbered. Keeping both private avoids the question entirely.
 
 Further supersessions to confirm in the walkthrough:
@@ -132,6 +132,6 @@ Further supersessions to confirm in the walkthrough:
   content-refresh job to a pinned CI ingest.
 - **ADR-034** supersedes the FX half of ADR-021's provider choice (Twelve Data → keyless ECB rates via
   Frankfurter). The user-visible cost — EUR/JPY becomes a daily reference rate, not an intraday tick — is
-  the single thing in this batch most likely to be wrong for Anna, so it should be confirmed first.
+  the single thing in this batch most likely to be wrong for the user, so it should be confirmed first.
 - **ADR-035** is the only genuinely new widget here and the most speculative; it says so itself. If "my
   phone already does that" is the answer, dropping it costs nothing else in the batch.

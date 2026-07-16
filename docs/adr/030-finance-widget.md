@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -13,10 +13,10 @@ Two questions dominate, and everything else follows from them.
 **1. Bank integration or not.** "Finance dashboard" invites automatic transaction sync via an open-banking aggregator (Nordigen/GoCardless, Tink, Plaid, TrueLayer). The consequences of saying yes:
 
 - **Cost.** PSD2 aggregators are commercial products. GoCardless has a free tier with per-connection limits; Tink/Plaid are enterprise-priced. Any of them is a real dependency against **NFR-8 (≤ €20/mo total infra)** and G2 (must survive weeks of neglect — bank connections expire every 90 days under SCA and need re-consent).
-- **Threat model.** It puts a live, refreshable authorization to read Anna's real bank accounts inside a personal hobby project's blast radius (§5). Today, ARD §5.3's worst case is "a compromised automation can annoy, not exfiltrate". A bank-linked finance module makes the worst case _"an attacker reads your full transaction history"_ — the most identity-revealing dataset in the app, worse than journal in some respects (it locates you in space and time).
+- **Threat model.** It puts a live, refreshable authorization to read the user's real bank accounts inside a personal hobby project's blast radius (§5). Today, ARD §5.3's worst case is "a compromised automation can annoy, not exfiltrate". A bank-linked finance module makes the worst case _"an attacker reads your full transaction history"_ — the most identity-revealing dataset in the app, worse than journal in some respects (it locates you in space and time).
 - **Ops.** Consent renewal, webhook/poll infra, per-institution quirks, and a silent-staleness failure mode. This is ADR-018's rejected calendar-sync bundle, with money attached.
 
-**2. Boundary with the stocks widget.** **ADR-021 (in progress, being written in parallel)** covers a stocks widget. Overlap is inevitable unless the line is drawn explicitly, so: **stocks = market data (a watchlist of instruments Anna does not necessarily own, prices from a public API, no personal financial position); finance = Anna's own money (balances, spending, budgets).** They are separate modules, separate tables, separate widgets. A future "portfolio value" feature — Anna's actual holdings, priced with market data — would be the _composition_ of the two and belongs in **this** module (it is her money), consuming market prices via the API layer, never by importing `StocksModule` (§4.1). Flagged as Q-B.
+**2. Boundary with the stocks widget.** **ADR-021 (in progress, being written in parallel)** covers a stocks widget. Overlap is inevitable unless the line is drawn explicitly, so: **stocks = market data (a watchlist of instruments the user does not necessarily own, prices from a public API, no personal financial position); finance = the user's own money (balances, spending, budgets).** They are separate modules, separate tables, separate widgets. A future "portfolio value" feature — the user's actual holdings, priced with market data — would be the _composition_ of the two and belongs in **this** module (it is the user's own money), consuming market prices via the API layer, never by importing `StocksModule` (§4.1). Flagged as Q-B.
 
 Third force: privacy. Financial data belongs in the **§5.3 highest-value asset tier** alongside journal, mood, and (per ADR-029) health. This ADR says so explicitly.
 
@@ -105,7 +105,7 @@ Under `/api/v1/finance`, zod in `packages/contracts`, `.strict()` writes, `user_
 - `GET /transactions?from&to&category&accountId` — required range, max 366 days (ADR-018's cap pattern), paginated.
 - `PATCH /transactions/:id` — category override only; amounts/dates are import-derived and immutable (a hand-edited amount is a lie about the bank statement).
 - `GET /summary?months=N` — SQL-aggregated monthly totals + per-category breakdown.
-- `GET /export` — full ledger as JSON/CSV (NFR-7: the data stays Anna's).
+- `GET /export` — full ledger as JSON/CSV (NFR-7: the data stays the user's).
 
 ### Accessibility
 
@@ -124,12 +124,12 @@ Financial data is a **highest-value asset (§5.3 tier — with journal, mood, an
 - Server logs record row counts, import ids, and error codes — **never** descriptions or amounts; parser errors log the _column_, not the _value_.
 - Uploaded CSVs are never persisted — no file lands on disk or in object storage.
 
-### Open questions for Anna
+### Open questions for the product owner
 
 - **Q-A:** Is CSV import worth building at all, or is "manual balances + a monthly spending figure" enough for v1? The import is ~70% of the effort. If the honest answer is "I'd check it monthly", the smaller version may be right.
-- **Q-B (boundary with ADR-021, in progress):** where do _owned_ holdings live? Proposal: portfolio positions are Anna's money → `FinanceModule`; instrument prices are market data → `StocksModule`, composed at the API layer. Confirm before either is implemented — it decides which module owns a `holdings` table.
+- **Q-B (boundary with ADR-021, in progress):** where do _owned_ holdings live? Proposal: portfolio positions are the user's money → `FinanceModule`; instrument prices are market data → `StocksModule`, composed at the API layer. Confirm before either is implemented — it decides which module owns a `holdings` table.
 - **Q-C:** should `hideAmounts` default to **on**? One tap to reveal; saves the shared-screen case.
-- **Q-D:** budgets — genuinely wanted, or the feature every finance app has and nobody uses? Left in the schema, out of the v1 UI unless Anna says otherwise.
+- **Q-D:** budgets — genuinely wanted, or the feature every finance app has and nobody uses? Left in the schema, out of the v1 UI unless the product owner says otherwise.
 
 ## Consequences
 

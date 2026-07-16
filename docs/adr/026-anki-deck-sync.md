@@ -4,20 +4,20 @@
 - **Date:** 2026-07-16 (rewritten twice: the 2026-07-14 draft used AnkiConnect
   queue-and-flush; the same-day revision then dropped Mongo with ADR-024 — GitHub is the
   store, and sync results live in `sync/state.json` instead of a report endpoint)
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
-Anna keeps two real Anki decks — **Japanese** and **Tech** — and wants them on every device.
+Two live Anki decks — **Japanese** and **Tech** — must stay available on every device.
 That last part is not ours to build: AnkiWeb already syncs a collection to Anki's mobile and
 desktop clients. What we must build is everything upstream of it — turning saved card files
-(ADR-024) into well-formed notes in the right deck, without duplicates, and showing Anna
+(ADR-024) into well-formed notes in the right deck, without duplicates, and showing the user
 honestly whether that has happened.
 
 The first draft of this ADR (and ADR-011 before it) reasoned from a two-option premise:
 AnkiConnect is a plugin inside the _desktop_ Anki app on `localhost:8765` that a cloud backend
 can never reach, and AnkiWeb has no public API and scraping it is forbidden (ToS, R2) —
-therefore the only path to the collection runs through Anna's browser while desktop Anki is
+therefore the only path to the collection runs through the user's browser while desktop Anki is
 open, hence queue-and-flush. **That premise missed a third option.** The official `anki`
 package on PyPI is not a wrapper or a reverse-engineered client — it is the actual Anki
 backend, the same code the desktop app runs. It can open a collection, add and update notes,
@@ -27,11 +27,11 @@ is the sanctioned way to script Anki, categorically different from scraping Anki
 Running that library needs three things: a place to execute Python, the card content, and
 AnkiWeb credentials. ADR-024 already puts the content in a private GitHub repo, one commit per
 saved item — which means GitHub Actions is a runner that fires exactly when cards change, with
-encrypted secrets storage in Anna's own GitHub account, for free (NFR-8). The desktop app
+encrypted secrets storage in the user's own GitHub account, for free (NFR-8). The desktop app
 drops out of the loop entirely: it becomes just another AnkiWeb client, like the phone.
 
-Anna has decided for this approach over the desktop-mediated one; this rewrite records it.
-Nothing of the old design is implemented, so nothing is migrated.
+This approach was selected over the desktop-mediated one by product-owner decision; this
+rewrite records it. Nothing of the old design is implemented, so nothing is migrated.
 
 ## Decision
 
@@ -42,8 +42,8 @@ The learning repo is a **separate GitHub repository** from the command-center mo
 that repo is part of its own deployable. Split by rate of change:
 
 - **The learning repo carries only a thin caller workflow** (`.github/workflows/anki-sync.yml`,
-  ~15 lines: the triggers and concurrency below plus one `uses:` step). Anna commits it **once
-  at setup**, exactly like the repo itself, which ADR-024 already has her create manually. It
+  ~15 lines: the triggers and concurrency below plus one `uses:` step). The user commits it **once
+  at setup**, exactly like the repo itself, which ADR-024 already specifies as manually created. It
   almost never changes afterwards.
 - **The machinery lives in the command-center monorepo** as a composite action —
   `tools/anki-sync/` holding `action.yml`, the Python sync script, and the pinned
@@ -78,7 +78,7 @@ Run steps, in order — the order is load-bearing:
 2. `col.sync_login(email, password)` with `ANKIWEB_EMAIL` / `ANKIWEB_PASSWORD` from Actions
    secrets, then **sync down** (`sync_collection`). On a cache miss the empty collection
    full-downloads — slower, equally correct. Writing before syncing down is forbidden: it
-   manufactures full-sync conflicts with Anna's mobile reviews.
+   manufactures full-sync conflicts with the user's mobile reviews.
 3. Ensure decks and note types exist (`col.decks.id()` creates on demand; models by name →
    create). A missing model is the normal state of a fresh runner, not an error.
 4. Upsert a note for **every** card file with `anki: true` (below), keyed on `CardId`. Every
@@ -89,8 +89,8 @@ Run steps, in order — the order is load-bearing:
 **Full-sync rule (the one dangerous edge):** if Anki decides the collections have diverged
 beyond normal merge (schema change, long divergence), the script may answer **full download**
 (we only lose the cache) but must **never answer full upload** — a CI runner force-uploading
-over Anna's real collection could destroy mobile review history. Full-upload-required fails
-the run red, and Anna resolves it once on a real client.
+over the user's real collection could destroy mobile review history. Full-upload-required fails
+the run red, and the user resolves it once on a real client.
 
 ### What gets synced: the `anki` front-matter flag
 
@@ -99,7 +99,7 @@ the run red, and Anna resolves it once on a real client.
 its front-matter — in v1 every saved card is Anki-bound, so saving _is_ adding to Anki. The
 commit triggers the workflow. There is **no `anki_queue`**, no flush protocol, and no
 browser↔Anki traffic of any kind — the repo _is_ the queue. The flag still earns its place:
-the sync script upserts only `anki: true` files, so a future not-for-Anki card class (or Anna
+the sync script upserts only `anki: true` files, so a future not-for-Anki card class (or the user
 flipping the flag off in any git client) needs no new mechanism.
 
 **Every Anki note is created from a card file** — structurally: the sync script can only see
@@ -108,13 +108,13 @@ makes the note addressable, deduplicable, and re-mappable forever.
 
 ### Import: getting the existing decks in
 
-Anna's real decks predate this system, so the Action has a second, dispatch-only mode
+The user's real decks predate this system, so the Action has a second, dispatch-only mode
 (`workflow_dispatch` input `mode: import`): sync down → export every note of the configured
 deck whose guid does _not_ start with `cc:` into `cards/japanese/imported/<year>/` files
 (year derived from the Anki note id, which is a creation-epoch-ms) → commit → **stop**. Import
 never syncs up — it is read-only against the collection by construction. Imported files carry
 `source: anki-import` and an `anki: { noteId, guid, model }` block, and their `fields` are a
-raw 1:1 map of her own note type's field names, so later edits write back to the same model
+raw 1:1 map of the source note type's field names, so later edits write back to the same model
 losslessly. Subsequent sync runs upsert them by the stored `noteId` and never duplicate them.
 
 ### Deck & note-type design
@@ -123,13 +123,13 @@ losslessly. Subsequent sync runs upsert them by the stored `noteId` and never du
 card's `deck` field (`japanese` | `tech`). **The Tech deck is deferred with its content track
 (ADR-013/032 investigation pending); v1 ships Japanese only**, but the design is two-deck so
 Tech lands as content plus one deck mapping, not a new mechanism. **No subdecks.** Anki applies its scheduling
-options and daily limits per top-level deck, which is exactly the granularity Anna asked for;
+options and daily limits per top-level deck, which is exactly the granularity the user asked for;
 sub-classification (WOTD vs grammar, TypeScript vs SQL) rides as **tags** — `cc::japanese-wotd`,
 `cc::grammar`, `cc::tech::typescript` — which filter and search just as well without multiplying
-deck config. The `cc::` prefix keeps our tags from colliding with Anna's own.
+deck config. The `cc::` prefix keeps our tags from colliding with the user's own.
 
 Two **custom note types**, created by the sync script, name-versioned so a field change is a
-new model and never a destructive migration of Anna's existing notes:
+new model and never a destructive migration of the user's existing notes:
 
 | `CC Japanese v1`                      | `CC Tech v1`                       |
 | ------------------------------------- | ---------------------------------- |
@@ -175,7 +175,7 @@ schema (ADR-024's), which is the actual contract.
 Idempotency, three layers:
 
 1. **`find_notes` on `CardId`** (or the stored `noteId` for imported cards) — hit →
-   `update_note`, miss → `add_note`. Exact, and it survives Anna editing the expression.
+   `update_note`, miss → `add_note`. Exact, and it survives the user editing the expression.
 2. **Deterministic `guid`** — even against a rebuilt collection or a stray import, Anki's own
    machinery refuses a duplicate of `cc:<card-id>`.
 3. **Anki's first-field duplicate check** as the final net.
@@ -188,7 +188,7 @@ the same guid.
 
 **Deletions are manual.** Unsetting `anki: true` or deleting a card file never deletes or
 alters the existing Anki note — scheduling history is expensive to rebuild and cheap to keep.
-The script only creates and updates; removing a card is an act Anna performs in Anki.
+The script only creates and updates; removing a card is an act the user performs in Anki.
 
 ### Reporting back: `sync/state.json`, not an endpoint
 
@@ -248,7 +248,7 @@ client at all.
 
 ### Credential custody & terms
 
-AnkiWeb email + password live **only** in Actions secrets of Anna's own private repo —
+AnkiWeb email + password live **only** in Actions secrets of the user's own private repo —
 encrypted at rest, masked in logs, never on our API host, never in the client (§5.2). The
 script must still never print sync responses. Blast radius of a leak: read/write of the Anki
 collection — the same power as the desktop login it replaces. The API's learning-repo PAT
@@ -264,7 +264,7 @@ authenticated as the account owner, at personal-use volume. The previous draft's
   AnkiWeb minutes later, with desktop Anki closed or the machine off. The API loses a whole
   protocol surface (queue endpoints, flush lifecycle, AnkiConnect CORS carve-out, client
   provisioning); the browser never talks to Anki. Stats refresh daily regardless of desktop
-  use. Re-syncing every card file is the normal case, not a recovery mode. Her existing decks
+  use. Re-syncing every card file is the normal case, not a recovery mode. Existing decks
   come in through the same machinery (import mode), not a separate tool.
 - **Harder / committed to:** we own a Python sync script in a TypeScript monorepo, plus a
   cross-repo seam: the learning repo's caller workflow, the monorepo's Actions-sharing setting,
@@ -273,8 +273,8 @@ authenticated as the account owner, at personal-use volume. The previous draft's
   protocol evolves and old clients get rejected; the daily run is the alarm) — shipped by
   moving the tag, so a bad bump is rolled back by moving it back. GitHub Actions is now on
   the sync path: an Actions outage delays sync but loses nothing — the repo still holds the
-  items. Anna must update the secret if she changes her AnkiWeb password.
-- **Still owned from the first draft:** custom note types and card templates in Anna's
+  items. The Actions secret must be updated after any AnkiWeb password change.
+- **Still owned from the first draft:** custom note types and card templates in the user's
   collection — a field change means shipping `CC Japanese v2` and leaving v1 notes alone;
   versioned model names are what make that survivable. The HTML-escaping obligation on `Code`.
 - **The full-sync edge:** the script's never-full-upload rule is the single most important
@@ -283,7 +283,7 @@ authenticated as the account owner, at personal-use volume. The previous draft's
   `ankiConnectClient`, flush-time provisioning, client stats push) and its
   `/api/v1/japanese/anki/*` endpoints; ADR-013's reuse of that endpoint; this ADR's own
   2026-07-14 draft (AnkiConnect flush + desktop `sync` trigger); and, from the 2026-07-16
-  revision (Anna: GitHub is the store, no Mongo), the interim `PUT /api/v1/anki/report`
+  revision (product-owner decision: GitHub is the store, no Mongo), the interim `PUT /api/v1/anki/report`
   endpoint, its machine token, `AnkiModule`, and the Mongo `anki_snapshots` collection —
   none of these will exist. ADR-019 and ADR-024/025 are edited in place (same unapproved
   batch). ARD edits owed on approval: §4.5's Anki paragraph, the container diagram and
@@ -291,7 +291,7 @@ authenticated as the account owner, at personal-use volume. The previous draft's
   `anki_snapshots` row (deleted, not moved).
 - **Media** (images/audio, e.g. ADR-019's diagrams) stays out of v1; when wanted it is one
   more call in the same run (`col.sync_media`), not a new architecture.
-- **Open questions for Anna:** (1) Recall (Meaning → Expression) cards for Japanese: on or
+- **Open questions for the product owner:** (1) Recall (Meaning → Expression) cards for Japanese: on or
   off by default? (2) Deck names — literally `Japanese` and `Tech`, or nested under an
   existing parent deck? (3) Comfortable with the AnkiWeb password in Actions secrets, or gate
   this ADR on trying it with a throwaway AnkiWeb account first? (The "do the decks already
@@ -336,7 +336,7 @@ authenticated as the account owner, at personal-use volume. The previous draft's
 - **Keeping an API-side `anki_queue` in front of the card files:** rejected — a second queue
   duplicating repo state, adding no durability the repo doesn't already provide.
 - **Anki's `guid` as the _only_ identity (no `CardId` field):** rejected — guid is invisible
-  in the Anki UI and unsearchable by Anna; the field costs nothing and is the debuggable
+  in the Anki UI and unsearchable by the user; the field costs nothing and is the debuggable
   handle. We set both.
 - **Importing Anki's per-card scheduling state back into ADR-025's FSRS:** still rejected —
   now as a choice (the collection is readable in the run) rather than an impossibility; a
