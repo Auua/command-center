@@ -72,6 +72,42 @@ Three of the four **change ADRs that are already in this queue** — worth readi
 - **ADR-035** is the only _new_ widget, and the most speculative item here; it is also the only one that may
   poll a provider on read, under three stated conditions.
 
+## Batch 5 — tasks & calendar upgrades (product-owner ask, 2026-07-16)
+
+Two ADRs from one ask: recurring todos that also show on the calendar, and Google Calendar in the
+dashboard with per-calendar read-only / read-write access.
+
+| ADR | Title                                          | Review state    | Approved |
+| --- | ---------------------------------------------- | --------------- | -------- |
+| 036 | Recurring tasks (+ calendar projection)        | claude-reviewed |          |
+| 037 | Google Calendar sync (read-only / read-write)  | claude-reviewed |          |
+
+Both **change ADRs already in this queue or accepted work** — read in this order:
+
+- **ADR-036 extends ADR-008** (new `tasks` columns, `every …` quick-add token, transactional
+  respawn-on-completion) and **ADR-018's task overlay** (`projected: true` occurrences on the same
+  endpoint). It also extracts ADR-018's RRULE expansion into a shared `packages/` recurrence
+  utility consumed by both modules — a library, not a module import, so ADR-002 holds.
+- **ADR-037 lifts ADR-018's external-sync deferral** for Google specifically, through the
+  `source`/`external_id` seam ADR-018 left. ADR-033 is _not_ retired: holidays stay keyless — a
+  public fact should not cost a private-token grant. The single decision most worth product-owner
+  attention: sync freshness is a 10-minute worker poll (shown as "synced N min ago"), not push —
+  and v1 cannot create/edit recurring _series_ on Google calendars (single events only; series
+  stay edited in Google's UI).
+
+## Review notes (batch 5 pass)
+
+Rails check as before, both hold: the Google refresh token is server-side only and encrypted at
+rest (§5.2 secrets posture; client never sees it); new tables (`calendar_accounts`,
+`calendar_sources`) carry RLS; `tasks`/`calendar_events` changes keep existing RLS; no
+client-direct provider calls (sync runs in the worker; writes go API → Google); reject-at-the-door
+RRULE validation mirrors ADR-018; NFR-8 unaffected (Google Calendar API is free at this scale,
+recurrence adds zero infra). ADR-036's one-open-occurrence invariant is enforced by a partial
+unique index (unrepresentable, not policed), consistent with the house pattern (ADR-027 PK marks,
+ADR-018 CHECK). Cross-checked ADR-027's habits-vs-recurring-tasks boundary — ADR-036 states the
+complementary rule rather than eroding it. The §5.3 threat-tier addition (write-capable Google
+token after escalation) is the security item to confirm explicitly in the walkthrough.
+
 ## Review notes (batch 1–3 pass)
 
 Checked and found consistent: house ADR structure and header block on all 13; no `dangerouslySetInnerHTML`
