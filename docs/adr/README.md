@@ -26,7 +26,7 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 017 | [Appreciation Tracker Widget](reflection/017-appreciation-widget.md)                                                               | reflection    | accepted |
 | 018 | [Calendar Widget (daily/weekly/monthly views)](productivity/018-calendar-widget.md)                                                | productivity  | proposed |
 | 019 | [System-design micro-lesson widget](learning/019-system-design-widget.md)                                                          | learning      | proposed |
-| 020 | [Post reader widget (RSS/Atom subscriptions)](external-data/020-post-reader-widget.md)                                             | external-data | proposed |
+| 020 | [RSS feed widget (headlines + excerpts, link out)](external-data/020-post-reader-widget.md)                                        | external-data | accepted |
 | 021 | [Stock & FX watchlist widget](external-data/021-stocks-widget.md)                                                                  | external-data | accepted |
 | 022 | [Weather forecast widget](external-data/022-weather-widget.md)                                                                     | external-data | accepted |
 | 023 | [Work tracker widget (wins, impact, review evidence)](reflection/023-work-tracker-widget.md)                                       | reflection    | accepted |

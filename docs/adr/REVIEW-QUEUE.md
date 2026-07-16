@@ -16,13 +16,19 @@ and don't violate the architecture, **not** that they're the decisions the produ
 
 ## Batch 1 — new widgets (mock: `docs/design/new-widgets-mock.html`)
 
-| ADR | Title                      | Review state    | Approved     |
-| --- | -------------------------- | --------------- | ------------ |
-| 019 | System-design micro-lesson | claude-reviewed |              |
-| 020 | Post reader (RSS/Atom)     | claude-reviewed |              |
-| 021 | Stock & FX watchlist       | claude-reviewed | ✓ 2026-07-16 |
-| 022 | Weather forecast           | claude-reviewed | ✓ 2026-07-16 |
-| 023 | Work tracker (perf review) | claude-reviewed | ✓ 2026-07-16 |
+| ADR | Title                          | Review state    | Approved                 |
+| --- | ------------------------------ | --------------- | ------------------------ |
+| 019 | System-design micro-lesson     | claude-reviewed |                          |
+| 020 | RSS feed (headlines, link out) | claude-reviewed | ✓ 2026-07-16 (rewritten) |
+| 021 | Stock & FX watchlist           | claude-reviewed | ✓ 2026-07-16             |
+| 022 | Weather forecast               | claude-reviewed | ✓ 2026-07-16             |
+| 023 | Work tracker (perf review)     | claude-reviewed | ✓ 2026-07-16             |
+
+**ADR-020 was rewritten at the 2026-07-16 walkthrough by product-owner decision** (the ADR-024/026
+precedent): the drafted in-app reader (block-document bodies in Mongo, `/reader` route, image policy)
+was more than the want — the accepted design is a classic RSS feed: headlines + plain-text excerpts
+linking out to the publisher, unread/saved flags, Postgres only. The reader design survives in git
+history as the starting point if in-app reading is ever wanted.
 
 ## Batch 2 — learning center
 
