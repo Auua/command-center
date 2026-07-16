@@ -1,8 +1,8 @@
 # ADR-028: Pomodoro timer widget
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -112,9 +112,9 @@ A live-updating number is the classic screen-reader failure: announced every sec
 
 ### Open questions for the product owner
 
-- **Q-A:** should a pomodoro be attachable to a task (`task_id`)? The column is planned; the UI (a task picker in the widget) is not, and it drags in a `TasksModule` read. Ship the column, defer the picker?
-- **Q-B:** does an abandoned pomodoro deserve a row (for honest "started 6, finished 4" stats), or is that a guilt mechanic in the ADR-014/027 sense? Current answer: don't store it.
-- **Q-C:** cross-device single-timer via Supabase realtime — worth it, or is per-device the honest scope?
+- **Q-A:** should a pomodoro be attachable to a task (`task_id`)? The column is planned; the UI (a task picker in the widget) is not, and it drags in a `TasksModule` read. Ship the column, defer the picker? → _PO-review:_ yes — column ships now, picker deferred.
+- **Q-B:** does an abandoned pomodoro deserve a row (for honest "started 6, finished 4" stats), or is that a guilt mechanic in the ADR-014/027 sense? Current answer: don't store it. → _PO-review:_ confirmed — abandoned sessions are not stored.
+- **Q-C:** cross-device single-timer via Supabase realtime — worth it, or is per-device the honest scope? → _PO-review:_ per-device; cross-tab sync only, revisit on felt need.
 
 ## Consequences
 
