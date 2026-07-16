@@ -46,6 +46,7 @@ flowchart TB
     supabase[("Supabase<br/>Auth + Postgres + Realtime")]
     mongo[("MongoDB Atlas<br/>Document store")]
     content["Content sources<br/>(dictionary/lesson APIs,<br/>seeded datasets)"]
+    gcal["Google Calendar API<br/>(OAuth, per-calendar<br/>read-only / read-write)"]
 
     user -->|"HTTPS / PWA"| system
     system -->|"add cards, fetch review stats"| anki
@@ -54,17 +55,19 @@ flowchart TB
     system --> supabase
     system --> mongo
     system -->|"fetch word/grammar/lesson data"| content
+    system -->|"10-min incremental sync,<br/>write-through edits"| gcal
 ```
 
 **External dependencies and their failure posture:**
 
-| Dependency         | Used for                                | If unavailable                                                      |
-| ------------------ | --------------------------------------- | ------------------------------------------------------------------- |
-| Supabase           | Auth, relational data, realtime         | App unusable (accepted single point of failure)                     |
-| MongoDB Atlas      | Documents (journal, braindump, content) | Affected widgets show error state; rest of dashboard works          |
-| Anki (AnkiConnect) | Deck sync, review stats                 | Widget degrades to "last synced" data; "Add to Anki" queues locally |
-| Web Push           | Reminders                               | Automations still logged in-app; notification bell as fallback      |
-| Content APIs       | Word/lesson of the day                  | Serve from pre-seeded content cache                                 |
+| Dependency         | Used for                                 | If unavailable                                                                                                           |
+| ------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Supabase           | Auth, relational data, realtime          | App unusable (accepted single point of failure)                                                                          |
+| MongoDB Atlas      | Documents (journal, braindump, content)  | Affected widgets show error state; rest of dashboard works                                                               |
+| Anki (AnkiConnect) | Deck sync, review stats                  | Widget degrades to "last synced" data; "Add to Anki" queues locally                                                      |
+| Web Push           | Reminders                                | Automations still logged in-app; notification bell as fallback                                                           |
+| Content APIs       | Word/lesson of the day                   | Serve from pre-seeded content cache                                                                                      |
+| Google Calendar    | Synced calendars (mirror, write-through) | Mirror serves stale (labelled "synced N min ago"); writes fail visibly; `needs_reauth` banner on token failure (ADR-037) |
 
 ---
 
@@ -221,6 +224,9 @@ erDiagram
     users ||--o{ streaks : owns
     users ||--o{ push_subscriptions : owns
     users ||--o{ calendar_events : owns
+    users ||--o{ calendar_accounts : owns
+    calendar_accounts ||--o{ calendar_sources : lists
+    calendar_sources ||--o{ calendar_events : mirrors
     automations ||--o{ automation_runs : logs
 
     tasks {
@@ -269,6 +275,32 @@ erDiagram
         text widget_id
         jsonb grid_pos
         jsonb settings
+    }
+    calendar_events {
+        uuid id PK
+        uuid user_id FK
+        text title
+        timestamptz starts_at "timed events; null when all-day (ADR-018)"
+        date starts_on "all-day events; CHECK one representation"
+        text rrule "nullable RFC 5545 series"
+        uuid source_id FK "nullable; null = own event (ADR-037)"
+        text external_id "UNIQUE(source_id, external_id), with etag"
+    }
+    calendar_accounts {
+        uuid id PK
+        uuid user_id FK
+        text provider "google"
+        bytea refresh_token_enc "AES-256-GCM at rest (ADR-037)"
+        text status "ok | needs_reauth"
+    }
+    calendar_sources {
+        uuid id PK
+        uuid user_id FK
+        uuid account_id FK
+        text google_calendar_id
+        text mode "read | write"
+        text sync_token "nullable; incremental sync cursor"
+        timestamptz last_synced_at
     }
 ```
 
@@ -347,6 +379,7 @@ sequenceDiagram
 ### 5.3 Threat notes (STRIDE-lite, personal-app calibrated)
 
 - **Highest-value asset:** journal + mood data — private reflections. Mitigations: 2FA, RLS, no third-party analytics on journal routes, Mongo network-restricted to backend host IPs/VPC peering where the tier allows.
+- **Google Calendar refresh token (ADR-037):** same top tier — a calendar-scope token reads much of the user's life; a write-scope one can modify it. Mitigations: AES-256-GCM at rest (key in platform env), incremental scopes (read-only until a calendar is explicitly marked read-write), token never reaches the client or logs, per-calendar `mode` enforced API-side, disconnect = revoke at Google + delete credential + purge mirrored rows.
 - **Tampering with automations:** automations execute only `notify` actions in v1 — no arbitrary webhooks/code — so a compromised automation record can annoy, not exfiltrate. Revisit before adding webhook actions or Home Assistant control.
 - **Token theft:** short-lived access tokens (1 h), refresh rotation via Supabase; sessions revocable from the Supabase dashboard.
 - **Backups as attack surface:** Atlas/Supabase managed backups inherit provider encryption at rest; no manual dump-to-laptop workflow.
@@ -422,7 +455,7 @@ Full ADRs live in `docs/adr/`, grouped into domain subfolders (productivity, ref
 
 | **038** | Nutrition widget: personal food library + food-entry log in Postgres (`foods`, `food_entries`); entries snapshot name/kcal at log time; `kcal` is nullable — unknown is a first-class state and daily totals report "N kcal · M uncounted"; kcal-only v1, no external food DB | Capture speed is the product (one tap for the foods the user always eats); requiring kcal blocks the habit and teaches number-inventing — "tracking is the first step" (PO brief); snapshots keep past totals honest when the library changes; eating data is §5.3 highest-value with the no-shaming posture at extra force | Folding into FitnessModule (different shapes/UX/failure domains); public food DB or barcodes in v1 (licensing + lookup UX dwarf a personal vocabulary); required kcal (blocks the habit); join-not-snapshot (library edits silently rewrite history); macros in v1 (kcal answers the current question) |
 
-ADRs 019–038 are tracked in `docs/adr/REVIEW-QUEUE.md`; 020, 021, 022, 023, 029, and 038 are **accepted**, 034 is **rejected**, and 030/031 are **parked** (product-owner walkthrough, 2026-07-16); the rest are **proposed and pending review** — see the queue for the review
+ADRs 019–038 are tracked in `docs/adr/REVIEW-QUEUE.md`; 020, 021, 022, 023, 029, 033, 037, and 038 are **accepted**, 034 is **rejected**, and 030/031 are **parked** (product-owner walkthrough, 2026-07-16); the rest are **proposed and pending review** — see the queue for the review
 state of each. Several ARD edits are **owed once the relevant ADRs are approved**: §4.4 gains the
 Postgres `review_cards` / `review_logs` tables (ADR-025, itself deferred and owing a re-alignment
 to ADR-024's rewrite); R5 (content sourcing) is closed by ADR-032 — licensed bulk datasets for
@@ -432,10 +465,10 @@ repo's GitHub Action → AnkiWeb with results in `sync/state.json`) retire AnkiC
 planned `vault_items`/`anki_snapshots` Mongo collections from the architecture, which rewrites
 §4.3's Mongo ownership list, §4.5's Anki paragraph, the §2 container diagram and failure-mode row,
 §5.2's AnkiConnect CORS scope, R2, and Phase 3's "Anki queue-and-flush". ADR-036 owes §4.4 the
-new `tasks` columns (`rrule`, `repeat`, `series_id`, `spawned_from`); ADR-037 owes the §2 context
-diagram a Google Calendar API system, §4.4 the `calendar_accounts`/`calendar_sources` tables and
-`calendar_events` source columns, §5.3 the refresh-token asset entry, and Phase 4 the sync scope
-line.
+new `tasks` columns (`rrule`, `repeat`, `series_id`, `spawned_from`). ADR-037's owed edits were
+applied on its acceptance (2026-07-16): §2 gained the Google Calendar API system and failure row,
+§4.4 the `calendar_accounts`/`calendar_sources` tables and `calendar_events` source columns,
+§5.3 the refresh-token asset entry, and Phase 4 the sync scope line.
 
 ---
 
@@ -459,6 +492,6 @@ line.
 2. **Phase 1 — Daily core:** Tasks, Braindump, Mood check-in + trends. First Postgres + first Mongo widget → validates ADR-003 early.
 3. **Phase 2 — Automations:** trigger engine, worker, web push, notification center. _Highest architectural risk — do before more widgets._
 4. **Phase 3 — Learning:** Japanese WOTD/grammar, tech "X of the day", streaks, Anki queue-and-flush.
-5. **Phase 4 — Reflection & polish:** Journal, Appreciation, Calendar views, layout customization UI, data export.
+5. **Phase 4 — Reflection & polish:** Journal, Appreciation, Calendar views, Google Calendar sync (per-calendar read-only/read-write, ADR-037), layout customization UI, data export.
 
 Each phase ends deployed and used daily — the product owner is also user #1, so dogfooding is the QA strategy.
