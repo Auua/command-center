@@ -58,7 +58,7 @@ not one per API — the sweep produced more candidates than it kept.
 | ADR | Title                                           | Review state    | Approved            |
 | --- | ----------------------------------------------- | --------------- | ------------------- |
 | 032 | Content sourcing & licensing (learning widgets) | claude-reviewed |                     |
-| 033 | Public holidays in the calendar                 | claude-reviewed |                     |
+| 033 | Public holidays in the calendar                 | claude-reviewed | ✓ 2026-07-16        |
 | 034 | FX from central-bank reference rates            | claude-reviewed | rejected 2026-07-16 |
 | 035 | Transit departures widget (HSL/Digitransit)     | claude-reviewed |                     |
 
@@ -86,10 +86,10 @@ Three of the four **change ADRs that are already in this queue** — worth readi
 Two ADRs from one ask: recurring todos that also show on the calendar, and Google Calendar in the
 dashboard with per-calendar read-only / read-write access.
 
-| ADR | Title                                         | Review state    | Approved |
-| --- | --------------------------------------------- | --------------- | -------- |
-| 036 | Recurring tasks (+ calendar projection)       | claude-reviewed |          |
-| 037 | Google Calendar sync (read-only / read-write) | claude-reviewed |          |
+| ADR | Title                                         | Review state    | Approved     |
+| --- | --------------------------------------------- | --------------- | ------------ |
+| 036 | Recurring tasks (+ calendar projection)       | claude-reviewed |              |
+| 037 | Google Calendar sync (read-only / read-write) | claude-reviewed | ✓ 2026-07-16 |
 
 Both **change ADRs already in this queue or accepted work** — read in this order:
 

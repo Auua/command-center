@@ -1,8 +1,8 @@
 # ADR-037: Google Calendar sync (per-calendar read-only and read-write)
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-16
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -12,7 +12,7 @@ consent and refresh-token custody, webhook-or-polling transport in the worker, a
 read-only-vs-two-way policy. The product owner has now asked for exactly that project: Google
 Calendar in the dashboard, with some calendars **read-only** (subscribed/shared calendars that
 should render but never be touched) and at least one **read-write** (events created or edited in
-the dashboard land in Google). ADR-033 deliberately bought the *public* slice of this (holidays)
+the dashboard land in Google). ADR-033 deliberately bought the _public_ slice of this (holidays)
 without OAuth; this ADR pays the real bill for the private slice.
 
 Forces:
@@ -27,8 +27,8 @@ Forces:
   data exposure, mitigated by encryption and scope minimization, not by keeping the backend out).
 - **The read path must stay local (NFR-2).** Dashboard reads can never call Google; ADR-021
   already established worker-polls / read-serves-cache as the house shape for third-party data.
-- **Google operational realities.** Calendar scopes are "sensitive": an OAuth app in *testing*
-  status expires refresh tokens after 7 days (weekly re-consent — unusable); *production* status
+- **Google operational realities.** Calendar scopes are "sensitive": an OAuth app in _testing_
+  status expires refresh tokens after 7 days (weekly re-consent — unusable); _production_ status
   without verification shows a one-time unverified-app warning, acceptable for a personal app.
   Push notifications (watch channels) require a public HTTPS webhook and expire (~week), needing
   renewal machinery. Incremental sync via `syncToken` is cheap and quota is far beyond
@@ -55,7 +55,7 @@ rows** — the mirror is a cache of Google's data, not user data we retain.
 **Scopes are incremental (least privilege):** the initial connect requests only
 `calendar.calendarlist.readonly` + `calendar.events.readonly`. The write scope
 (`calendar.events`) is requested — with a second, explicit consent — only when the user first
-marks a calendar read-write. A read-only-forever setup therefore never holds a token that *could*
+marks a calendar read-write. A read-only-forever setup therefore never holds a token that _could_
 write. Google scopes are account-wide, so per-calendar write policy is enforced by our `mode`
 column (API-level 403) with Google's own per-calendar ACL as the outer net.
 
@@ -112,7 +112,7 @@ on current data. **Last-writer never silently wins in either direction.** There 
 queue (offline-first is a §1.3 non-goal): if Google is unreachable, the write fails visibly and
 the mirror stays consistent.
 
-v1 write scope is **single events only**: creating or editing *recurring series* on a Google
+v1 write scope is **single events only**: creating or editing _recurring series_ on a Google
 calendar stays in Google's own UI (the edit dialog hides recurrence controls for synced events).
 Series edit semantics (this / this-and-following / all) are Google's hardest UX; re-implementing
 them against a mirror of expanded instances is a project of its own and is deferred, not designed
@@ -184,7 +184,7 @@ as everywhere.
   override model immediately, plus Google-specific quirks (floating overrides, split series) —
   the highest-complexity path to the same rendered pixels. Concrete instances over a horizon match
   the read contract as-is.
-- **Mirroring our own events *up* to a Google calendar (full two-way)** — deferred: doubles the
+- **Mirroring our own events _up_ to a Google calendar (full two-way)** — deferred: doubles the
   conflict surface and creates echo-loop risk (our write → their webhook/poll → our mirror). The
   ask — see Google events, edit some calendars — is satisfied by mirror + write-through; own
   events stay ours.

@@ -43,5 +43,5 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 034 | [FX from central-bank reference rates (Frankfurter), not from the metered quote provider](external-data/034-fx-reference-rates.md) | external-data | rejected |
 | 035 | [Transit departures widget (HSL / Digitransit)](external-data/035-transit-departures-widget.md)                                    | external-data | proposed |
 | 036 | [Recurring tasks (and their projection onto the calendar)](productivity/036-recurring-tasks.md)                                    | productivity  | proposed |
-| 037 | [Google Calendar sync (per-calendar read-only and read-write)](productivity/037-google-calendar-sync.md)                           | productivity  | proposed |
+| 037 | [Google Calendar sync (per-calendar read-only and read-write)](productivity/037-google-calendar-sync.md)                           | productivity  | accepted |
 | 038 | [Nutrition widget (food log, personal food library, calorie tracking)](lifestyle/038-nutrition-widget.md)                          | lifestyle     | accepted |
