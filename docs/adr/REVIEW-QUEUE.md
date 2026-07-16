@@ -20,7 +20,7 @@ and don't violate the architecture, **not** that they're the decisions the produ
 | --- | -------------------------- | --------------- | ------------ |
 | 019 | System-design micro-lesson | claude-reviewed |              |
 | 020 | Post reader (RSS/Atom)     | claude-reviewed |              |
-| 021 | Stock & FX watchlist       | claude-reviewed |              |
+| 021 | Stock & FX watchlist       | claude-reviewed | ✓ 2026-07-16 |
 | 022 | Weather forecast           | claude-reviewed |              |
 | 023 | Work tracker (perf review) | claude-reviewed | ✓ 2026-07-16 |
 
@@ -49,12 +49,12 @@ make a widget materially better. Every provider proposed below was called or had
 2026-07-14 before being written up; the "verified" column of each ADR records what was checked. Four ADRs,
 not one per API — the sweep produced more candidates than it kept.
 
-| ADR | Title                                           | Review state    | Approved |
-| --- | ----------------------------------------------- | --------------- | -------- |
-| 032 | Content sourcing & licensing (learning widgets) | claude-reviewed |          |
-| 033 | Public holidays in the calendar                 | claude-reviewed |          |
-| 034 | FX from central-bank reference rates            | claude-reviewed |          |
-| 035 | Transit departures widget (HSL/Digitransit)     | claude-reviewed |          |
+| ADR | Title                                           | Review state    | Approved            |
+| --- | ----------------------------------------------- | --------------- | ------------------- |
+| 032 | Content sourcing & licensing (learning widgets) | claude-reviewed |                     |
+| 033 | Public holidays in the calendar                 | claude-reviewed |                     |
+| 034 | FX from central-bank reference rates            | claude-reviewed | rejected 2026-07-16 |
+| 035 | Transit departures widget (HSL/Digitransit)     | claude-reviewed |                     |
 
 Three of the four **change ADRs that are already in this queue** — worth reading in that order:
 
@@ -69,6 +69,9 @@ Three of the four **change ADRs that are already in this queue** — worth readi
 - **ADR-034** moves the FX half of ADR-021's watchlist off the metered Twelve Data budget onto keyless ECB
   reference rates, and settles ADR-030's multi-currency conversion. It trades intraday FX for daily
   granularity — the one user-visible regression in the batch, and the thing to confirm first.
+  _Confirmed 2026-07-16 and declined:_ **rejected** — the watchlist stays a current-data card on
+  Twelve Data (one mixed FX + equities widget, per ADR-021), and the finance half went moot when
+  ADR-030 was parked.
 - **ADR-035** is the only _new_ widget, and the most speculative item here; it is also the only one that may
   poll a provider on read, under three stated conditions.
 

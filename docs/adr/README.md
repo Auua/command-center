@@ -27,7 +27,7 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 018 | [Calendar Widget (daily/weekly/monthly views)](productivity/018-calendar-widget.md)                                                | productivity  | proposed |
 | 019 | [System-design micro-lesson widget](learning/019-system-design-widget.md)                                                          | learning      | proposed |
 | 020 | [Post reader widget (RSS/Atom subscriptions)](external-data/020-post-reader-widget.md)                                             | external-data | proposed |
-| 021 | [Stock & FX watchlist widget](external-data/021-stocks-widget.md)                                                                  | external-data | proposed |
+| 021 | [Stock & FX watchlist widget](external-data/021-stocks-widget.md)                                                                  | external-data | accepted |
 | 022 | [Weather forecast widget](external-data/022-weather-widget.md)                                                                     | external-data | proposed |
 | 023 | [Work tracker widget (wins, impact, review evidence)](reflection/023-work-tracker-widget.md)                                       | reflection    | accepted |
 | 024 | [GitHub learning-center repo — the store for learning content and cards](learning/024-github-learning-vault.md)                    | learning      | proposed |
@@ -40,7 +40,7 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 031 | [Home Assistant integration widget](lifestyle/031-home-assistant-widget.md)                                                        | lifestyle     | proposed |
 | 032 | [Content sourcing & licensing for the learning widgets](learning/032-learning-content-sourcing.md)                                 | learning      | proposed |
 | 033 | [Public holidays in the calendar (and why name days are seeded, not called)](productivity/033-calendar-reference-data.md)          | productivity  | proposed |
-| 034 | [FX from central-bank reference rates (Frankfurter), not from the metered quote provider](external-data/034-fx-reference-rates.md) | external-data | proposed |
+| 034 | [FX from central-bank reference rates (Frankfurter), not from the metered quote provider](external-data/034-fx-reference-rates.md) | external-data | rejected |
 | 035 | [Transit departures widget (HSL / Digitransit)](external-data/035-transit-departures-widget.md)                                    | external-data | proposed |
 | 036 | [Recurring tasks (and their projection onto the calendar)](productivity/036-recurring-tasks.md)                                    | productivity  | proposed |
 | 037 | [Google Calendar sync (per-calendar read-only and read-write)](productivity/037-google-calendar-sync.md)                           | productivity  | proposed |
