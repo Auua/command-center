@@ -21,7 +21,7 @@ and don't violate the architecture, **not** that they're the decisions the produ
 | 019 | System-design micro-lesson | claude-reviewed |              |
 | 020 | Post reader (RSS/Atom)     | claude-reviewed |              |
 | 021 | Stock & FX watchlist       | claude-reviewed | ✓ 2026-07-16 |
-| 022 | Weather forecast           | claude-reviewed |              |
+| 022 | Weather forecast           | claude-reviewed | ✓ 2026-07-16 |
 | 023 | Work tracker (perf review) | claude-reviewed | ✓ 2026-07-16 |
 
 ## Batch 2 — learning center
