@@ -1,8 +1,8 @@
 # ADR-027: Habit tracking widget
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -101,9 +101,9 @@ Under `/api/v1/habits`, zod schemas in `packages/contracts`, `.strict()` on writ
 
 ### Open questions for the product owner
 
-- **Q-A: who joins habits to streaks?** Either the widget calls `GET /streaks` and joins by `streakKey` client-side (zero coupling, two requests), or `HabitsModule` calls a read-only `StreaksService` query (one request, but a module dependency ADR-014 currently forbids). Default is the client-side join; flag before implementation.
-- **Q-B: un-marking and streaks.** ADR-014's streak model is append-only (`streak_days` has no delete path). Un-marking a habit today should arguably retract the streak day _if no other source credited it_ — that requires `StreaksService` to gain a recompute-day operation. Options: (1) accept the drift (undo removes the mark, streak keeps the day), (2) extend ADR-014 with a `recomputeDay(userId, streakKey, localDate)` handler for `habit.unmarked`. Prefer (2), but it amends an existing ADR.
-- **Q-C:** counted habits (`target_count > 1`) — worth v1, or is binary enough?
+- **Q-A: who joins habits to streaks?** Either the widget calls `GET /streaks` and joins by `streakKey` client-side (zero coupling, two requests), or `HabitsModule` calls a read-only `StreaksService` query (one request, but a module dependency ADR-014 currently forbids). Default is the client-side join; flag before implementation. → _PO-review:_ client-side join, as defaulted.
+- **Q-B: un-marking and streaks.** ADR-014's streak model is append-only (`streak_days` has no delete path). Un-marking a habit today should arguably retract the streak day _if no other source credited it_ — that requires `StreaksService` to gain a recompute-day operation. Options: (1) accept the drift (undo removes the mark, streak keeps the day), (2) extend ADR-014 with a `recomputeDay(userId, streakKey, localDate)` handler for `habit.unmarked`. Prefer (2), but it amends an existing ADR. → _PO-review:_ option (2) — `StreaksService` gains `recomputeDay` handling `habit.unmarked`; fold the amendment into ADR-014 at its (still pending) walkthrough.
+- **Q-C:** counted habits (`target_count > 1`) — worth v1, or is binary enough? → _PO-review:_ counted habits ship in v1.
 
 ## Consequences
 
