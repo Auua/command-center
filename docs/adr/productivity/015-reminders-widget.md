@@ -1,8 +1,8 @@
 # ADR-015: Reminders / Automations widget
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-13
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 

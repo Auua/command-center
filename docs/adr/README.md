@@ -21,7 +21,7 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 012 | [Japanese Grammar-point widget](learning/012-japanese-grammar-widget.md)                                                           | learning      | proposed |
 | 013 | [Tech "X of the day" micro-lesson widget](learning/013-tech-lesson-widget.md)                                                      | learning      | proposed |
 | 014 | [Streaks widget](learning/014-streaks-widget.md)                                                                                   | learning      | proposed |
-| 015 | [Reminders / Automations widget](productivity/015-reminders-widget.md)                                                             | productivity  | proposed |
+| 015 | [Reminders / Automations widget](productivity/015-reminders-widget.md)                                                             | productivity  | accepted |
 | 016 | [Journal widget — editor choice, data model, and editing surface](reflection/016-journal-widget.md)                                | reflection    | accepted |
 | 017 | [Appreciation Tracker Widget](reflection/017-appreciation-widget.md)                                                               | reflection    | accepted |
 | 018 | [Calendar Widget (daily/weekly/monthly views)](productivity/018-calendar-widget.md)                                                | productivity  | proposed |
