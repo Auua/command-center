@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Reference
 
-`docs/ARD.md` is the authoritative architecture document — read it before making structural decisions. It defines the container layout (Next.js on Vercel + NestJS modular monolith with a separate worker process), the widget SDK contract, the Postgres/MongoDB data-ownership split, the automation/queue design (pg-boss), security model, NFR targets, and ADRs 001–007. New load-bearing decisions get an ADR in `docs/adr/` (template there) and a summary row in the ARD.
+`docs/ARD.md` is the authoritative architecture document — read it before making structural decisions. It defines the container layout (Next.js on Vercel + NestJS modular monolith with a separate worker process), the widget SDK contract, the Postgres/MongoDB data-ownership split, the automation/queue design (pg-boss), security model, NFR targets, and ADRs 001–007. New load-bearing decisions get an ADR in the fitting domain subfolder of `docs/adr/` (productivity / reflection / learning / external-data / lifestyle; template at `docs/adr/template.md`), a row in the `docs/adr/README.md` index, and a summary row in the ARD. ADR numbering is global across folders.
 
 ## Current State
 
