@@ -16,13 +16,13 @@ and don't violate the architecture, **not** that they're the decisions the produ
 
 ## Batch 1 — new widgets (mock: `docs/design/new-widgets-mock.html`)
 
-| ADR | Title                      | Review state    | Approved |
-| --- | -------------------------- | --------------- | -------- |
-| 019 | System-design micro-lesson | claude-reviewed |          |
-| 020 | Post reader (RSS/Atom)     | claude-reviewed |          |
-| 021 | Stock & FX watchlist       | claude-reviewed |          |
-| 022 | Weather forecast           | claude-reviewed |          |
-| 023 | Work tracker (perf review) | claude-reviewed |          |
+| ADR | Title                      | Review state    | Approved     |
+| --- | -------------------------- | --------------- | ------------ |
+| 019 | System-design micro-lesson | claude-reviewed |              |
+| 020 | Post reader (RSS/Atom)     | claude-reviewed |              |
+| 021 | Stock & FX watchlist       | claude-reviewed |              |
+| 022 | Weather forecast           | claude-reviewed |              |
+| 023 | Work tracker (perf review) | claude-reviewed | ✓ 2026-07-16 |
 
 ## Batch 2 — learning center
 
@@ -34,13 +34,13 @@ and don't violate the architecture, **not** that they're the decisions the produ
 
 ## Batch 3 — README future extensions
 
-| ADR | Title                      | Review state    | Approved |
-| --- | -------------------------- | --------------- | -------- |
-| 027 | Habit tracking             | claude-reviewed |          |
-| 028 | Pomodoro timer             | claude-reviewed |          |
-| 029 | Fitness & health           | claude-reviewed |          |
-| 030 | Finance dashboard          | claude-reviewed |          |
-| 031 | Home Assistant integration | claude-reviewed |          |
+| ADR | Title                      | Review state    | Approved     |
+| --- | -------------------------- | --------------- | ------------ |
+| 027 | Habit tracking             | claude-reviewed |              |
+| 028 | Pomodoro timer             | claude-reviewed |              |
+| 029 | Fitness & health           | claude-reviewed | ✓ 2026-07-16 |
+| 030 | Finance dashboard          | claude-reviewed |              |
+| 031 | Home Assistant integration | claude-reviewed |              |
 
 ## Batch 4 — public-API enhancements
 
@@ -77,10 +77,10 @@ Three of the four **change ADRs that are already in this queue** — worth readi
 Two ADRs from one ask: recurring todos that also show on the calendar, and Google Calendar in the
 dashboard with per-calendar read-only / read-write access.
 
-| ADR | Title                                          | Review state    | Approved |
-| --- | ---------------------------------------------- | --------------- | -------- |
-| 036 | Recurring tasks (+ calendar projection)        | claude-reviewed |          |
-| 037 | Google Calendar sync (read-only / read-write)  | claude-reviewed |          |
+| ADR | Title                                         | Review state    | Approved |
+| --- | --------------------------------------------- | --------------- | -------- |
+| 036 | Recurring tasks (+ calendar projection)       | claude-reviewed |          |
+| 037 | Google Calendar sync (read-only / read-write) | claude-reviewed |          |
 
 Both **change ADRs already in this queue or accepted work** — read in this order:
 
@@ -94,6 +94,21 @@ Both **change ADRs already in this queue or accepted work** — read in this ord
   attention: sync freshness is a 10-minute worker poll (shown as "synced N min ago"), not push —
   and v1 cannot create/edit recurring _series_ on Google calendars (single events only; series
   stay edited in Google's UI).
+
+## Batch 6 — nutrition (from the ADR-029 walkthrough, 2026-07-16)
+
+One ADR from the product owner's calorie-tracking ask at the ADR-029 review: a personal food
+library with one-tap logging and nullable-kcal entries ("tracking is the first step").
+
+| ADR | Title                                         | Review state    | Approved     |
+| --- | --------------------------------------------- | --------------- | ------------ |
+| 038 | Nutrition widget (food log, calorie tracking) | claude-reviewed | ✓ 2026-07-16 |
+
+The rails check ran at drafting time (RLS on both tables, no client-direct access, §4.3 split argued,
+no cross-module imports — the energy-balance view composes over APIs). The ADR-029 walkthrough also
+**changed ADR-029 itself** (accepted with: `workout_sets` relational table in v1, Withings as the
+committed next integration ADR, metric registry seeded weight/sleep/steps/activity, CSV/GPX import
+dropped) — the Withings sync ADR is owed next and will follow ADR-037's OAuth/worker pattern.
 
 ## Review notes (batch 5 pass)
 
