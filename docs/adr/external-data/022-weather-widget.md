@@ -1,8 +1,8 @@
 # ADR-022: Weather forecast widget
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -68,6 +68,15 @@ job, no events.
   refreshed in the background (stale-while-revalidate), so a slow upstream never blocks the card.
 - **Geocoding** (`GET /weather/geocode?q=`) proxies Open-Meteo's geocoding API, cached 30 days per
   query — city coordinates do not move.
+- **Severe-weather warnings (added at PO review):** for locations inside Finland, the service also reads
+  **FMI's open-data warnings** (keyless, CC BY 4.0 — the same no-key, attribution-only dependency shape
+  as Open-Meteo) through its own small adapter behind the same provider port. Warnings are cached like
+  current conditions (15 min TTL, same `weather_cache` mechanics, `source = 'fmi-warnings'`, keyed by the
+  rounded coordinate; municipality resolution happens inside the adapter). **Display only, hard rule:**
+  warnings render on the card and never become push notifications or automations — official channels
+  already own alerting, and this dashboard must not pretend to be one (NFR-3's SLO cannot be trusted
+  with a storm warning, the ADR-035 reasoning). Non-Finnish locations simply get an empty list; no
+  second warnings provider is sought for them.
 - **Failure posture:** upstream down → serve the last cached entry with `stale: true` and its
   `fetchedAt`; only a cold cache with a dead upstream returns an error the widget can show. Weather is
   the definition of "degrade, don't die".
@@ -115,6 +124,9 @@ asOf, fetchedAt, stale: boolean, attribution }`.
   location oracle even if a client sends six decimals, so precision cannot leak through the cache key.
 - `GET /weather/geocode?q=` → `{ results: [{ name, country, admin1, lat, lon, timezone }] }`
   (throttled; used only while typing in settings).
+- The `GET /weather` response additionally carries `warnings: [{ severity, event, headline, onset,
+expires }]` (FMI, Finnish locations only — empty array elsewhere; `severity` is FMI's own scale,
+  passed through, never re-graded by us).
 
 `code` is the WMO weather code (an integer), and `label` is the **server-resolved human string** for it
 ("Rain showers"). The mapping lives in the contracts package so FE and BE cannot disagree about what 61
@@ -139,6 +151,10 @@ weather service" rather than rendering a generic crash; a warm cache never error
 - Current conditions carry a single-sentence summary as visually-hidden text ("Currently 14 degrees,
   overcast, wind 4 metres per second from the south-west, as of 08:40") so the whole card is one
   coherent utterance rather than a scatter of numbers.
+- **Warnings are text first** (PO addition): a warning renders as a visible line with the severity as a
+  word ("Warning · Severe thunderstorm until 21:00"), never a colour band or icon alone; it lives in a
+  `role="status"` region (present on load ≠ an interruption; `role="alert"` is reserved for failures of
+  _this app_, not of the sky).
 - `<time datetime>` on `asOf`; temperatures use `Intl.NumberFormat` with a degree unit; wind uses the
   locale's unit formatting (NFR-12). Day names come from `toLocaleDateString(undefined, { weekday: 'short' })`.
 - Any sun-arc / temperature-curve animation is gated behind `prefers-reduced-motion`.
@@ -163,6 +179,7 @@ weather service" rather than rendering a generic crash; a warm cache never error
 - **Attribution:** Open-Meteo's data is CC BY 4.0 and its free tier is non-commercial — the attribution
   line lives in the widget's about panel and the app's about page (ADR-011's placement rule), and the
   non-commercial condition is recorded as a licence constraint on the project, not just a footnote.
+  FMI's open-data attribution (CC BY 4.0) joins the same about-panel line.
 - All chrome copy through the message catalog (NFR-12).
 
 ## Consequences
@@ -170,6 +187,10 @@ weather service" rather than rendering a generic crash; a warm cache never error
 - **Easier:** the widget is ~200 lines and a cache table; no key management, no worker job, no quota
   anxiety. The provider port means a swap (to met.no's Locationforecast, which has the same keyless,
   attribution-required shape) is an adapter.
+- **Committed to (PO addition):** a second upstream — FMI warnings — with the same keyless/attribution
+  shape and the same degrade-don't-die posture (a dead FMI hides the warnings line; it never breaks the
+  forecast). Warnings stay display-only permanently; turning them into notifications would require
+  re-opening this ADR against NFR-3.
 - **Easier:** the "no user data in this module" property means weather needs no export endpoint, no RLS
   policy, and nothing in the §5.3 asset inventory — a feature that holds nothing cannot leak anything.
 - **Harder / committed to:** we now cache third-party content in our Postgres, which means a TTL bug
@@ -177,12 +198,14 @@ weather service" rather than rendering a generic crash; a warm cache never error
   instantly. The `stale` flag and `fetchedAt` in the contract exist so the UI is never confidently wrong.
 - **Committed to:** rounded coordinates end-to-end (client, API, cache key); geolocation only behind an
   explicit action; icons never carrying meaning alone; units requested upstream rather than converted.
-- **Open questions for the product owner:** (1) Open-Meteo's free tier is non-commercial — fine forever for a personal
-  dashboard, but it forecloses a future "publish this as a product" turn; is that worth a second adapter
-  now? (2) Severe-weather warnings (FMI publishes them for Finland; Open-Meteo does not carry them) —
-  worth a second provider, or is a forecast card enough? (3) Should the widget auto-adjust the calendar
-  card ("outdoor event, 80 % rain") — that would need a cross-module read and belongs behind the event
-  bus (§4.1) rather than an import, and is a bigger feature than it looks.
+- **Open questions for the product owner:** (1) Open-Meteo's free tier is non-commercial — is that worth a second adapter
+  now? -> _PO-review:_ no — single provider; the port makes met.no a known drop-in the day it is needed
+  (the same when-needed rule as ADR-021's hedge adapters). (2) Severe-weather warnings — worth a second
+  provider? -> _PO-review:_ **yes, in v1** — FMI open-data warnings for Finnish locations, display only,
+  never push (see Backend/API/Accessibility additions). (3) Weather-aware hints on other widgets
+  ("outdoor event, 80 % rain")? -> _PO-review:_ wanted, **designed later** — recorded as a named future
+  feature; when picked up it gets its own ADR and composes via the event bus (§4.1), never a module
+  import.
 
 ## Alternatives considered
 
