@@ -1,7 +1,8 @@
 # ADR-016: Journal widget — editor choice, data model, and editing surface
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-13
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -17,7 +18,7 @@ The widget's core UX promise is **never lose writing**. A journal that eats an e
 
 ### Editor choice
 
-**We will use TipTap (ProseMirror) as the journal editor, and the ProseMirror JSON document as the canonical stored format.**
+**We will use TipTap (ProseMirror) as the journal editor, and the ProseMirror JSON document as the canonical stored format.** -> _PO-review:_ approved after weighing Lexical's a11y/IME edge — the deciding asymmetry is that ProseMirror JSON outlives TipTap (the doc model belongs to `prosemirror-model` and parses without TipTap), while Lexical's format is coupled to Lexical's own 0.x node classes.
 
 Reasons, against the alternatives evaluated below:
 
@@ -25,7 +26,7 @@ Reasons, against the alternatives evaluated below:
 - **A11y and input track record.** ProseMirror has years of hardening around contenteditable, IME/composition (relevant for future Japanese-language entries, NFR-12), and screen-reader behavior. Lexical's a11y pedigree (built at Meta for exactly this) is genuinely strong — it is the runner-up — but it does not outweigh the format-stability gap. Slate's Android/IME record is the weakest of the three.
 - **React 19 / RSC compatibility.** All three are client-side; TipTap's `@tiptap/react` works cleanly as a client component under React 19, and TipTap ships `generateHTML`/`generateText` utilities usable in Node for server-side text extraction without a DOM.
 - **Rendering path.** Read-only display uses TipTap's renderer over the stored JSON (a read-only editor instance or static render from the same schema) — satisfying §5.2's "render through the editor's renderer" verbatim.
-- **Maintenance and bundle.** Core is MIT with an active ecosystem; we use only free extensions (StarterKit subset + Link). Lazy-loaded on journal routes only, the ~60–80 kB gz cost never touches the dashboard bundle.
+- **Maintenance and bundle.** Core is MIT with an active ecosystem; we use only free extensions (StarterKit subset + Link). Lazy-loaded on journal routes only, the ~60–80 kB gz cost never touches the dashboard bundle. TipTap's open-core drift (paid/cloud pro extensions) is an accepted, named risk: nothing we use is gated, and because the stored format is ProseMirror's rather than TipTap's, exiting the wrapper (raw `prosemirror-*` or another PM wrapper) never touches stored entries.
 
 We pin the allowed document vocabulary (see Data model) and record `schemaVersion` on every entry so the format is a deliberate, versioned commitment rather than an accident of editor defaults.
 
@@ -58,7 +59,7 @@ MongoDB `journal_entries` (owner: JournalModule):
 {
   "_id": "ObjectId",
   "userId": "uuid", // always filtered; from JWT, never the body
-  "entryDate": "2026-07-13", // user-local date; one primary entry/day, extras allowed
+  "entryDate": "2026-07-13", // user-local date; one primary entry/day, extras allowed (PO-confirmed)
   "doc": {/* TipTap JSON, allowlisted schema */},
   "schemaVersion": 1, // doc-format version, for future migrations
   "plainText": "…", // server-derived; Atlas Search source
@@ -118,7 +119,7 @@ Rich-text editors are an a11y minefield; these are commitments, not aspirations 
 - **Error/degraded (Mongo down):** the widget's error boundary renders the standard fallback card (§4.2); the editor stays usable with IndexedDB drafts and the local-save notice — writing is never blocked by the backend being down.
 - **Offline:** identical to degraded; drafts sync on reconnect via the retry loop.
 - **Multi-tab:** drafts are keyed per entry in IndexedDB; a `BroadcastChannel` heartbeat marks one tab as the active writer so two tabs on the same entry warn instead of silently racing (the version check on `PATCH` is the backstop).
-- **Delete:** destructive and rare, so it confirms via an accessible dialog (focus moved in, returned on close) — no undo toast pretending to be a trash can in v1.
+- **Delete:** destructive and rare, so it confirms via an accessible dialog (focus moved in, returned on close) — no undo toast pretending to be a trash can in v1. -> _PO-review:_ confirmed — hard delete behind the dialog, no trash or undo window.
 - **Widget SDK conformance (§4.2):** registered `WidgetDefinition` `{ id: "journal", sizes, component, settingsSchema, quickActions }`; `settingsSchema` = `{ showPrompt: boolean, promptCategories: enum[] }` (drives the auto-generated settings panel); `quickActions` = "Write entry" → `/journal/new`. Error + suspense boundaries come from the shell.
 - **i18n (NFR-12):** all UI copy in the message catalog; prompts stored per-locale in `journal_prompts` — nothing user-facing is hardcoded.
 

@@ -1,8 +1,8 @@
 # ADR-023: Work tracker widget (wins, impact, review evidence)
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -216,9 +216,13 @@ shape and a length cap (≤ 10) so a link array cannot become a smuggling channe
   and ADR-017's own precedent — small modules are cheap here — say two modules.
 - **Open questions for the product owner:** (1) Should completed tasks with a `#win` tag offer the promote action
   automatically (a nudge, not an inference) — useful, but it is the thin end of the auto-derivation
-  wedge? (2) Is a per-entry "visible to manager" flag wanted, so the export can split _my_ honest notes
-  from _their_ version — or is that a second dataset pretending to be a flag? (3) Should periods be
-  seedable from a template ("H1/H2", "quarterly") to avoid the empty-periods cold start?
+  wedge? -> _PO-review:_ yes — offer the promote action on `#win`-tagged completed tasks (a nudge,
+  still explicit; no auto-creation). (2) Is a per-entry "visible to manager" flag wanted, so the export can split _my_ honest notes
+  from _their_ version — or is that a second dataset pretending to be a flag? -> _PO-review:_ no flag —
+  one dataset; entries are written knowing they may be exported, private commentary belongs in journal.
+  (3) Should periods be
+  seedable from a template ("H1/H2", "quarterly") to avoid the empty-periods cold start? -> _PO-review:_
+  yes — seed periods from templates ("H1/H2", "quarterly").
 
 ## Alternatives considered
 
