@@ -26,11 +26,11 @@ and don't violate the architecture, **not** that they're the decisions Anna want
 
 ## Batch 2 — learning center
 
-| ADR | Title                            | Review state    | Anna |
-| --- | -------------------------------- | --------------- | ---- |
-| 024 | GitHub learning vault            | claude-reviewed |      |
-| 025 | Spaced-repetition review widget  | claude-reviewed |      |
-| 026 | Anki deck sync (Japanese + Tech) | claude-reviewed |      |
+| ADR | Title                                   | Review state    | Anna |
+| --- | --------------------------------------- | --------------- | ---- |
+| 024 | GitHub learning-center repo (the store) | claude-reviewed |      |
+| 025 | Spaced-repetition review widget         | claude-reviewed |      |
+| 026 | Anki deck sync via learning-repo Action | claude-reviewed |      |
 
 ## Batch 3 — README future extensions
 
@@ -82,17 +82,33 @@ token is deliberately browser-only and, notably, kept _out_ of `settingsSchema` 
 touches a paid surface.
 
 One conflict found and fixed during review: ADR-019 (written in parallel with batch 2) pointed
-"Add to Anki" at ADR-011's `POST /api/v1/japanese/anki/queue`, which ADR-026 supersedes with the
-deck-agnostic `AnkiModule` at `/api/v1/anki/*`, keyed by vault item id. ADR-019 now matches.
+"Add to Anki" at ADR-011's `POST /api/v1/japanese/anki/queue`, which ADR-026 superseded. (ADR-019
+has since been re-aligned again to ADR-026's 2026-07-16 rewrite — see below.)
+
+**ADR-024 and ADR-026 were rewritten on 2026-07-16 at Anna's direction** (planning session for the
+learning-center v1 slice):
+
+- ADR-024: the Mongo-record + GitHub-mirror design is replaced by **GitHub as the store** — the
+  private `learning-center` repo holds the JMdict-derived word pool and the card files, read/written
+  by `LearningModule` via the Contents API. No `vault_items`, no push queue, no reconcile job.
+- ADR-026: the AnkiConnect queue-and-flush design is replaced by a GitHub Action in the learning
+  repo (composite action in this monorepo) running the official `anki` library straight against
+  AnkiWeb — no desktop in the loop; results land in `sync/state.json`, not a report endpoint; a
+  dispatch-only import mode brings her existing deck content into the repo.
+- ADR-019, ADR-032 were edited in place to match; ADR-025 got a light touch and owes a full
+  re-alignment when the review widget is picked up (all still unapproved). Setup steps live in
+  `docs/runbook-learning-center.md`.
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 
-- ADR-026 moves the Anki queue out of `JapaneseModule` (was ADR-011/013) into a new `AnkiModule`, and
-  upgrades ADR-011's `findNotes` dedupe key from headword+reading to the exact vault id.
+- ADR-026 (rewritten) removes ADR-011/013's AnkiConnect queue-and-flush entirely: no `anki_queue`,
+  no browser↔Anki traffic; saving a card file (`anki: true` front-matter, deterministic
+  `jp-<ent_seq>` id) _is_ "Add to Anki", and the learning repo's Action upserts notes keyed on it.
 - ADR-025 supersedes ADR-012's "Anki _is_ the SRS" — the in-app review widget schedules with FSRS, and
   `srs_owner` guarantees an item is scheduled by exactly one of the two.
-- Both imply ARD edits (§4.3 `anki_snapshots` ownership; §4.4 gains `review_cards` / `review_logs`),
-  noted in ARD §7 and owed once these are approved.
+- These imply ARD edits (§4.3 loses the planned `vault_items`/`anki_snapshots` rows; §4.4 gains
+  `review_cards` / `review_logs`; AnkiConnect leaves §4.5, the §2 diagram, §5.2 CORS, R2, and
+  Phase 3), noted in ARD §7 and owed once these are approved.
 
 ## Review notes (batch 4 pass)
 

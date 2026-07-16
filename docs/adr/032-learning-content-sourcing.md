@@ -86,9 +86,12 @@ content API but by discovering that half the content has an excellent free sourc
 This **narrows ADR-011's worker "content-pool refresh" job**: there is no recurring worker job for content.
 
 - Ingest is a **script run in CI (or by hand), against a pinned release tag**: download → validate →
-  transform → upsert into `jp_content` (Mongo, `JapaneseModule`, per §4.3). Bumping the pin is a PR, and
-  therefore reviewable, revertable, and visible in git — which is the correct control for the data that
-  _is_ the product.
+  transform → emit. Bumping the pin is a PR, and therefore reviewable, revertable, and visible in git —
+  which is the correct control for the data that _is_ the product. _(Revised 2026-07-16 with ADR-024's
+  rewrite: the v1 target is the learning repo's `pool/japanese/` — manifest + JSONL shards emitted by
+  `tools/jmdict-ingest` and committed by Anna — not Mongo `jp_content`. If the daily-content widgets
+  of ADR-011/012 later need a server-side store, that is their migration to propose; the pinned-ingest,
+  fail-closed, licence-typed rules here apply to either target.)_
 - Why not a worker cron: dictionary data changes weekly and nobody would notice if we were a year behind,
   while a cron that downloads a multi-megabyte JSON into a €0 backend on a schedule is a real operational
   hazard for zero user-visible benefit (G2). The ARD's §2 promise "content sources down → serve pre-seeded
