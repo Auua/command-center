@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed — PO-reviewed 2026-07-16, **parked** (deliberately not accepted or rejected)
 
 ## Context
 

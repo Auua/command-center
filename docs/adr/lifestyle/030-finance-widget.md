@@ -2,11 +2,13 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed — PO-reviewed 2026-07-16, **parked** (deliberately not accepted or rejected)
 
 ## Context
 
 The README lists a finance dashboard under Future Extensions; the ARD names it in G4. Nothing is implemented — this is a planning ADR.
+
+_PO-review (2026-07-16):_ **parked.** The user's current finance interest is market watching only — the stocks/FX watchlist (ADR-021) — not tracking their own balances or spending. This ADR is deliberately left proposed rather than rejected: the design (CSV import, no-bank-connection gate, privacy rules) stays valid if the need ever appears, and the no-credential-custody rule and the §5 threat-model gate on bank integration hold **regardless** of whether this widget is ever built. Provisional answers to the open questions were recorded below so a future pass doesn't start cold; the v1-scope question (Q-A) reopens if the widget is picked up.
 
 Two questions dominate, and everything else follows from them.
 
@@ -91,7 +93,7 @@ transactions (
 );
 
 import_profiles ( id, user_id, name, header_fingerprint, column_map jsonb, decimal_sep, date_format, encoding );
-budgets ( id, user_id, category, month, limit_cents );   -- optional, opt-in
+-- budgets table removed at PO review (Q-D): not wanted, in schema or UI
 ```
 
 Decisions embedded: **`bigint` cents, never `numeric`/`float`** (integers make rounding drift unrepresentable). **`booked_on` is a `date`**, not `timestamptz` — the ADR-018 all-day-event lesson: a bank's booking date is a calendar date and must never be timezone-converted. **No FX in v1** — multi-currency accounts are stored in their own currency and _not_ summed across currencies (the card shows per-currency totals rather than inventing a rate). Indexes: `(user_id, booked_on desc)`, `(user_id, category, booked_on)`.
@@ -126,10 +128,10 @@ Financial data is a **highest-value asset (§5.3 tier — with journal, mood, an
 
 ### Open questions for the product owner
 
-- **Q-A:** Is CSV import worth building at all, or is "manual balances + a monthly spending figure" enough for v1? The import is ~70% of the effort. If the honest answer is "I'd check it monthly", the smaller version may be right.
-- **Q-B (boundary with ADR-021, in progress):** where do _owned_ holdings live? Proposal: portfolio positions are the user's money → `FinanceModule`; instrument prices are market data → `StocksModule`, composed at the API layer. Confirm before either is implemented — it decides which module owns a `holdings` table.
-- **Q-C:** should `hideAmounts` default to **on**? One tap to reveal; saves the shared-screen case.
-- **Q-D:** budgets — genuinely wanted, or the feature every finance app has and nobody uses? Left in the schema, out of the v1 UI unless the product owner says otherwise.
+- **Q-A:** Is CSV import worth building at all, or is "manual balances + a monthly spending figure" enough for v1? The import is ~70% of the effort. -> _PO-review:_ the honest answer went further — the current interest is market watching only (ADR-021), so the **whole widget is parked**; this question reopens if it is ever picked up.
+- **Q-B (boundary with ADR-021, in progress):** where do _owned_ holdings live? Proposal: portfolio positions are the user's money → `FinanceModule`; instrument prices are market data → `StocksModule`, composed at the API layer. -> _PO-review:_ decide when a portfolio view is actually wanted; until then neither module grows a `holdings` table.
+- **Q-C:** should `hideAmounts` default to **on**? -> _PO-review (provisional):_ default **off** — the dashboard is a personal device; blur stays one tap away.
+- **Q-D:** budgets — genuinely wanted, or the feature every finance app has and nobody uses? -> _PO-review:_ **not wanted — dropped from the schema too.** If this widget is ever built, it ships without a `budgets` table; spending trends are enough.
 
 ## Consequences
 
