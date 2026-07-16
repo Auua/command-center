@@ -1,8 +1,8 @@
 # ADR-033: Public holidays in the calendar (and why name days are seeded, not called)
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -176,9 +176,13 @@ correctly, so it is worth fetching; a nameday almanac is a CSV.
 - **Open questions for the product owner:** (1) Should holidays feed **automations** — "don't fire work reminders on a
   public holiday"? That is a cross-module read and belongs behind the event bus rather than an import (§4.1),
   and it is a bigger feature than it looks — the same shape as ADR-022's "should weather adjust the calendar"
-  question, and probably the same answer: later, deliberately. (2) Name days: worth the 365-row seed, or is
-  it clutter on a card that is mostly about tasks? (3) Do you want JP holidays on the calendar at all, or is
-  Golden Week better as a fact the Japanese widgets know about?
+  question, and probably the same answer: later, deliberately. → _PO-review:_ later, deliberately — recorded
+  as a wanted future feature (event-bus composition, like ADR-022's weather-aware hints); not v1, not ADR-015
+  scope. (2) Name days: worth the 365-row seed, or is
+  it clutter on a card that is mostly about tasks? → _PO-review:_ yes — ship the `name_days` seed table;
+  never an integration, per this ADR's rule. (3) Do you want JP holidays on the calendar at all, or is
+  Golden Week better as a fact the Japanese widgets know about? → _PO-review:_ on the calendar — default
+  stays `['FI']`, JP added via `holidayCountries` in settings.
 
 ## Alternatives considered
 
