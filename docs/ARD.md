@@ -237,6 +237,10 @@ erDiagram
         text[] tags
         date deadline
         timestamptz completed_at
+        text rrule "nullable; recurring series rule (ADR-036)"
+        jsonb repeat "structured descriptor; edit UI source"
+        uuid series_id "lineage key; one open occurrence per series"
+        uuid spawned_from "FK tasks(id); which completion spawned this row"
     }
     mood_checkins {
         uuid id PK
@@ -455,7 +459,7 @@ Full ADRs live in `docs/adr/`, grouped into domain subfolders (productivity, ref
 
 | **038** | Nutrition widget: personal food library + food-entry log in Postgres (`foods`, `food_entries`); entries snapshot name/kcal at log time; `kcal` is nullable — unknown is a first-class state and daily totals report "N kcal · M uncounted"; kcal-only v1, no external food DB | Capture speed is the product (one tap for the foods the user always eats); requiring kcal blocks the habit and teaches number-inventing — "tracking is the first step" (PO brief); snapshots keep past totals honest when the library changes; eating data is §5.3 highest-value with the no-shaming posture at extra force | Folding into FitnessModule (different shapes/UX/failure domains); public food DB or barcodes in v1 (licensing + lookup UX dwarf a personal vocabulary); required kcal (blocks the habit); join-not-snapshot (library edits silently rewrite history); macros in v1 (kcal answers the current question) |
 
-ADRs 019–038 are tracked in `docs/adr/REVIEW-QUEUE.md`; 020, 021, 022, 023, 029, 033, 037, and 038 are **accepted**, 034 is **rejected**, and 030/031 are **parked** (product-owner walkthrough, 2026-07-16); the rest are **proposed and pending review** — see the queue for the review
+ADRs 019–038 are tracked in `docs/adr/REVIEW-QUEUE.md`; 020, 021, 022, 023, 029, 033, 036, 037, and 038 are **accepted**, 034 is **rejected**, and 030/031 are **parked** (product-owner walkthrough, 2026-07-16); the rest are **proposed and pending review** — see the queue for the review
 state of each. Several ARD edits are **owed once the relevant ADRs are approved**: §4.4 gains the
 Postgres `review_cards` / `review_logs` tables (ADR-025, itself deferred and owing a re-alignment
 to ADR-024's rewrite); R5 (content sourcing) is closed by ADR-032 — licensed bulk datasets for
@@ -464,10 +468,10 @@ Japanese vocabulary, authored content for everything else; the 2026-07-16 rewrit
 repo's GitHub Action → AnkiWeb with results in `sync/state.json`) retire AnkiConnect and the
 planned `vault_items`/`anki_snapshots` Mongo collections from the architecture, which rewrites
 §4.3's Mongo ownership list, §4.5's Anki paragraph, the §2 container diagram and failure-mode row,
-§5.2's AnkiConnect CORS scope, R2, and Phase 3's "Anki queue-and-flush". ADR-036 owes §4.4 the
-new `tasks` columns (`rrule`, `repeat`, `series_id`, `spawned_from`). ADR-037's owed edits were
-applied on its acceptance (2026-07-16): §2 gained the Google Calendar API system and failure row,
-§4.4 the `calendar_accounts`/`calendar_sources` tables and `calendar_events` source columns,
+§5.2's AnkiConnect CORS scope, R2, and Phase 3's "Anki queue-and-flush". ADR-036's and ADR-037's
+owed edits were applied on their acceptance (2026-07-16): §4.4 gained the new `tasks` columns
+(`rrule`, `repeat`, `series_id`, `spawned_from`), §2 the Google Calendar API system and failure
+row, §4.4 the `calendar_accounts`/`calendar_sources` tables and `calendar_events` source columns,
 §5.3 the refresh-token asset entry, and Phase 4 the sync scope line.
 
 ---

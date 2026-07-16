@@ -88,7 +88,7 @@ dashboard with per-calendar read-only / read-write access.
 
 | ADR | Title                                         | Review state    | Approved     |
 | --- | --------------------------------------------- | --------------- | ------------ |
-| 036 | Recurring tasks (+ calendar projection)       | claude-reviewed |              |
+| 036 | Recurring tasks (+ calendar projection)       | claude-reviewed | ✓ 2026-07-16 |
 | 037 | Google Calendar sync (read-only / read-write) | claude-reviewed | ✓ 2026-07-16 |
 
 Both **change ADRs already in this queue or accepted work** — read in this order:

@@ -1,8 +1,8 @@
 # ADR-036: Recurring tasks (and their projection onto the calendar)
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-16
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -16,10 +16,10 @@ Forces:
 
 - **Habits are not recurring tasks, and vice versa.** ADR-027 rejected "habits-as-recurring-tasks"
   because habits are no-guilt day-marks with no deadline and no overdue state. The inverse holds
-  here: a recurring *obligation* (rent, filters, invoices) carries a deadline, a priority, and an
+  here: a recurring _obligation_ (rent, filters, invoices) carries a deadline, a priority, and an
   overdue state — it belongs in Tasks. The two features complement; neither absorbs the other.
-  Rule of thumb, recorded so it isn't re-litigated per feature: *if skipping it should nag you,
-  it's a task; if skipping it should be forgiven, it's a habit.*
+  Rule of thumb, recorded so it isn't re-litigated per feature: _if skipping it should nag you,
+  it's a task; if skipping it should be forgiven, it's a habit._
 - **Recurrence expansion is already solved once.** ADR-018 put RRULE expansion server-side in one
   tested place, precisely so no second implementation would drift. Whatever Tasks does must reuse
   that logic — but ADR-002 forbids `TasksModule` importing `CalendarModule`.
@@ -44,7 +44,7 @@ open occurrence of a series exists at any time. Completing it (`PATCH … comple
 one transaction: mark the row completed (server clock, per ADR-008), compute the next occurrence
 date **strictly after the completion day** (user's home timezone, ARD Q1), and insert a fresh open
 row with the same title/priority/tags, the new deadline, and the live rule. An uncompleted
-recurring task simply goes overdue and *stays* a single overdue item — missed occurrences do not
+recurring task simply goes overdue and _stays_ a single overdue item — missed occurrences do not
 pile up, deliberately: a stack of five "water the plants (missed)" rows is a guilt generator
 (ADR-027's posture) and drowns the list. Because the respawn is transactional with the completion
 write, there is no worker, no cron, and no missed-tick failure mode: recurrence cannot be "late".
@@ -59,7 +59,7 @@ need its own picker UX and semantics discussion.
 We will store the rule as an **RFC 5545 RRULE string**, the same vocabulary as ADR-018, and
 extract the expansion/next-occurrence logic (the `rrule` library plus the house validation and
 DST test suite) into a **shared recurrence utility in `packages/`** consumed by both
-`CalendarModule` and `TasksModule`. A shared *library* is not a shared *domain module* — no state,
+`CalendarModule` and `TasksModule`. A shared _library_ is not a shared _domain module_ — no state,
 no repository, no events — so ADR-002's boundary rule is intact. Cron (ADR-015's grammar) was
 considered and rejected: "every 2 weeks" and COUNT/UNTIL termination are inexpressible in cron,
 and tasks are day-granular like calendar events, not time-of-day like reminders. Task RRULEs are
@@ -74,18 +74,18 @@ at write time.
 
 Migration extends `tasks` (ADR-008) rather than adding a series table:
 
-| column         | type        | notes                                                              |
-| -------------- | ----------- | ------------------------------------------------------------------ |
-| `rrule`        | `text` null | the live rule; carried by the open occurrence, snapshot on closed  |
-| `repeat`       | `jsonb` null| structured descriptor — the edit UI's source of truth (see below)  |
-| `series_id`    | `uuid` null | lineage key; set to the row's own `id` when a task is made recurring, inherited by every respawn |
-| `spawned_from` | `uuid` null | FK → `tasks(id)` on delete set null; which completion produced this row |
+| column         | type         | notes                                                                                            |
+| -------------- | ------------ | ------------------------------------------------------------------------------------------------ |
+| `rrule`        | `text` null  | the live rule; carried by the open occurrence, snapshot on closed                                |
+| `repeat`       | `jsonb` null | structured descriptor — the edit UI's source of truth (see below)                                |
+| `series_id`    | `uuid` null  | lineage key; set to the row's own `id` when a task is made recurring, inherited by every respawn |
+| `spawned_from` | `uuid` null  | FK → `tasks(id)` on delete set null; which completion produced this row                          |
 
 CHECK: `rrule IS NOT NULL ⇒ deadline IS NOT NULL AND series_id IS NOT NULL` (a recurring task
-without a deadline is meaningless — the deadline *is* the current occurrence). A **partial unique
+without a deadline is meaningless — the deadline _is_ the current occurrence). A **partial unique
 index** `UNIQUE (series_id) WHERE completed_at IS NULL AND series_id IS NOT NULL` makes the
 one-open-occurrence invariant unrepresentable to violate, even under a retried completion request.
-The series *is* its open row: editing title/rule/priority edits the open occurrence and flows
+The series _is_ its open row: editing title/rule/priority edits the open occurrence and flows
 forward via respawn; completed occurrences keep their snapshot (history is what actually happened).
 Deleting the open occurrence ends the series; completed rows remain as ordinary history. RLS and
 ownership are unchanged.
@@ -105,8 +105,7 @@ ADR-008's undo issues `completed: false`. For a recurring occurrence, un-complet
 row**, and restores the rule to the restored row — transactional, so undo returns the world to the
 pre-completion state. If the successor was already completed or deleted (possible only after the
 undo toast is long gone), un-complete proceeds without touching it and the restored row comes back
-non-recurring; the edge is documented in the service test suite rather than papered over with a
-409. `task.completed` still fires per occurrence (streaks, ADR-014, unaffected), and Phase 2
+non-recurring; the edge is documented in the service test suite rather than papered over with a 409. `task.completed` still fires per occurrence (streaks, ADR-014, unaffected), and Phase 2
 automation consumers already must tolerate complete→undo sequences per ADR-008.
 
 ### Widget UX
@@ -131,7 +130,7 @@ exactly like ADR-018's expansion (≤366-day span, occurrence cap). Projections 
 read time from the open row's rule — **no rows are materialized**, so there is nothing to drift
 when the rule changes. The calendar renders them as it already renders task deadlines: read-only
 markers deep-linking to the tasks widget, visually distinguished as tentative (and labelled so in
-the accessible name — a projection is where the task *will* land if the current one is completed
+the accessible name — a projection is where the task _will_ land if the current one is completed
 on time, since recurrence advances on completion). Clients never see or parse the rule (ADR-018's
 one-expander principle).
 
@@ -139,7 +138,7 @@ one-expander principle).
 
 - Recurrence acquires **zero scheduling infrastructure**: no worker job, no missed-tick class of
   bugs, no catch-up logic. The trade is semantic — "every Monday" completed on Wednesday spawns
-  *next* Monday, and an ignored task shows one overdue row, not a backlog. This matches how the
+  _next_ Monday, and an ignored task shows one overdue row, not a backlog. This matches how the
   major todo apps behave and is the wellbeing-aligned choice; if per-slot accounting is ever
   wanted, that's habit territory (ADR-027), not a tasks change.
 - The partial unique index plus transactional respawn make double-spawn unrepresentable; the cost
