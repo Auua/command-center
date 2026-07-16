@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -17,7 +17,7 @@ Forces:
 
 - **ADR-012 said "Anki _is_ the SRS" and rejected in-widget scheduling.** This ADR revises that,
   on reachability rather than taste: AnkiConnect is desktop-only (§4.5, R2), so an Anki-only SRS
-  means Anna can only review at her desk with Anki open. A review loop that does not work on a
+  means reviewing only at the desk with Anki open. A review loop that does not work on a
   phone on a train is a review loop that does not run. The revision is scoped — Anki stays a
   first-class scheduler for items handed to it (ADR-026); it is simply no longer the only one,
   and exactly one scheduler owns any given item (see below).
@@ -193,7 +193,7 @@ gradeButtons: "four" | "two" (default "four"), showNextInterval: boolean (defaul
 - ADR-012's "Anki is the SRS, no in-widget scheduling" line is **superseded** by this ADR; the
   grammar widget keeps its oldest-seen review rotation for _browsing_, but real scheduling for
   saved items now lives here.
-- **Open questions for Anna:** (1) Which deck do you actually want to study where — should
+- **Open questions for the product owner:** (1) Which deck do you actually want to study where — should
   `japanese` default to `srs_owner: 'anki'` (your existing mobile habit) and `tech` to `'app'`, or
   both to `'app'` until Anki proves better? (2) Session cap of 20 — right size for a dashboard
   card, or too small? (3) Is one-way app→Anki transfer acceptable in v1, or do you need to pull an

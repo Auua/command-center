@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -18,7 +18,7 @@ Two ADRs need an exchange rate, for different reasons, and both are currently po
   home currency needs a rate — and specifically a rate **for the booking day**, not for now.
 
 The thing neither ADR noticed is that **these two use cases want the same data, and it is not a quote.**
-A watchlist row Anna glances at once a day and an accounting conversion of a transaction that settled on
+A watchlist row the user glances at once a day and an accounting conversion of a transaction that settled on
 13 July both want a **daily reference rate from an authoritative source**. Neither wants a tick. Yet FX is
 currently spending the scarce, metered resource (Twelve Data credits) that the equities half genuinely
 needs, in order to deliver intraday precision that nothing in the product consumes.
@@ -53,8 +53,8 @@ This is not an intraday quote and never will be.
 For **finance**, that is not a limitation — it is precisely correct, and it is what an accountant would use.
 For the **watchlist**, it is a genuine trade: EUR/JPY becomes a once-a-day number with a day-over-day change,
 not a live tick. We take that trade, and the reasoning is the same one ADR-021 used to refuse price alerts:
-a personal dashboard that shows a live-updating currency tick is inviting a checking habit, and Anna is
-watching EUR/JPY because she goes to Japan, not because she is running a book.
+a personal dashboard that shows a live-updating currency tick is inviting a checking habit, and EUR/JPY is
+on the watchlist for travel to Japan, not for running a trading book.
 
 ### Integration shape
 
@@ -164,14 +164,14 @@ productization.
   is a defensible number in a way that "a free quote API said 185.2317 at some point" is not.
 - **Easier:** ADR-030's multi-currency story stops being an open question. Booking-day conversion, stored
   immutably on the transaction, is both the correct accounting and the cheapest implementation.
-- **Harder / committed to:** **EUR/JPY on the watchlist is a daily number.** If Anna wants an intraday
+- **Harder / committed to:** **EUR/JPY on the watchlist is a daily number.** If the user wants an intraday
   currency tick, that is a deliberate re-opening of this ADR (and of NFR-8), and it means putting FX back on
   Twelve Data's credit budget. The trade is stated here so that it is a choice, not a regression.
 - **Committed to:** `as_of_granularity` in the model and in the UI — "ECB reference rate · 13 July" is not
   the same claim as "delayed 15 min", and the widget must not blur them. `marketOpen: null` for FX.
 - **Committed to:** rates are resolved server-side and stored on the transaction; there is no client-supplied
   rate, and historical conversions never drift.
-- **Open questions for Anna:** (1) Confirm the daily-granularity trade for the watchlist — this is the one
+- **Open questions for the product owner:** (1) Confirm the daily-granularity trade for the watchlist — this is the one
   user-visible thing this ADR changes. (2) Should the FX sparkline be 7 business days (matching equities) or
   30 (FX moves slowly, and 7 ECB points is a very short line)? (3) ADR-021 asked whether hedge adapters
   should be written up front; this ADR removes half the exposure — is the remaining Twelve Data dependency
@@ -202,7 +202,7 @@ productization.
   "streak at risk" nudges — a personal dashboard should not manufacture reasons to keep looking at it.
 - **Client-direct Frankfurter calls.** It is keyless and CORS-enabled, so it is the ADR-022 temptation
   exactly. Rejected for ADR-022's reasons verbatim: it defeats the shared cache, puts a third-party round
-  trip in the widget's critical path, hands Anna's IP to a provider on every dashboard load (NFR-7), and
+  trip in the widget's critical path, hands the user's IP to a provider on every dashboard load (NFR-7), and
   carves an exception into ADR-004 in the one place where the exception is easy — which is how a
   single-authorization-point architecture rots.
 - **Deriving EUR/JPY from two USD-based quotes.** Rejected: it invents a cross-rate with our own rounding on

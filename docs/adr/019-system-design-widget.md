@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -41,7 +41,7 @@ the same `LearningModule` backend, **not** a new track of `tech-lesson`.
 - `settingsSchema` (zod): `{ area: 'fundamentals' | 'scaling' | 'data' | 'reliability' | 'all'
 (default 'all'), depth: 'intro' | 'interview' (default 'intro'), showTradeoffs: boolean (default true) }`.
   Per-instance settings mean "System design · scaling" and "System design · data" can be two cards if
-  Anna wants two lanes — the same instantiation trick ADR-013 uses for tracks, applied to areas.
+  the user wants two lanes — the same instantiation trick ADR-013 uses for tracks, applied to areas.
 - `quickActions`: "Add to Anki" (shared queue, below) and "Mark learned"; the body holds a
   **self-check** ("Why does a health check need to be cheaper than the request it guards?") with a
   reveal button, because recall beats re-reading.
@@ -175,7 +175,7 @@ pinned lesson rather than an error (ARD §2 failure posture).
   that document; hand-editing coordinates in Mongo is explicitly not a workflow.
 - **Committed to:** required `altText` (no picture without words), the shared `lesson_content`
   collection with a `kind` discriminator, and per-area widget instances.
-- **Open questions for Anna:** (1) is the dagre-laid-out mermaid subset expressive enough, or do the
+- **Open questions for the product owner:** (1) is the dagre-laid-out mermaid subset expressive enough, or do the
   first ten lessons need sequence diagrams too (a second IR shape)? (2) Should "Add to Anki" ship the
   diagram as media (Anki's media sync, `sync_media` — ADR-026), or is a text-only card enough? (3) Does the
   self-check want a free-text "explain it back" field — valuable pedagogically, but it is journal-shaped

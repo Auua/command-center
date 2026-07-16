@@ -2,11 +2,11 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
-The README lists habit tracking under "Future Extensions"; the ARD names it in G4 as a widget that must plug in "without core changes". This ADR plans it — nothing is implemented, and several questions are flagged for Anna rather than pre-decided.
+The README lists habit tracking under "Future Extensions"; the ARD names it in G4 as a widget that must plug in "without core changes". This ADR plans it — nothing is implemented, and several questions are flagged for the product owner rather than pre-decided.
 
 Habits sit awkwardly close to two things that already exist, and most of the design work is drawing those lines:
 
@@ -99,7 +99,7 @@ Under `/api/v1/habits`, zod schemas in `packages/contracts`, `.strict()` on writ
 - **Wellbeing stance — restated and binding: no guilt-tripping.** We will not ship "at risk" banners, countdowns, red broken-chain styling, shame copy, or any automatic push nudge for an unmarked habit. Missed days render **neutrally** (an empty cell, "not done" — not "failed"), and a broken streak reads "0 days — best 20". The only nudge mechanism is an **explicit, user-created reminder** through the Automation widget (ADR-015) — opt-in pressure, never ambient pressure. This is the same trade ADR-014 made and is inherited verbatim: a habit widget that makes you anxious about the tool is self-defeating in an app that also holds your mood data.
 - `times_per_week` habits show progress ("2 of 3 this week") rather than per-day expectation, so a flexible habit never reads as "missed" on an off day.
 
-### Open questions for Anna
+### Open questions for the product owner
 
 - **Q-A: who joins habits to streaks?** Either the widget calls `GET /streaks` and joins by `streakKey` client-side (zero coupling, two requests), or `HabitsModule` calls a read-only `StreaksService` query (one request, but a module dependency ADR-014 currently forbids). Default is the client-side join; flag before implementation.
 - **Q-B: un-marking and streaks.** ADR-014's streak model is append-only (`streak_days` has no delete path). Un-marking a habit today should arguably retract the streak day _if no other source credited it_ — that requires `StreaksService` to gain a recompute-day operation. Options: (1) accept the drift (undo removes the mark, streak keeps the day), (2) extend ADR-014 with a `recomputeDay(userId, streakKey, localDate)` handler for `habit.unmarked`. Prefer (2), but it amends an existing ADR.

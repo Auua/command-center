@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -110,7 +110,7 @@ A live-updating number is the classic screen-reader failure: announced every sec
 - `settingsSchema` (zod): `{ focusMin: 1..120 (default 25), shortBreakMin: 1..60 (default 5), longBreakMin: 1..60 (default 15), longBreakEvery: 2..12 (default 4), autoStartNext: boolean (default false), sound: boolean (default false) }` — drives the auto-generated settings panel.
 - `quickActions: [{ id: "start-focus", label: t("pomodoro.start") }]`.
 
-### Open questions for Anna
+### Open questions for the product owner
 
 - **Q-A:** should a pomodoro be attachable to a task (`task_id`)? The column is planned; the UI (a task picker in the widget) is not, and it drags in a `TasksModule` read. Ship the column, defer the picker?
 - **Q-B:** does an abandoned pomodoro deserve a row (for honest "started 6, finished 4" stats), or is that a guilt mechanic in the ADR-014/027 sense? Current answer: don't store it.
@@ -119,7 +119,7 @@ A live-updating number is the classic screen-reader failure: announced every sec
 ## Consequences
 
 - The deadline representation makes the entire class of tick-drift/throttling bugs unrepresentable rather than mitigated — this is the load-bearing decision, and it is why the timer needs no server.
-- No server involvement in the running timer means zero new infrastructure (NFR-8) and no worker jobs to cancel on pause — but it also means **the timer cannot fire with the browser closed**, permanently. If Anna ever wants that, it is a different feature (a scheduled push), not a change to this one.
+- No server involvement in the running timer means zero new infrastructure (NFR-8) and no worker jobs to cancel on pause — but it also means **the timer cannot fire with the browser closed**, permanently. If the user ever wants that, it is a different feature (a scheduled push), not a change to this one.
 - Persisting only completions keeps the write path tiny (one idempotent POST per pomodoro) and the data honest, but "how many did I abandon?" is unanswerable by construction.
 - `pomodoro.completed` on the bus means streaks and automations get pomodoros for one map entry each — the ADR-014 pattern paying off a third time.
 - The `role="timer"` + `aria-live="off"` choice means the timer is _silent_ to screen readers between phases. This is correct but non-obvious; a reviewer expecting a live region will flag it, and this ADR is the answer.

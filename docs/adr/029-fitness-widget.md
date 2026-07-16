@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -22,7 +22,7 @@ Second force: privacy. Health data — weight, resting HR, sleep, injuries in a 
 
 ### Scope: manual logging in v1
 
-We will ship **manual logging only**: workouts (what, how long, how hard) and body metrics (weight, resting HR, whatever numeric series Anna cares about), plus trend charts. **All device/service integrations are explicitly deferred** — Apple Health permanently unless the native-app non-goal changes; Garmin/Strava/Fitbit as a possible later ADR.
+We will ship **manual logging only**: workouts (what, how long, how hard) and body metrics (weight, resting HR, whatever numeric series the user cares about), plus trend charts. **All device/service integrations are explicitly deferred** — Apple Health permanently unless the native-app non-goal changes; Garmin/Strava/Fitbit as a possible later ADR.
 
 Rationale, concretely: an OAuth integration is roughly the whole widget's effort again (consent flow, encrypted refresh-token storage, worker poll/webhook receiver, dedupe against manual entries, stale-token re-auth UX), it adds a paid/partner dependency risk against NFR-8, and it is unnecessary to answer the question the widget exists to answer ("am I moving, and is the trend going the right way?"). Manual logging also produces the higher-quality data for the metrics that actually matter here (weight, subjective effort), which no wearable measures well anyway.
 
@@ -122,7 +122,7 @@ Health data is a **highest-value asset (§5.3, same tier as journal + mood)** �
 - Server logs record row ids and error codes only — never `note` content or metric values. The `note` field is the sharpest edge (injuries, illness, how the body feels) and is treated like a journal entry: never logged, never in a notification, always in the export.
 - RLS + JWT-derived `user_id` as everywhere; a future import path must not become an unauthenticated ingest endpoint.
 
-### Open questions for Anna
+### Open questions for the product owner
 
 - **Q-A:** CSV/GPX import (Strava/Garmin export files, no OAuth) — worth it in v1? Reuses the `source`/`external_id` seam, needs no token custody. Probably the right answer if manual logging ever feels tedious.
 - **Q-B:** which metrics actually matter? The narrow-table model makes this a settings question, but the registry needs a starting list (weight, resting HR, sleep hours?).
@@ -144,6 +144,6 @@ Health data is a **highest-value asset (§5.3, same tier as journal + mood)** �
 - **Wide metrics table (one column per metric: `weight`, `resting_hr`, …).** Rejected: every new metric is a migration and every row is mostly NULL; the narrow series costs one index and buys extensibility.
 - **Store the value in whatever unit the user typed, with a `unit` column.** Rejected: every aggregation and chart then has to convert (or silently doesn't), and mixed-unit series are the classic health-app bug. Canonical storage, presentation-layer conversion.
 - **Multiple weigh-ins per day preserved (the ADR-009 event model).** Rejected here, deliberately: intra-day body-weight variance is water, not signal, and averaging it would make the trend noisier, not truer. Mood's multiple-per-day rule is right _for mood_; it does not generalize.
-- **Sets/reps/exercise-level strength logging in v1.** Rejected as premature: it triples the model to serve a use case Anna has not stated. The coarse workout row is the falsifiable v1; if it proves too coarse, `sets jsonb` is the extension.
+- **Sets/reps/exercise-level strength logging in v1.** Rejected as premature: it triples the model to serve a use case the user has not stated. The coarse workout row is the falsifiable v1; if it proves too coarse, `sets jsonb` is the extension.
 - **Store workouts in MongoDB** (free-shape activity documents). Rejected by §4.3: numeric series queried with filters and aggregations are the Postgres column of the split, and RLS gives the second authorization net that health data — as a top-tier asset — most needs.
 - **Goal/target-driven UI (rings, "you're behind") as the default.** Rejected: the ADR-014 wellbeing position applies with extra force to body data. Targets are opt-in and rendered neutrally.

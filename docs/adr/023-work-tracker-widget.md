@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -18,7 +18,7 @@ Forces:
 - **This is a §5.3-class asset.** The ARD names journal and mood as the highest-value private data;
   work-tracker entries belong in the same class and arguably above it. They contain colleagues' names,
   incident details, sometimes the honest version of a project's history, and they are compensation-
-  adjacent — the one dataset here that could hurt Anna professionally if it leaked. Everything the ARD
+  adjacent — the one dataset here that could hurt the user professionally if it leaked. Everything the ARD
   says about journal privacy applies verbatim, plus one more rule: this data must never be inferred
   automatically (see UX).
 - **Storage split (§4.3) is genuinely arguable here.** Entries have a body, which whispers "document,
@@ -185,8 +185,8 @@ shape and a length cap (≤ 10) so a link array cannot become a smuggling channe
   - Push/automation payloads are generic ("Time to log this week's wins") — never entry content, which
     would transit vendor push infrastructure (§5.2).
   - **Nothing is ever auto-derived.** We do _not_ silently mine `task.completed` events into work
-    entries, even though the event bus makes it trivial. A win is a claim Anna is willing to make about
-    herself in a review; a machine-inferred one is noise she'd have to audit, and an app that quietly
+    entries, even though the event bus makes it trivial. A win is a claim the user is willing to make
+    about themselves in a review; a machine-inferred one is noise to be audited, and an app that quietly
     builds a dossier of your work from your task log is not one you'd want to keep using. Promotion is
     always explicit: a completed task offers a "Log as a win" action that **prefills** the form (client-
     side composition through the API, no module import — ADR-010's promote-to-task pattern reused).
@@ -204,7 +204,7 @@ shape and a length cap (≤ 10) so a link array cannot become a smuggling channe
   inherits every journal-grade rule (2FA, RLS, no analytics, log hygiene, backup/restore testing under
   NFR-5) and adds the no-auto-derivation rule as a permanent constraint on future "smart" features.
 - **Committed to:** a PATCH surface (entries are mutable drafts), plain-text bodies, `date`-typed
-  `occurred_on`, and a server-rendered markdown export whose format is now a contract with Anna's actual
+  `occurred_on`, and a server-rendered markdown export whose format is now a contract with the user's actual
   review document.
 - **Why not merged with the appreciation widget (ADR-017):** they share a _shape_ and nothing else.
   Appreciation is gratitude — external, wellbeing-oriented, deliberately unstructured, 280 characters,
@@ -214,7 +214,7 @@ shape and a length cap (≤ 10) so a link array cannot become a smuggling channe
   performance-review metadata form inside a gratitude practice (which would quietly kill the gratitude
   practice), and give one error boundary to two unrelated failure domains. The one-owner rule (§4.1/§4.3)
   and ADR-017's own precedent — small modules are cheap here — say two modules.
-- **Open questions for Anna:** (1) Should completed tasks with a `#win` tag offer the promote action
+- **Open questions for the product owner:** (1) Should completed tasks with a `#win` tag offer the promote action
   automatically (a nudge, not an inference) — useful, but it is the thin end of the auto-derivation
   wedge? (2) Is a per-entry "visible to manager" flag wanted, so the export can split _my_ honest notes
   from _their_ version — or is that a second dataset pretending to be a flag? (3) Should periods be
@@ -246,6 +246,6 @@ shape and a length cap (≤ 10) so a link array cannot become a smuggling channe
   is the product, and a review document is organised by competency and impact. A flat tag array cannot
   tell "React" (a skill) from "Checkout" (a project), so the grouping — the only reason to do this at
   all — would have to be re-derived by hand every review cycle.
-- **Client-side markdown generation.** Rejected: the format is a contract with Anna's review document
+- **Client-side markdown generation.** Rejected: the format is a contract with the user's review document
   and must be identical everywhere and testable in isolation; server-side is a pure function over rows,
   covered by unit tests, and it means the JSON and markdown exports can never drift.

@@ -2,20 +2,21 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-16 (rewritten; the 2026-07-14 draft — "GitHub learning vault" — made Mongo
-  `vault_items` the system of record with GitHub as a write-behind mirror. Anna's decision:
+  `vault_items` the system of record with GitHub as a write-behind mirror. Product-owner decision:
   **no Mongo for learning data, GitHub is the store.** This rewrite records that.)
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
-The learning widgets need three functions Anna named directly: get new content in (a Japanese
-word of the day, later tech lessons), get her _old_ content out of her existing Anki decks,
-and write saved cards somewhere that syncs onward to Anki (ADR-026). She wants all of that
-learning data in one place she owns and can read, edit, and clone anywhere: a **separate
-private GitHub repository, `learning-center`** — versioned, browsable, free (NFR-7, NFR-8).
+The learning widgets require three capabilities: bringing new content in (a Japanese word of
+the day, later tech lessons), importing _existing_ content from the user's Anki decks, and
+writing saved cards to a store that syncs onward to Anki (ADR-026). The requirement is that
+all learning data live in one user-owned place that is readable, editable, and clonable
+anywhere: a **separate private GitHub repository, `learning-center`** — versioned, browsable,
+free (NFR-7, NFR-8).
 
 The first draft interposed Mongo as the system of record with a write-behind queue and a
-reconcile job, to keep GitHub off the read path. Anna rejected that trade: at single-user
+reconcile job, to keep GitHub off the read path. That trade was rejected: at single-user
 volume the mirror machinery (queue, sha-conflict handling, reconcile, `gitStatus` lifecycle)
 is more system than the problem, and a cached read through the Contents API is plenty. The
 forces that survive unchanged:
@@ -70,7 +71,7 @@ TypeScript) downloads **pinned** jmdict-simplified (`jmdict-examples-eng`, which
 Tatoeba example sentences) and JmdictFurigana release artifacts, filters to a frequency-led
 subset (priority `ichi1`/`nf01–nf12`, must have a furigana alignment and an English gloss,
 archaic/obscure senses dropped, top ~2000), folds furigana to bracket notation, and emits the
-manifest + shards. Anna runs it against a local clone and commits the output — bumping a pin
+manifest + shards. The user runs it against a local clone and commits the output — bumping a pin
 is a reviewed commit, per ADR-032's stance. The manifest's attribution block carries EDRDG's
 required acknowledgement line, which the widget renders on every word display (ADR-032: a
 legal requirement, not styling). **Tech lesson content is deferred** — no open-licensed
@@ -113,7 +114,7 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
 ## Consequences
 
 - **Easier:** one store — no dual-write, no drift, no queue/reconcile machinery to test; the
-  export _is_ `git clone`; Anna gardens her cards in any git client and the app simply reads
+  export _is_ `git clone`; cards can be gardened in any git client and the app simply reads
   the current state; sync results (`state.json`) version alongside the cards they describe;
   the whole learning feature adds zero database surface.
 - **Harder / accepted:** GitHub is on the read path — bounded by in-memory caching,
@@ -130,14 +131,14 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
   exist. ADR-025 (review widget, deferred) composed against those and needs re-alignment
   when it is picked up. ARD edits owed on approval: §4.3 loses the planned `vault_items` row;
   the ADR-024 summary row.
-- **Open questions for Anna:** (1) repo name literally `learning-center`? (2) Is a ~2000-word
+- **Open questions for the product owner:** (1) repo name literally `learning-center`? (2) Is a ~2000-word
   pool the right starting size? (3) When tech lessons land, same repo under `pool/tech/` +
   `cards/tech/` (the design assumes yes)?
 
 ## Alternatives considered
 
 - **Mongo as system of record + GitHub write-behind mirror (the 2026-07-14 draft):** rejected
-  by Anna — the queue, sha-conflict routing, reconcile job, and dual-source-of-truth semantics
+  by product-owner decision — the queue, sha-conflict routing, reconcile job, and dual-source-of-truth semantics
   are real machinery bought to keep an external service off a read path that a cache covers at
   this scale. Kept as the documented escape hatch if GitHub-on-the-read-path ever hurts.
 - **GitHub as record, DB as read-through cache:** rejected for v1 — same freshness questions
@@ -149,7 +150,7 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
   installation tokens + JWT signing is real ops surface for a single-user writer (G2). PAT
   with single-repo scope is proportionate.
 - **One big JSON/JSONL file per deck for cards:** rejected — merge conflicts, unreadable
-  diffs, and Anna can't comfortably edit one card on github.com. File-per-card is the point
+  diffs, and the user can't comfortably edit one card on github.com. File-per-card is the point
   of using a repo. (The _pool_ is JSONL shards because it is machine-generated and re-emitted
   wholesale by the ingest tool — diffs there are per-release, not per-item.)
 - **Runtime dictionary API for new content:** rejected (ADR-032) — no terms of service on the

@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending Anna's approval
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
@@ -185,7 +185,7 @@ Unread</span>` plus bold), never a coloured dot alone.
 - **Unsubscribe** uses the shared undo pattern (ADR-008): optimistic removal, ~6 s Undo whose timeout
   pauses on focus/hover (WCAG 2.2.1), restoring via re-`POST /feeds`.
 - **Privacy:** no analytics on reader routes (NFR-7); remote images off by default (above); nothing
-  about what Anna reads leaves the server. Push notifications about new posts, if ever added, carry the
+  about what the user reads leaves the server. Push notifications about new posts, if ever added, carry the
   feed name only — never post titles (§5.2's "no sensitive content in push bodies", applied honestly:
   reading habits are sensitive).
 
@@ -202,7 +202,7 @@ Unread</span>` plus bold), never a coloured dot alone.
   composition point. It is also the cleanest illustration of §4.3 in the codebase.
 - **Committed to:** politeness (conditional GETs, ≥ 30 min intervals, identifying UA, backoff) as a
   correctness requirement, not a nicety; images-off-by-default; retention pruning of unsaved posts.
-- **Open questions for Anna:** (1) an image proxy (`GET /reader/img?u=<signed>`, host-allowlisted to the
+- **Open questions for the product owner:** (1) an image proxy (`GET /reader/img?u=<signed>`, host-allowlisted to the
   post's origin, size-capped, no private-IP redirects, cached) would give images _and_ privacy — worth
   the bandwidth on the small backend instance (NFR-8), or is the per-feed opt-in enough? (2) paywalled
   Substack posts arrive as excerpts; do we want authenticated feed URLs (secret in the feed URL — a
@@ -221,9 +221,9 @@ Unread</span>` plus bold), never a coloured dot alone.
   puts an origin boundary in the middle of the reading experience — for content we are already
   structurally sanitising anyway.
 - **Client-side feed fetching (`fetch(feedUrl)` from the browser).** Rejected: CORS makes it fail for
-  most feeds, it exposes Anna's IP and reading schedule to every publisher, and it can't do conditional
+  most feeds, it exposes the user's IP and reading schedule to every publisher, and it can't do conditional
   polling, caching or backoff. It also contradicts ADR-004 (domain data through the API).
-- **A hosted feed API (Feedly/Inoreader/Superfeedr).** Rejected: a third party learns everything Anna
+- **A hosted feed API (Feedly/Inoreader/Superfeedr).** Rejected: a third party learns everything the user
   reads (NFR-7 in spirit), most useful tiers cost money (NFR-8), and it removes the interesting half of
   the problem — this is a learning vehicle (G3).
 - **Store posts in Postgres as JSONB.** Rejected: this is the archetypal document — variable body, no
