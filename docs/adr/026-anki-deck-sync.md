@@ -1,60 +1,135 @@
-# ADR-026: Anki two-deck sync (Japanese + Tech) via AnkiWeb
+# ADR-026: Anki two-deck sync (Japanese + Tech) — learning-repo GitHub Action → AnkiWeb
 
 - **Status:** proposed
-- **Date:** 2026-07-14
+- **Date:** 2026-07-16 (rewritten twice: the 2026-07-14 draft used AnkiConnect
+  queue-and-flush; the same-day revision then dropped Mongo with ADR-024 — GitHub is the
+  store, and sync results live in `sync/state.json` instead of a report endpoint)
 - **Review:** claude-reviewed — pending Anna's approval
 
 ## Context
 
 Anna keeps two real Anki decks — **Japanese** and **Tech** — and wants them on every device.
 That last part is not ours to build: AnkiWeb already syncs a collection to Anki's mobile and
-desktop clients. What we must build is everything upstream of it — turning vault items
+desktop clients. What we must build is everything upstream of it — turning saved card files
 (ADR-024) into well-formed notes in the right deck, without duplicates, and showing Anna
 honestly whether that has happened.
 
-The hard constraint is already settled and is not reopened here (§4.5, R2, ADR-011):
-**AnkiConnect is a plugin inside the _desktop_ Anki app on `localhost:8765`.** A cloud backend
-can never reach it. AnkiWeb has no public API and **scraping it is forbidden** (ToS, R2). The
-only path from our cloud to Anna's collection runs through her browser, on her desktop, while
-Anki is open. ADR-011 therefore established queue-and-flush: adds are queued durably in the
-API; the browser flushes them to AnkiConnect when it detects it; review stats are pushed back
-client → API into `anki_snapshots`. That protocol stands. This ADR extends it from "one widget
-adds a Basic note" to "two decks, two note types, deterministically mapped from the vault, and
-pushed onward to AnkiWeb".
+The first draft of this ADR (and ADR-011 before it) reasoned from a two-option premise:
+AnkiConnect is a plugin inside the _desktop_ Anki app on `localhost:8765` that a cloud backend
+can never reach, and AnkiWeb has no public API and scraping it is forbidden (ToS, R2) —
+therefore the only path to the collection runs through Anna's browser while desktop Anki is
+open, hence queue-and-flush. **That premise missed a third option.** The official `anki`
+package on PyPI is not a wrapper or a reverse-engineered client — it is the actual Anki
+backend, the same code the desktop app runs. It can open a collection, add and update notes,
+and sync with AnkiWeb through the official protocol (`sync_login` → `sync_collection`). This
+is the sanctioned way to script Anki, categorically different from scraping AnkiWeb's HTML.
 
-Two prior decisions need correcting, and nothing is implemented yet, so both are free:
+Running that library needs three things: a place to execute Python, the card content, and
+AnkiWeb credentials. ADR-024 already puts the content in a private GitHub repo, one commit per
+saved item — which means GitHub Actions is a runner that fires exactly when cards change, with
+encrypted secrets storage in Anna's own GitHub account, for free (NFR-8). The desktop app
+drops out of the loop entirely: it becomes just another AnkiWeb client, like the phone.
 
-- ADR-011 placed the Anki queue inside `JapaneseModule` (`/api/v1/japanese/anki/queue`) and
-  ADR-013 has tech lessons posting to that Japanese endpoint — visibly wrong once a Tech deck
-  exists.
-- ADR-011's default `ankiNoteType` was `"Basic"`. Two fields cannot hold an expression, a
-  reading, a meaning, an example, and a stable id.
+Anna has decided for this approach over the desktop-mediated one; this rewrite records it.
+Nothing of the old design is implemented, so nothing is migrated.
 
 ## Decision
 
-### Module ownership (supersedes ADR-011/013 placement)
+### Sync engine: a workflow in the learning repo, machinery in the monorepo
 
-We will extract an **`AnkiModule`** owning `anki_queue` and `anki_snapshots` (Mongo), serving
-`/api/v1/anki/*`. It is deck-agnostic and vault-driven: its input is a vault item id, never a
-Japanese word or a lesson. `JapaneseModule` and `LearningModule` keep their content; neither
-owns Anki any more, and neither imports the other (§4.1). ARD §4.3's ownership row for
-`anki_snapshots` (currently "Japanese") needs a follow-up edit.
+The learning repo is a **separate GitHub repository** from the command-center monorepo
+(ADR-024), so "ship a workflow there" needs a distribution mechanism — the app cannot pretend
+that repo is part of its own deployable. Split by rate of change:
 
-**Every Anki note is created from a vault item.** "Add to Anki" implies a vault save (ADR-024)
-— it is the vault id that makes the note addressable, deduplicable, and re-mappable forever.
-There is no path that produces an Anki note without a vault item.
+- **The learning repo carries only a thin caller workflow** (`.github/workflows/anki-sync.yml`,
+  ~15 lines: the triggers and concurrency below plus one `uses:` step). Anna commits it **once
+  at setup**, exactly like the repo itself, which ADR-024 already has her create manually. It
+  almost never changes afterwards.
+- **The machinery lives in the command-center monorepo** as a composite action —
+  `tools/anki-sync/` holding `action.yml`, the Python sync script, and the pinned
+  `anki==X.Y.Z` requirement. The caller references it as
+  `uses: <owner>/command-center/tools/anki-sync@anki-sync-v1`; the runner downloads the action
+  bundle directly, so no PAT and no cross-repo checkout are needed. The one switch to flip:
+  the command-center repo's Actions access setting must allow its actions to be used from the
+  owner's other private repositories (GitHub's same-owner private-Actions sharing).
+- **Releases are the `anki-sync-v1` tag moving** — script and `anki` library version travel
+  together, and a sync run never changes behavior because command-center's `main` moved.
+  Bumping the tag is the deliberate act the pinned-version policy (below) calls for.
+
+AnkiWeb credentials stay **learning-repo Actions secrets**, passed into the action as inputs —
+the monorepo holds code, never secrets. Triggers, on the caller:
+
+- **`push`** filtered to `japanese/**` and `tech/**` — every saved or edited card syncs within
+  minutes, from any device, desktop off.
+- **`schedule` (daily)** — reviews done on mobile change stats without any commit, so the
+  snapshot (below) refreshes at least daily; and a daily run turns sync-protocol drift into a
+  red run within a day instead of a silent failure months later.
+- **`workflow_dispatch`** — manual re-run from the Actions tab.
+
+A `concurrency: anki-sync` group (no cancel-in-progress: never kill a run mid-sync) is the
+politeness mechanism: GitHub holds at most one pending run per group, so ADR-024's
+one-commit-per-item bursts coalesce into at most a running run plus one queued run. Combined
+with personal save volume (a handful of pushes a day) and the single daily cron, AnkiWeb sees
+a polite client, never a polling loop.
+
+Run steps, in order — the order is load-bearing:
+
+1. Restore `collection.anki2` from `actions/cache` (optimization only; a miss is normal).
+2. `col.sync_login(email, password)` with `ANKIWEB_EMAIL` / `ANKIWEB_PASSWORD` from Actions
+   secrets, then **sync down** (`sync_collection`). On a cache miss the empty collection
+   full-downloads — slower, equally correct. Writing before syncing down is forbidden: it
+   manufactures full-sync conflicts with Anna's mobile reviews.
+3. Ensure decks and note types exist (`col.decks.id()` creates on demand; models by name →
+   create). A missing model is the normal state of a fresh runner, not an error.
+4. Upsert a note for **every** card file with `anki: true` (below), keyed on `CardId`. Every
+   file, every run — convergence by re-derivation, not by tracking deltas.
+5. **Sync up** (`sync_collection` again), then `col.close()`.
+6. Report results and stats to the API (below).
+
+**Full-sync rule (the one dangerous edge):** if Anki decides the collections have diverged
+beyond normal merge (schema change, long divergence), the script may answer **full download**
+(we only lose the cache) but must **never answer full upload** — a CI runner force-uploading
+over Anna's real collection could destroy mobile review history. Full-upload-required fails
+the run red, and Anna resolves it once on a real client.
+
+### What gets synced: the `anki` front-matter flag
+
+**"Add to Anki" is a repo write, not an Anki API call.** Saving a card
+(`POST /api/v1/learning/cards`, ADR-024) creates the card file with `anki: true` already in
+its front-matter — in v1 every saved card is Anki-bound, so saving _is_ adding to Anki. The
+commit triggers the workflow. There is **no `anki_queue`**, no flush protocol, and no
+browser↔Anki traffic of any kind — the repo _is_ the queue. The flag still earns its place:
+the sync script upserts only `anki: true` files, so a future not-for-Anki card class (or Anna
+flipping the flag off in any git client) needs no new mechanism.
+
+**Every Anki note is created from a card file** — structurally: the sync script can only see
+the repo, so no path can produce a note without a file. The card's `id` is the identity that
+makes the note addressable, deduplicable, and re-mappable forever.
+
+### Import: getting the existing decks in
+
+Anna's real decks predate this system, so the Action has a second, dispatch-only mode
+(`workflow_dispatch` input `mode: import`): sync down → export every note of the configured
+deck whose guid does _not_ start with `cc:` into `cards/japanese/imported/<year>/` files
+(year derived from the Anki note id, which is a creation-epoch-ms) → commit → **stop**. Import
+never syncs up — it is read-only against the collection by construction. Imported files carry
+`source: anki-import` and an `anki: { noteId, guid, model }` block, and their `fields` are a
+raw 1:1 map of her own note type's field names, so later edits write back to the same model
+losslessly. Subsequent sync runs upsert them by the stored `noteId` and never duplicate them.
 
 ### Deck & note-type design
 
 **Two top-level decks, named in settings** (defaults `Japanese`, `Tech`), mapped 1:1 from the
-vault item's `deck` field (`japanese` | `tech`). **No subdecks.** Anki applies its scheduling
+card's `deck` field (`japanese` | `tech`). **The Tech deck is deferred with its content track
+(ADR-013/032 investigation pending); v1 ships Japanese only**, but the design is two-deck so
+Tech lands as content plus one deck mapping, not a new mechanism. **No subdecks.** Anki applies its scheduling
 options and daily limits per top-level deck, which is exactly the granularity Anna asked for;
 sub-classification (WOTD vs grammar, TypeScript vs SQL) rides as **tags** — `cc::japanese-wotd`,
 `cc::grammar`, `cc::tech::typescript` — which filter and search just as well without multiplying
 deck config. The `cc::` prefix keeps our tags from colliding with Anna's own.
 
-Two **custom note types**, created by us, name-versioned so a field change is a new model and
-never a destructive migration of Anna's existing notes:
+Two **custom note types**, created by the sync script, name-versioned so a field change is a
+new model and never a destructive migration of Anna's existing notes:
 
 | `CC Japanese v1`                      | `CC Tech v1`                       |
 | ------------------------------------- | ---------------------------------- |
@@ -63,146 +138,207 @@ never a destructive migration of Anna's existing notes:
 | `Meaning`                             | `Code` (pre-formatted, in `<pre>`) |
 | `Example`, `ExampleEn`                | `Language`                         |
 | `Source`                              | `SourceUrl`                        |
-| `VaultId`                             | `VaultId`                          |
+| `CardId`                              | `CardId`                           |
 
-`VaultId` is the load-bearing field: it is our GUID. Anki's own note `guid` is not settable
-through AnkiConnect's `addNote`, so we do not pretend to control it — we carry our identity in a
-field we do control, and search on it (Anki supports field-scoped search: `VaultId:<uuid>`).
+Identity is double-anchored, both anchors ours to set (the library, unlike AnkiConnect,
+exposes both), and **deterministic from the content source** — `jp-<JMdict ent_seq>`, not a
+random uuid, so a replayed save converges on the same file, note, and guid:
 
-**Furigana** uses Anki's native convention rather than our own: the `Reading` field holds
-bracket notation (`約束[やくそく]`) and the card template renders it with the built-in
-`{{furigana:Reading}}` filter. ADR-011 already stores `rubySegments` at ingest, so the
-conversion is a deterministic fold over those segments — no runtime tokenizer, and the reading
-degrades to legible plain text in any client that lacks the filter.
+- **`CardId` field** — the searchable, human-visible identity; the upsert queries
+  `"CardId:<id>"` via `find_notes`.
+- **Anki's note `guid`**, set deterministically to `cc:<card-id>` at creation — Anki's own
+  sync- and import-level dedupe now recognizes our notes natively. (The previous draft
+  rejected guid because AnkiConnect's `addNote` cannot set it; the official library can.)
+
+**Furigana** uses Anki's native convention, and the conversion happens at **ingest time**: the
+pool's `reading` field (ADR-024) already holds bracket notation (`約束[やくそく]`), folded by
+jmdict-ingest from JmdictFurigana alignments, so card files are legible on their own and the
+card template just renders `{{furigana:Reading}}`. Neither the API nor the Python mapper ever
+touches Japanese text.
 
 Card templates ship with the model: Japanese generates recognition (Expression → Meaning) and,
 optionally, recall (Meaning → Expression) cards; Tech generates one card (Question → Answer +
-Code). `Code` is escaped and wrapped in `<pre>` at map time — Anki templates are HTML, and
-un-escaped code in a card is both broken rendering and a (self-inflicted) injection.
+Code). Card files store `code` raw (readable in GitHub); the sync script HTML-escapes it and
+wraps it in `<pre>` at note-build time — Anki templates are HTML, and un-escaped code in a
+card is both broken rendering and a (self-inflicted) injection.
 
-### Mapping vault items → notes, and idempotency
+### Mapping & idempotency
 
-Mapping reads ADR-024's structured `fields` block, **never the markdown body**. The map is a
-pure function `(vaultItem, settings) → AnkiNote` living in `packages/contracts` so client and
-API agree on it, with a golden-file test per deck.
+Mapping reads ADR-024's structured `fields` block, **never the markdown body**. With furigana
+folded at write time and escaping specced above, the map is a near-verbatim field copy —
+deliberately too dumb to drift. It lives in the sync script under `tools/anki-sync/`, with
+golden-file tests per deck in the same directory, run by the monorepo's normal CI — the mapper
+sits two directories from `packages/contracts`, not in another repo. The honest cost that
+remains: it is Python next to a TypeScript codebase; `contracts` keeps only the `fields`
+schema (ADR-024's), which is the actual contract.
 
-Idempotency keeps ADR-011's **three layers**, with layer (b) upgraded from a fuzzy key to an
-exact one:
+Idempotency, three layers:
 
-1. **`clientRequestId`** on `POST /api/v1/anki/queue` — a retried click or a flaky POST cannot
-   create two queue rows (unique per `(userId, clientRequestId)`).
-2. **`findNotes` on `VaultId` before `addNote`** — the client queries
-   `deck:"Japanese" VaultId:<uuid>`; a hit short-circuits to `PATCH … flushed` with the found
-   note id. This is strictly better than ADR-011's headword+reading key: it is exact, it
-   survives Anna editing the expression, and it removes that ADR's noted weakness ("note types
-   whose first field isn't the word need mapping care").
-3. **`duplicateScope: "deck"`** on `addNote` — Anki's own first-field dedupe as the final net.
+1. **`find_notes` on `CardId`** (or the stored `noteId` for imported cards) — hit →
+   `update_note`, miss → `add_note`. Exact, and it survives Anna editing the expression.
+2. **Deterministic `guid`** — even against a rebuilt collection or a stray import, Anki's own
+   machinery refuses a duplicate of `cc:<card-id>`.
+3. **Anki's first-field duplicate check** as the final net.
 
-A crash between `addNote` and `PATCH` is caught by (2) on the next flush. Re-syncing the whole
-vault is therefore safe by construction: it converges, it does not duplicate.
+The previous draft's `clientRequestId` layer disappears with the queue it protected: the
+workflow reads repo _state_, not a request stream, so re-running — including replaying every
+card file, which every run does — converges by construction. A crash between `add_note` and
+sync-up loses nothing: the next run finds the note absent from AnkiWeb and re-adds it under
+the same guid.
 
-Provisioning is part of the flush, not a setup wizard: before the first add of a session the
-client ensures deck and model exist (`deckNames` → `createDeck`, `modelNames` → `createModel`).
-A missing model is a normal state on a fresh machine, not an error.
+**Deletions are manual.** Unsetting `anki: true` or deleting a card file never deletes or
+alters the existing Anki note — scheduling history is expensive to rebuild and cheap to keep.
+The script only creates and updates; removing a card is an act Anna performs in Anki.
 
-### Triggering AnkiWeb sync
+### Reporting back: `sync/state.json`, not an endpoint
 
-After a flush batch completes (not per note), the client calls AnkiConnect's **`sync`** action,
-which triggers the desktop app's normal AnkiWeb sync — the same sync Anna would press `Y` for.
-This is the only "make it available on all my devices" mechanism we use, and it requires nothing
-from us but the call: Anki does the rest, and it presumes only that Anna is logged into AnkiWeb
-in the desktop app. Debounced to at most one `sync` per flush batch and at most once per few
-minutes, so a burst of adds is one sync, not twenty. A failed sync (not logged in, conflict
-prompt open) is reported into the sync-status surface, never retried in a loop — the desktop app
-owns conflict resolution and we must not fight it.
+The run's last step **commits a state file to the learning repo itself** —
+`sync/state.json`, written only by the Action (default `GITHUB_TOKEN`, job permission
+`contents: write`; the push trigger is path-filtered to `cards/**`, so this commit cannot
+retrigger the workflow). No report endpoint, no machine bearer token, no `anki_snapshots`
+store — with GitHub as the store (ADR-024), sync results are just more repo state. Contents:
 
-### Pulling review stats back
+- `lastSyncAt` and `lastRun { runId, mode, status, url }`;
+- per-card results: `{ ankiNoteId, action: created | updated | unchanged | failed, syncedAt }`
+  keyed by card id;
+- per-deck stats computed from the just-synced collection: card counts by state, due today,
+  reviews done today — fresher than any desktop session (every push plus daily, desktop off);
+- `errors` for anything non-fatal worth surfacing.
 
-After a successful flush, and at most hourly on window focus, the client reads per-deck stats
-(`deckNames`, `getDeckStats`, plus `findCards`/`cardsInfo` for the two decks) and pushes them to
-`PUT /api/v1/anki/snapshot`. The server stamps `takenAt` and stores them in `anki_snapshots`
-(§4.3, §4.4). This is the **only** picture the cloud ever has of Anki, and it is aggregate and
-lagging by design — it is not a scheduling import, and per ADR-025 it never feeds the in-app
-scheduler. It exists so the dashboard can tell the truth on a phone, where AnkiConnect does not
-exist.
+The API reads this file (ETag-cached) to serve the status surface. The `srs_owner` hinge to
+the in-app review widget (ADR-025) is **deferred with that widget**; when it lands, ownership
+transfer keys off `state.json`'s per-card results instead of a pushed event — same one-item,
+one-scheduler invariant, different transport.
+
+The collection is fully readable during a run, so a per-card schedule import into ADR-025's
+FSRS is now _possible_ — it remains **rejected**, on ADR-025's own grounds (a partial import
+silently corrupts FSRS state; ownership transfer is one-way), no longer on reachability
+grounds. A run that syncs but crashes before committing state merely leaves `lastSyncAt`
+stale until the next run; the Actions tab is the ground truth the status surface links to.
 
 ### "Synced for me": the status surface
 
-Three honest states, surfaced in the learning widgets' footer and the review widget card:
+Three honest states, surfaced in the learning widget's footer:
 
-- **Synced** — "Anki synced 8 min ago" (relative time from `lastSnapshotAt`, `Intl.RelativeTimeFormat`).
-- **Pending** — "3 waiting for Anki" whenever the queue is non-empty. On mobile this is the
-  normal, expected resting state, and the copy must not read as an error: pending means _next
-  time you open Anki on your desktop_, not _something broke_.
-- **Failed** — only for items that exhausted retries or hit a mapping error; these get an inline
-  retry and never block the rest of the queue.
+- **Synced** — "Anki synced 8 min ago" (relative time from `lastSyncAt`,
+  `Intl.RelativeTimeFormat`).
+- **Pending** — "N waiting for sync": card commits since `lastSyncAt` (a cheap commits-list
+  query on `cards/`, excluding the Action's own commits). The normal window is a couple of
+  minutes — commit, run, state — on **any** device. The old design's "pending possibly for
+  days until desktop Anki opens" state no longer exists.
+- **Failed** — `state.json` marks the run or an item `failed`. "View run" links to the
+  Actions tab; retry is re-running the workflow there (or any new card commit).
 
-Never a spinner that implies live connectivity we do not have, and never a green tick on mobile
-that we cannot actually verify.
+No spinner implying live connectivity, and — new — a green tick on mobile is now _true_, which
+the old design structurally could not offer.
 
 ### API contract
 
-Under `/api/v1/anki` (moved from `/api/v1/japanese/anki`), JWT-guarded, zod contracts in
-`packages/contracts` (ADR-004/007):
+No Anki module exists at all — Anki sync has no API surface beyond one read. The
+`LearningModule` (ADR-024) exposes, alongside its content endpoints:
 
-- `POST /queue` `{ clientRequestId, vaultItemId, deck }` → 201; replays return the existing
-  record (200). The **server** maps the item to fields (single source of mapping truth); the
-  client sends no note payload.
-- `GET /queue?status=pending` → items to flush, each carrying its resolved deck, model, fields,
-  tags, and `VaultId`.
-- `PATCH /queue/:id` `{ status: 'flushed', ankiNoteId }` | `{ status: 'failed', lastError }`.
-- `PUT /snapshot` → per-deck counts + `reviewsToday`, server-stamped.
-- `GET /status` → `{ pending, failed, lastSnapshotAt, lastSyncAt }` — one fetch for the surface
-  above.
+- `GET /api/v1/learning/anki-status` →
+  `{ configured, lastSyncAt, lastRunStatus, lastRunUrl, pendingCommits, decks }` — one fetch
+  for the surface above, composed from `state.json` plus the commits query, both cached.
 
-A successful flush emits **`anki.note_created { userId, vaultItemId, deck, ankiNoteId }`**;
-`ReviewModule` (ADR-025) listens and transfers `srs_owner` to `anki`, suspending the in-app card.
-This event is the whole hinge between the two loops — one item, one scheduler.
+Gone: the first draft's `POST/GET/PATCH /api/v1/anki/queue`, `PUT /snapshot`, and this
+rewrite's earlier `PUT /report`; `/api/v1/japanese/anki/*` (ADR-011/013). "Add to Anki" rides
+ADR-024's `POST /api/v1/learning/cards` — no Anki-specific write endpoint exists for the
+client at all.
+
+### Credential custody & terms
+
+AnkiWeb email + password live **only** in Actions secrets of Anna's own private repo —
+encrypted at rest, masked in logs, never on our API host, never in the client (§5.2). The
+script must still never print sync responses. Blast radius of a leak: read/write of the Anki
+collection — the same power as the desktop login it replaces. The API's learning-repo PAT
+(ADR-024, `GITHUB_LEARNING_TOKEN`) is unchanged: Contents-only, single repo.
+
+On terms: this is the official client library speaking the official sync protocol,
+authenticated as the account owner, at personal-use volume. The previous draft's rejection of
+"AnkiWeb scraping" (HTML, ToS) stands untouched — this is not that.
 
 ## Consequences
 
-- **Easier:** two decks stay coherent because both are generated from one vault mapping; a
-  re-sync of the entire vault is safe and idempotent; "available on all my devices" costs us one
-  `sync` call because AnkiWeb already solves it. Tech lessons stop posting to a Japanese
-  endpoint.
-- **Harder / committed to:** we own custom note types and card templates in Anna's collection.
-  Changing a field means shipping `CC Japanese v2` and a migration decision (leave v1 notes
-  alone, most likely) — versioned model names are what make that survivable. We also own an
-  HTML-escaping obligation on `Code`.
-- **Unchanged and accepted (R2):** nothing syncs while Anki is closed. Mobile adds queue,
-  possibly for days. Review stats are as fresh as the last desktop session. This is a property of
-  Anki's architecture, not a defect in ours, and the UI says so plainly rather than hiding it.
-- **Supersedes:** ADR-011/013's `/api/v1/japanese/anki/*` endpoint placement and their
-  `ankiNoteType: "Basic"` default; ADR-011's `findNotes` dedupe key (headword+reading → `VaultId`).
-  ARD §4.3 needs a follow-up edit moving `anki_snapshots` to `AnkiModule`.
-- **Open questions for Anna:** (1) Do the two decks already exist in your collection with content
-  — do we need a one-time import of _existing_ notes into the vault, or does the vault start
-  empty? (2) Recall (Meaning → Expression) cards for Japanese: on or off by default? (3) Deck
-  names — literally `Japanese` and `Tech`, or nested under an existing parent deck you already
-  use?
+- **Easier:** the desktop app leaves the architecture — a card saved on the phone is in
+  AnkiWeb minutes later, with desktop Anki closed or the machine off. The API loses a whole
+  protocol surface (queue endpoints, flush lifecycle, AnkiConnect CORS carve-out, client
+  provisioning); the browser never talks to Anki. Stats refresh daily regardless of desktop
+  use. Re-syncing every card file is the normal case, not a recovery mode. Her existing decks
+  come in through the same machinery (import mode), not a separate tool.
+- **Harder / committed to:** we own a Python sync script in a TypeScript monorepo, plus a
+  cross-repo seam: the learning repo's caller workflow, the monorepo's Actions-sharing setting,
+  and the `anki-sync-v1` release tag are three pieces of setup that live outside the codebase
+  and belong in the runbook. The pinned `anki` version needs deliberate bumps (the sync
+  protocol evolves and old clients get rejected; the daily run is the alarm) — shipped by
+  moving the tag, so a bad bump is rolled back by moving it back. GitHub Actions is now on
+  the sync path: an Actions outage delays sync but loses nothing — the repo still holds the
+  items. Anna must update the secret if she changes her AnkiWeb password.
+- **Still owned from the first draft:** custom note types and card templates in Anna's
+  collection — a field change means shipping `CC Japanese v2` and leaving v1 notes alone;
+  versioned model names are what make that survivable. The HTML-escaping obligation on `Code`.
+- **The full-sync edge:** the script's never-full-upload rule is the single most important
+  line of the implementation and gets a test. A red run here is correct behavior, not a bug.
+- **Supersedes:** ADR-011's entire queue-and-flush protocol (durable `anki_queue`, browser
+  `ankiConnectClient`, flush-time provisioning, client stats push) and its
+  `/api/v1/japanese/anki/*` endpoints; ADR-013's reuse of that endpoint; this ADR's own
+  2026-07-14 draft (AnkiConnect flush + desktop `sync` trigger); and, from the 2026-07-16
+  revision (Anna: GitHub is the store, no Mongo), the interim `PUT /api/v1/anki/report`
+  endpoint, its machine token, `AnkiModule`, and the Mongo `anki_snapshots` collection —
+  none of these will exist. ADR-019 and ADR-024/025 are edited in place (same unapproved
+  batch). ARD edits owed on approval: §4.5's Anki paragraph, the container diagram and
+  failure-mode row, the AnkiConnect CORS row, R2, Phase 3's "queue-and-flush", and §4.3's
+  `anki_snapshots` row (deleted, not moved).
+- **Media** (images/audio, e.g. ADR-019's diagrams) stays out of v1; when wanted it is one
+  more call in the same run (`col.sync_media`), not a new architecture.
+- **Open questions for Anna:** (1) Recall (Meaning → Expression) cards for Japanese: on or
+  off by default? (2) Deck names — literally `Japanese` and `Tech`, or nested under an
+  existing parent deck? (3) Comfortable with the AnkiWeb password in Actions secrets, or gate
+  this ADR on trying it with a throwaway AnkiWeb account first? (The "do the decks already
+  have content" question is answered: yes — import mode exists for exactly that.)
 
 ## Alternatives considered
 
-- **Server-side sync (API → AnkiConnect):** impossible, not merely rejected — AnkiConnect binds
-  to desktop localhost (§4.5). Restated here because it is the first thing everyone proposes.
-- **AnkiWeb scraping / reverse-engineered sync client:** rejected on ToS grounds (R2), and it
-  would put Anna's Anki credentials in our custody — a strictly worse security posture (§5.3) for
-  a feature the desktop app performs for free.
-- **`Basic` note type (ADR-011's original default):** rejected — two fields force expression,
-  reading, meaning and example into concatenated HTML, destroy field-scoped dedupe, and make
-  furigana a string-munging problem. Custom models cost one `createModel` call.
-- **Subdecks (`Japanese::Grammar`, `Tech::TypeScript`):** rejected — Anki's options/limits apply
-  per top-level deck, so subdecks would fragment exactly the scheduling knobs Anna wants to set
-  once per deck; tags give the same filtering with none of that.
-- **Anki note `guid` as the identity key:** rejected — not settable via AnkiConnect's `addNote`,
-  so we would be asserting control we do not have. A `VaultId` field is settable, searchable, and
-  ours.
-- **Mapping vault markdown bodies to fields (parse on flush):** rejected — the body is generated
-  prose for human reading; ADR-024 stores a structured `fields` block precisely so that no
-  consumer ever parses markdown.
-- **Client-composed note payloads (client sends fields to the queue):** rejected — two mapping
-  implementations would drift, and it would let a compromised client write arbitrary content into
-  the queue. The server maps; the client transports.
-- **Importing Anki's scheduling state back into the app:** rejected for v1 — `getDeckStats` gives
-  aggregates, not per-card memory state; a partial import would silently corrupt ADR-025's FSRS
-  state. Ownership transfer is one-way, and honestly labelled as such.
+- **AnkiConnect queue-and-flush via the browser (this ADR's first draft, per ADR-011):**
+  workable but desktop-gated — adds pend for days until desktop Anki opens, stats lag by a
+  desktop session, mobile can never show a true green tick, and we own a queue, a flush
+  lifecycle, client-side provisioning, and a CORS carve-out. Kept in history as the fallback
+  if credentials-in-Actions proves unacceptable.
+- **Server-side AnkiConnect:** still impossible, not merely rejected — it binds to desktop
+  localhost. Restated because it is the first thing everyone proposes.
+- **AnkiWeb HTML scraping / reverse-engineered private endpoints:** still rejected on ToS
+  grounds (R2). The official library speaking the official sync protocol is a different act.
+- **Self-hosted Anki sync server, devices re-pointed at it:** rejected — takes custody of the
+  entire collection on our infra (backups, availability, §5.3 exposure) and reconfigures every
+  device, to replace a sync service Anki provides for free (NFR-8).
+- **Generating `.apkg` files (genanki) on a schedule:** rejected — an `.apkg` does not import
+  itself; it waits for a manual click in desktop Anki, which is the exact gap this redesign
+  closes. Re-imports also carry scheduling-clobber risk that true sync does not.
+- **Vendoring the whole script + workflow into the learning repo:** rejected — that repo has
+  no CI of its own worth building, so the mapper's golden tests would drift away from
+  `packages/contracts`, and every script fix becomes a manual copy into a second repo. The
+  thin-caller/composite-action split keeps the code where the tests and reviews already are.
+- **The API provisioning and updating the workflow via the Contents API:** rejected — writing
+  under `.github/workflows/` needs the fine-grained PAT to gain the Workflows permission,
+  widening ADR-024's deliberately Contents-only scope, to automate a ~15-line file that
+  changes approximately never. One manual commit at setup is proportionate.
+- **A report endpoint (`PUT /api/v1/anki/report` + machine token), as this rewrite first
+  proposed:** rejected once Mongo left ADR-024 — it existed to fill `anki_snapshots`; with
+  GitHub as the store, committing `sync/state.json` is simpler, keeps sync results
+  versioned next to the cards they describe, and removes a token and an API surface.
+- **Running the sync from our worker (pg-boss job):** rejected — puts AnkiWeb credentials on
+  our API host (the custody objection the first draft rightly raised), adds a Python runtime
+  to a Node deployment, and re-implements what Actions gives free: trigger-on-push, secrets,
+  logs, cron.
+- **A minutes-level cron instead of push-triggered runs:** rejected — hammers AnkiWeb for a
+  personal repo that changes a few times a day; push triggers + daily schedule match actual
+  write volume.
+- **Keeping an API-side `anki_queue` in front of the card files:** rejected — a second queue
+  duplicating repo state, adding no durability the repo doesn't already provide.
+- **Anki's `guid` as the _only_ identity (no `CardId` field):** rejected — guid is invisible
+  in the Anki UI and unsearchable by Anna; the field costs nothing and is the debuggable
+  handle. We set both.
+- **Importing Anki's per-card scheduling state back into ADR-025's FSRS:** still rejected —
+  now as a choice (the collection is readable in the run) rather than an impossibility; a
+  partial import silently corrupts FSRS state, and ownership transfer stays one-way. (Import
+  mode deliberately exports _content_ only, never scheduling.)

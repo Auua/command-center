@@ -71,9 +71,9 @@ agree — two different answers to that question would be a bug users feel.
   Anki notes. Reviewing the same item in two schedulers is not extra practice — it is two
   contradictory models of one memory, double work, and a permanent "did I already do this
   today?" question. We refuse to build that.
-- Transfer is one-way in v1. We cannot read Anki's scheduling state from the cloud (R2); only
-  the aggregate snapshots of ADR-026. "Take it back from Anki" would need a schedule import we
-  cannot do reliably — flagged below rather than faked.
+- Transfer is one-way in v1. ADR-026's sync run _can_ read the collection, but the app only
+  consumes its aggregate snapshots: "take it back from Anki" would need a per-card schedule
+  import, and a partial import silently corrupts FSRS state — flagged below rather than faked.
 
 ### Data model
 

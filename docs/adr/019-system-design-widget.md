@@ -26,7 +26,7 @@ does not work is the diagram: a system-design lesson without a picture is a wall
   building SVG through DOM injection and inline styles — both a CSP fight (nonce-based, no inline
   script) and a bundle-size fight (~500 kB) for a card that shows one static picture.
 - Everything else about the widget is ADR-013's problem, already solved: day-pinning, streaks via
-  `lesson.completed` (ADR-014), the shared Anki queue (ADR-011), NFR-11/NFR-12, R5 provenance.
+  `lesson.completed` (ADR-014), the shared Anki sync path (ADR-026), NFR-11/NFR-12, R5 provenance.
 
 Ambiguity resolved here: **separate widget, shared rails.** Fork the surface (component, settings,
 content sub-shape); reuse the pipeline (module, collection, progress table, events, Anki path).
@@ -72,14 +72,15 @@ module, no cross-module import.
   `lesson_progress`. Same day-pinning, same carry-over of an unfinished lesson.
 - **Completion emits `lesson.completed { userId, track: 'system-design', lessonId }`** on the event
   bus; ADR-014's StreaksService credits `streaks.widget_id = 'system-design'`. No inline streak write.
-- **"Add to Anki" reuses the shared queue** — but at its post-ADR-026 address: `POST /api/v1/anki/queue`
-  on the deck-agnostic `AnkiModule`, not ADR-011's original `/api/v1/japanese/anki/queue` (which
-  ADR-026 supersedes). The queue is **vault-driven**: saving the lesson writes a vault item (ADR-024)
-  and the vault id is the note's stable GUID, so ADR-011's three-layer idempotency keys off an exact
-  id rather than a content hash. A system-design lesson lands in the **Tech** deck (ADR-026): front =
-  the self-check question, back = takeaway + the tradeoff lines as text. Diagrams are **not** shipped
-  to Anki in v1 (an Anki media upload is a separate protocol on top of AnkiConnect; text cards are the
-  80 % value) — recorded as an open question below.
+- **"Add to Anki" is a repo write (ADR-024/026):** the quick action saves a card file (with
+  `anki: true` front-matter) into the learning repo via the learning API; the repo's GitHub
+  Action syncs it to AnkiWeb keyed on the deterministic card id, so idempotency keys off an
+  exact id rather than a content hash. There is no Anki queue endpoint (ADR-011's
+  `/api/v1/japanese/anki/queue` and the first ADR-026 draft's `/api/v1/anki/queue` are both
+  superseded). A system-design lesson lands in the **Tech** deck (ADR-026): front = the self-check
+  question, back = takeaway + the tradeoff lines as text. Diagrams are **not** shipped to Anki in v1
+  (media rides Anki's separate media sync, `sync_media`; text cards are the 80 % value) — recorded
+  as an open question below.
 
 ### Data model
 
@@ -116,8 +117,8 @@ Under `/api/v1/learning`, zod schemas in `packages/contracts` (ADR-004/007), rej
   "accidentally send markup" is unrepresentable in the contract, not merely forbidden by policy.
 - `POST /system-design/:id/complete` → idempotent (re-completing is a 200 no-op), returns updated
   progress + streak.
-- Anki: no new route — the shared `POST /api/v1/anki/queue` on `AnkiModule` (ADR-026), reached with a
-  vault item id (ADR-024). This widget adds no Anki surface of its own.
+- Anki: no new route — the quick action saves a card file through the learning API (ADR-024)
+  and ADR-026's Action does the rest. This widget adds no Anki surface of its own.
 
 Error semantics match the house rules: request-shape violations are 400 (ZodError via the global
 filter); a stored doc that fails the contract is a 500 (corrupt content), never a client ZodError;
@@ -176,7 +177,7 @@ pinned lesson rather than an error (ARD §2 failure posture).
   collection with a `kind` discriminator, and per-area widget instances.
 - **Open questions for Anna:** (1) is the dagre-laid-out mermaid subset expressive enough, or do the
   first ten lessons need sequence diagrams too (a second IR shape)? (2) Should "Add to Anki" ship the
-  diagram as media (AnkiConnect `storeMediaFile`), or is a text-only card enough? (3) Does the
+  diagram as media (Anki's media sync, `sync_media` — ADR-026), or is a text-only card enough? (3) Does the
   self-check want a free-text "explain it back" field — valuable pedagogically, but it is journal-shaped
   private content and would drag a Mongo write into an otherwise read-only widget.
 
