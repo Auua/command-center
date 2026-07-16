@@ -14,6 +14,9 @@ the Phase 2 automation engine via the `task.completed` event (§4.5). It also se
 NFR-11 (WCAG 2.1 AA) and NFR-12 (i18n) in an interactive widget — the clock and braindump widgets
 exercised neither seriously. Most of this ADR is implemented (commit `dc12298` onward); where the
 implementation falls short of the decision, the gap is called out inline as **Gap**.
+_(ADR-036 extends this widget with recurring tasks: lineage columns on `tasks`, an `every …`
+quick-add token, and respawn-on-completion semantics — this ADR's single-shot model remains the
+base case.)_
 
 ## Decision
 
