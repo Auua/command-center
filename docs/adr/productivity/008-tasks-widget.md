@@ -1,7 +1,8 @@
 # ADR-008: Tasks (todo) widget
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-13
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 

@@ -1,7 +1,8 @@
 # ADR-009: Mood check-in + 7-day trend widget
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-13
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -11,7 +12,7 @@ Forces in play:
 
 - The design mock (`docs/design/dashboard-mock.html`, "Mood check-in" card) shows a 5-face emoji scale as toggle buttons with `aria-pressed`, tag chips, and an SVG trend with a **hover-only** tooltip built in script. Hover-only is not keyboard- or touch-accessible and cannot ship as-is.
 - ARD hard rails: all data via NestJS REST `/api/v1` with zod contracts in `packages/contracts` (ADR-004/007); `mood_checkins` lives in Postgres under RLS, owned solely by `MoodModule` (§4.3–4.4); the widget conforms to the `WidgetDefinition` SDK (§4.2).
-- Ambiguity to resolve: one check-in per day or many? The mock's greeting says "mood not logged yet" (suggesting once daily) but the schema keys on `created_at` timestamps, and Phase 2 automations will prompt both morning and evening.
+- Ambiguity to resolve: one check-in per day or many? The mock's greeting says "mood not logged yet" (suggesting once daily) but the schema keys on `created_at` timestamps, and Phase 2 automations will prompt both morning and evening. -> _PO-review:_ 0–5 check-ins per day, cap enforced server-side (see Data model)
 - The widget already exists (commit dd30da4: `apps/web/widgets/mood/`, `apps/api/src/mood/`, `packages/contracts/src/schemas/mood.ts`, `supabase/migrations/0003_mood_checkins.sql`). This ADR records the decisions it embodies and names the gaps where it falls short of the target.
 
 ## Decision
@@ -55,19 +56,21 @@ We will store check-ins in Supabase Postgres `mood_checkins` (migration `0003_mo
 
 RLS is enabled with own-rows-only policies; a composite index on `(user_id, created_at desc)` serves the window query. MoodModule is the sole owner — no other module reads the table; a future journal↔mood link stores opaque ids and composes in the API (§4.3).
 
-**Multiple check-ins per day, immutable.** A check-in is an event, not a daily field: re-checking-in creates a new row rather than overwriting, and there is deliberately no `UNIQUE (user_id, day)` constraint and **no PATCH endpoint** — the only mutations are POST (log) and DELETE (undo). Rationale: Phase 2 automations will prompt morning and evening; averaging a day's events gives a truthful trend, while overwrite would silently destroy the morning signal. "Mood not logged yet" in the mock's greeting means _no check-in today_, computed from the newest row's local day — it does not imply a one-per-day schema.
+**Multiple check-ins per day (at most five), immutable.** A check-in is an event, not a daily field: re-checking-in creates a new row rather than overwriting, and there is deliberately no `UNIQUE (user_id, day)` constraint and **no PATCH endpoint** — the only mutations are POST (log) and DELETE (undo). Rationale: Phase 2 automations will prompt morning and evening; averaging a day's events gives a truthful trend, while overwrite would silently destroy the morning signal. "Mood not logged yet" in the mock's greeting means _no check-in today_, computed from the newest row's local day — it does not imply a one-per-day schema.
+
+_PO decision:_ **0–5 check-ins per home-timezone day, cap enforced server-side.** The service counts the caller's rows for the current home-timezone day before insert and rejects a sixth with a 409 (see API contract). The cap is a service rule, not a schema constraint — a unique key cannot express "at most five", and the day boundary is a home-timezone derivation (ADR-014), not a storage concern. Enforcing it pulls the `users.timezone` plumbing into `MoodModule`'s write path, so that plumbing is no longer deferrable (it also unblocks the trend-endpoint gap above).
 
 ### API contract
 
 We will expose three routes under `/api/v1/mood`, with zod schemas in `packages/contracts/src/schemas/mood.ts` shared verbatim by both sides (ADR-001/007):
 
 - `GET /mood?days=N` → `{ items: MoodCheckin[] }`, newest first; `days` coerced int, 1–90, default 7.
-- `POST /mood` with `{ score: 1|2|3|4|5, tags?: string[], note?: string|null }` → the created `MoodCheckin`. The write schema is `.strict()` (reject-unknown-fields, §5.2), trims and dedupes tags (≤20, ≤50 chars), caps notes at 1000 chars. `user_id` comes from the verified JWT, never the body.
+- `POST /mood` with `{ score: 1|2|3|4|5, tags?: string[], note?: string|null }` → the created `MoodCheckin`, or 409 when the caller already has five check-ins in the current home-timezone day (the PO-decided daily cap — see Data model). The write schema is `.strict()` (reject-unknown-fields, §5.2), trims and dedupes tags (≤20, ≤50 chars), caps notes at 1000 chars. `user_id` comes from the verified JWT, never the body.
 - `DELETE /mood/:id` → 204, or 404 for missing/foreign/malformed ids.
 
 `score` is a literal union `1|2|3|4|5` (not `int min 1 max 5`), so an out-of-range score is unrepresentable in the type system on both ends.
 
-Error semantics: request-shape violations are 400s (ZodError via the global exception filter); missing/foreign/malformed ids are uniform 404s; storage faults are opaque 500s with details only in server logs. `createdAt` is normalized to strict UTC `Z` datetimes at the repository boundary so the contract's `z.string().datetime()` holds regardless of PostgREST's offset serialization.
+Error semantics: request-shape violations are 400s (ZodError via the global exception filter); the daily-cap rejection is a 409 with a machine-readable code so the widget can show "5 check-ins today — back tomorrow" instead of a generic error; missing/foreign/malformed ids are uniform 404s; storage faults are opaque 500s with details only in server logs. `createdAt` is normalized to strict UTC `Z` datetimes at the repository boundary so the contract's `z.string().datetime()` holds regardless of PostgREST's offset serialization.
 
 ### Accessibility
 
@@ -106,8 +109,8 @@ Required states:
 - **Safer by construction:** the literal-union score and `.strict()` write schema mean a whole class of bad data is unrepresentable on both ends, not just validated away; the DB check constraint backs it a third time.
 - **Reusable pattern:** the chart's position-encoding + `aria-label` series + (target) hidden data table becomes the house accessibility pattern for every future chart widget (streaks, finance) — this ADR is the reference for those reviews.
 - **Harder:** multiple-rows-per-day means every consumer must bucket by _local_ day — "today's mood" is a derived question, not a column — and day-bucketing lives client-side until the home-tz `GET /mood/trend` endpoint exists.
-- **Committed to:** building the SQL trend endpoint before any window >90 days or richer aggregation ships; pairing any future hover tooltip with keyboard focus equivalence — hover-only regressions are architecturally forbidden by this ADR; keeping mood routes analytics-free permanently.
-- **Tracked gaps** (target recorded above, not yet in code): SQL trend aggregation endpoint; visually-hidden data table under the chart; optimistic submit with cache rollback; skeleton-style loading state; message-catalog externalization of widget copy; a visible (not just assistive) text label for the pressed face.
+- **Committed to:** building the SQL trend endpoint before any window >90 days or richer aggregation ships; pairing any future hover tooltip with keyboard focus equivalence — hover-only regressions are architecturally forbidden by this ADR; keeping mood routes analytics-free permanently; enforcing the 0–5-per-day cap server-side (409 on the sixth), which commits `MoodModule` to the `users.timezone` plumbing on its write path.
+- **Tracked gaps** (target recorded above, not yet in code): optimistic submit with cache rollback and the skeleton-style loading state (_PO-review:_ these two UX gaps close first); server-side daily-cap enforcement with the `users.timezone` plumbing it requires; SQL trend aggregation endpoint; visually-hidden data table under the chart; message-catalog externalization of widget copy; a visible (not just assistive) text label for the pressed face.
 
 ## Alternatives considered
 

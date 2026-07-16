@@ -2,6 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-13
+- **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
 
