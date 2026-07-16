@@ -1,8 +1,8 @@
 # ADR-021: Stock & FX watchlist widget
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -57,7 +57,10 @@ A new `MarketsModule` (§4.1) with two responsibilities: the user's watchlist (P
 **cached quote proxy** (provider behind an interface).
 
 - **Provider: Twelve Data free tier as v1**, behind a `MarketDataProvider` port
-  (`getQuotes(symbols[])`, `getDailySeries(symbol, days)`, `search(query)`). It is the one free tier
+  (`getQuotes(symbols[])`, `getDailySeries(symbol, days)`, `search(query)`). -> _PO-review (2026-07-16):_
+  confirmed for **both** FX and equities — ADR-034's proposal to move FX rows to daily ECB reference
+  rates was **rejected**: the widget's purpose is _current_ market data, and a once-a-day EUR/JPY
+  defeats it; the credit budget below already carries FX comfortably. It is the one free tier
   that covers **both FX pairs and equities through a single symbology** — the actual requirement here —
   with a batch quote endpoint (one request, many symbols) and a daily credit budget large enough for
   the polling design below. The port exists because free tiers change terms without warning: swapping
@@ -204,9 +207,12 @@ surfaced verbatim (they can contain the API key in the URL).
   `MarketsModule`'s quote read through the API layer, and this widget stays a watchlist.
 - **Open questions for the product owner:** (1) Twelve Data's free tier forbids some redistribution and can change —
   do we want the Finnhub/Alpha Vantage adapters written up-front as a hedge, or written the day we need
-  them? (2) Is a 7-day daily sparkline enough, or is intraday wanted (it is a per-symbol call per
-  interval — a materially different budget)? (3) Should FX pairs be a separate widget instance from
-  equities (per-instance settings would allow it), or is one mixed list actually the point?
+  them? -> _PO-review:_ when needed — the `MarketDataProvider` port plus its conformance suite _is_ the
+  hedge; a speculative second adapter is effort against a hypothetical. (2) Is a 7-day daily sparkline
+  enough, or is intraday wanted? -> _PO-review:_ daily closes as drafted (7 or 30 days); intraday
+  sparklines rejected — a materially different budget for a glance. (3) Should FX pairs be a separate
+  widget instance from equities, or is one mixed list actually the point? -> _PO-review:_ **one widget,
+  one mixed list** — current market data in a single card is the point; no separate FX instance.
 
 ## Alternatives considered
 

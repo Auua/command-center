@@ -1,10 +1,19 @@
 # ADR-034: FX from central-bank reference rates (Frankfurter), not from the metered quote provider
 
-- **Status:** proposed
+- **Status:** Rejected (product-owner decision, 2026-07-16)
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed — PO-reviewed 2026-07-16, rejected
 
 ## Context
+
+_PO-review (2026-07-16):_ **rejected, on both halves.** (1) The watchlist half: the daily-granularity
+trade this ADR leads with (open question 1) was declined — the watchlist's purpose is **current** market
+data, and a once-a-day EUR/JPY defeats it; FX stays on Twelve Data inside ADR-021's existing credit
+budget, which carries it comfortably. (2) The finance half became moot when ADR-030 was parked at the
+same review — there are no transactions to convert. The provider research below (Frankfurter/ECB:
+keyless, quota-free, self-hostable, verified live 2026-07-14) stands as the reference if either
+premise changes: a revived finance module should start here, and `as_of_granularity` remains the right
+mechanism if a daily-granularity source ever does join `market_quotes`.
 
 Two ADRs need an exchange rate, for different reasons, and both are currently pointed at the wrong thing:
 
@@ -172,10 +181,11 @@ productization.
 - **Committed to:** rates are resolved server-side and stored on the transaction; there is no client-supplied
   rate, and historical conversions never drift.
 - **Open questions for the product owner:** (1) Confirm the daily-granularity trade for the watchlist — this is the one
-  user-visible thing this ADR changes. (2) Should the FX sparkline be 7 business days (matching equities) or
-  30 (FX moves slowly, and 7 ECB points is a very short line)? (3) ADR-021 asked whether hedge adapters
-  should be written up front; this ADR removes half the exposure — is the remaining Twelve Data dependency
-  (equities only) now small enough to leave un-hedged?
+  user-visible thing this ADR changes. -> _PO-review:_ **declined — this is why the ADR is rejected.**
+  (2) Should the FX sparkline be 7 business days or 30? -> _PO-review:_ moot; sparklines stay on
+  ADR-021's daily-close design. (3) Is the remaining Twelve Data dependency small enough to leave
+  un-hedged? -> _PO-review:_ answered in ADR-021 — hedge adapters are written when needed; the port +
+  conformance suite is the hedge.
 
 ## Alternatives considered
 
