@@ -1,8 +1,8 @@
 # ADR-018: Calendar Widget (daily/weekly/monthly views)
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-13
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 

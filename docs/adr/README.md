@@ -24,7 +24,7 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 015 | [Reminders / Automations widget](productivity/015-reminders-widget.md)                                                             | productivity  | accepted |
 | 016 | [Journal widget — editor choice, data model, and editing surface](reflection/016-journal-widget.md)                                | reflection    | accepted |
 | 017 | [Appreciation Tracker Widget](reflection/017-appreciation-widget.md)                                                               | reflection    | accepted |
-| 018 | [Calendar Widget (daily/weekly/monthly views)](productivity/018-calendar-widget.md)                                                | productivity  | proposed |
+| 018 | [Calendar Widget (daily/weekly/monthly views)](productivity/018-calendar-widget.md)                                                | productivity  | accepted |
 | 019 | [System-design micro-lesson widget](learning/019-system-design-widget.md)                                                          | learning      | proposed |
 | 020 | [RSS feed widget (headlines + excerpts, link out)](external-data/020-post-reader-widget.md)                                        | external-data | accepted |
 | 021 | [Stock & FX watchlist widget](external-data/021-stocks-widget.md)                                                                  | external-data | accepted |
