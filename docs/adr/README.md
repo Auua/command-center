@@ -35,7 +35,7 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 026 | [Anki two-deck sync (Japanese + Tech) — learning-repo GitHub Action → AnkiWeb](learning/026-anki-deck-sync.md)                     | learning      | proposed |
 | 027 | [Habit tracking widget](productivity/027-habit-widget.md)                                                                          | productivity  | proposed |
 | 028 | [Pomodoro timer widget](productivity/028-pomodoro-widget.md)                                                                       | productivity  | proposed |
-| 029 | [Fitness & health widget](lifestyle/029-fitness-widget.md)                                                                         | lifestyle     | proposed |
+| 029 | [Fitness & health widget](lifestyle/029-fitness-widget.md)                                                                         | lifestyle     | accepted |
 | 030 | [Finance dashboard widget](lifestyle/030-finance-widget.md)                                                                        | lifestyle     | proposed |
 | 031 | [Home Assistant integration widget](lifestyle/031-home-assistant-widget.md)                                                        | lifestyle     | proposed |
 | 032 | [Content sourcing & licensing for the learning widgets](learning/032-learning-content-sourcing.md)                                 | learning      | proposed |
@@ -44,3 +44,4 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 035 | [Transit departures widget (HSL / Digitransit)](external-data/035-transit-departures-widget.md)                                    | external-data | proposed |
 | 036 | [Recurring tasks (and their projection onto the calendar)](productivity/036-recurring-tasks.md)                                    | productivity  | proposed |
 | 037 | [Google Calendar sync (per-calendar read-only and read-write)](productivity/037-google-calendar-sync.md)                           | productivity  | proposed |
+| 038 | [Nutrition widget (food log, personal food library, calorie tracking)](lifestyle/038-nutrition-widget.md)                          | lifestyle     | accepted |
