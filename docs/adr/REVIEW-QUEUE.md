@@ -34,13 +34,13 @@ and don't violate the architecture, **not** that they're the decisions the produ
 
 ## Batch 3 — README future extensions
 
-| ADR | Title                      | Review state    | Approved     |
-| --- | -------------------------- | --------------- | ------------ |
-| 027 | Habit tracking             | claude-reviewed |              |
-| 028 | Pomodoro timer             | claude-reviewed |              |
-| 029 | Fitness & health           | claude-reviewed | ✓ 2026-07-16 |
-| 030 | Finance dashboard          | claude-reviewed |              |
-| 031 | Home Assistant integration | claude-reviewed |              |
+| ADR | Title                      | Review state    | Approved          |
+| --- | -------------------------- | --------------- | ----------------- |
+| 027 | Habit tracking             | claude-reviewed |                   |
+| 028 | Pomodoro timer             | claude-reviewed |                   |
+| 029 | Fitness & health           | claude-reviewed | ✓ 2026-07-16      |
+| 030 | Finance dashboard          | claude-reviewed | parked 2026-07-16 |
+| 031 | Home Assistant integration | claude-reviewed | parked 2026-07-16 |
 
 ## Batch 4 — public-API enhancements
 
