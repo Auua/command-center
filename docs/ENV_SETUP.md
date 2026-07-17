@@ -58,4 +58,4 @@ migration step.
 ## 4. Deploy targets
 
 Set the same variables in the platform dashboards: Vercel (web) and
-Railway/Fly (api + worker). `CORS_ORIGIN` must list the deployed web origin.
+Render (api + worker). `CORS_ORIGIN` must list the deployed web origin.

@@ -1,7 +1,10 @@
 # ADR-025: Spaced-repetition review widget
 
 - **Status:** proposed
-- **Date:** 2026-07-14
+- **Date:** 2026-07-14 (Anki rationale edited 2026-07-17 after ADR-026's rewrite retired
+  the AnkiConnect/desktop reachability constraint. This ADR still composes against
+  ADR-024's superseded vault draft — `vault_items`, `vault.item_saved`, `/api/v1/vault/*`
+  — and owes a full re-alignment when this widget is picked up, per ADR-024/026.)
 - **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
@@ -16,11 +19,14 @@ ADR specifies an in-app, Anki-style review widget: show prompt → reveal → gr
 Forces:
 
 - **ADR-012 said "Anki _is_ the SRS" and rejected in-widget scheduling.** This ADR revises that,
-  on reachability rather than taste: AnkiConnect is desktop-only (§4.5, R2), so an Anki-only SRS
-  means reviewing only at the desk with Anki open. A review loop that does not work on a
-  phone on a train is a review loop that does not run. The revision is scoped — Anki stays a
-  first-class scheduler for items handed to it (ADR-026); it is simply no longer the only one,
-  and exactly one scheduler owns any given item (see below).
+  on coupling rather than taste: with Anki as the only SRS, becoming an Anki note is a
+  prerequisite for ever being asked again, and review happens only in Anki's apps, never on
+  the dashboard. Not every saved item belongs in a deck, and the second loop should reach the
+  place the capture happened. The revision is scoped — Anki stays a first-class scheduler for
+  items handed to it (ADR-026); it is simply no longer the only one, and exactly one scheduler
+  owns any given item (see below). (The original draft argued this from AnkiConnect's
+  desktop-only reachability; ADR-026's AnkiWeb sync retired that constraint — mobile Anki
+  reviews sync fine — so reachability is no longer the argument.)
 - **Data split (§4.3):** review state is relational, queryable, and aggregated over time
   (due counts, trends, forecast) → Postgres. Item _content_ lives in Mongo `vault_items`
   (ADR-024). No cross-DB joins; no cross-module imports (§4.1) — composition happens where
@@ -64,16 +70,18 @@ agree — two different answers to that question would be a bug users feel.
 
 - A saved vault item gets a card with `srs_owner` from the per-deck default setting (`app` for
   both decks initially — see open questions).
-- **"Add to Anki" (ADR-026) transfers ownership to Anki**: on `anki.note_created`, `ReviewModule`
-  sets `srs_owner = 'anki'` and suspends the app card. It leaves the due queue; the item still
-  appears in the vault list, badged "In Anki".
+- **"Add to Anki" (ADR-026) transfers ownership to Anki**: when ADR-026's `sync/state.json`
+  first reports the card's note created, `ReviewModule` sets `srs_owner = 'anki'` and suspends
+  the app card (per ADR-026, the hinge keys off `state.json`'s per-card results, not a pushed
+  event). It leaves the due queue; the item still appears in the vault list, badged "In Anki".
 - Anki-owned items are never quizzed in-app, and app-owned items are never pushed as scheduled
   Anki notes. Reviewing the same item in two schedulers is not extra practice — it is two
   contradictory models of one memory, double work, and a permanent "did I already do this
   today?" question. We refuse to build that.
 - Transfer is one-way in v1. ADR-026's sync run _can_ read the collection, but the app only
-  consumes its aggregate snapshots: "take it back from Anki" would need a per-card schedule
-  import, and a partial import silently corrupts FSRS state — flagged below rather than faked.
+  consumes its `state.json` results and stats: "take it back from Anki" would need a per-card
+  schedule import, and a partial import silently corrupts FSRS state — flagged below rather
+  than faked.
 
 ### Data model
 
@@ -181,8 +189,8 @@ gradeButtons: "four" | "two" (default "four"), showNextInterval: boolean (defaul
 
 ## Consequences
 
-- **Easier:** the review loop works on any device with a browser — the property Anki structurally
-  cannot give us (R2). The vault (ADR-024) gets a second consumer for free: one save action now
+- **Easier:** the review loop runs in the dashboard itself, on any device, without an item
+  having to become an Anki note first. The vault (ADR-024) gets a second consumer for free: one save action now
   feeds the file, the review card, and (opt-in) the Anki note. Streaks need one map entry.
 - **Harder / committed to:** we own an SRS. FSRS state must be migrated carefully if we ever
   change scheduler; `review_logs` is the insurance policy. We also own the `srs_owner` invariant —
@@ -211,8 +219,10 @@ gradeButtons: "four" | "two" (default "four"), showNextInterval: boolean (defaul
 - **Per-user FSRS parameter optimization in v1:** rejected as premature — the optimizer needs
   hundreds of reviews to beat the stock parameters, which do not exist yet. `review_logs` keeps
   the option open at zero cost.
-- **Anki as the only SRS (status quo of ADR-011/012):** rejected — desktop-only reachability (R2)
-  means no reviews on mobile, which is where daily review actually happens.
+- **Anki as the only SRS (status quo of ADR-011/012):** rejected — it makes Anki membership a
+  prerequisite for being re-asked (every saved item must become a note), and review happens only
+  in Anki's apps, never on the dashboard. (The earlier desktop-only-reachability argument is
+  retired by ADR-026's AnkiWeb sync; the coupling argument stands on its own.)
 - **Both schedulers on the same item ("extra practice"):** rejected — two schedulers produce two
   contradictory pictures of the same memory and double the workload; the `srs_owner` invariant
   exists specifically to make this state unrepresentable.

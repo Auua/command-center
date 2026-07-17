@@ -158,6 +158,27 @@ learning-center v1 slice):
 - ADR-019, ADR-032 were edited in place to match; ADR-025 got a light touch and owes a full
   re-alignment when the review widget is picked up (all still unapproved). Setup steps live in
   `docs/runbook-learning-center.md`.
+- 2026-07-17: the remaining in-place edits landed (product-owner ask — stale AnkiConnect/desktop
+  references). ADR-011's Anki sections were replaced with the ADR-024/026 path and its store/selection
+  re-pointed at the learning repo (the edit the v1 plan owed it); ADR-012/013 re-pointed their Anki
+  quick actions at `POST /api/v1/learning/cards` and dropped the `ankiDeckName`/`ankiNoteType`
+  settings; ADR-025's desktop-reachability rationale was replaced by the coupling argument (its full
+  ADR-024 re-alignment is still owed). ARD edits remain owed on approval, per ADR-026 and ARD §7.
+- 2026-07-17, ADR-024 walkthrough follow-ups (product-owner decisions): `POST /cards` is now
+  `POST /cards/:kind` — one contract, path-typed, server-side formatter per kind (closes the seam
+  ADR-012/013/019 point at); a cold boot during a GitHub outage shows "try again later" instead of
+  buying snapshot/boot-warming machinery (WOTD is not crucial); malformed card files skip-and-report
+  via `state.json.errors` (024 + 026); GitHub 401/403 surfaces as an explicit token-invalid state
+  rather than hiding behind serve-stale. Separately, hosting references corrected to **Render**
+  (ARD ADR-006 row/diagram/NFR-13/secrets row, ENV_SETUP, ADR-031) — it was never Railway/Fly.
+- 2026-07-17, later (product-owner decisions): **per-kind progress files in the learning repo** —
+  `progress/<kind>.json`, mechanism + WOTD schema in ADR-024 (selection is no longer zero-state:
+  eligible = pool − seen − skipped, day pin, ~1 commit/day; skip replaces reroll in ADR-011 with
+  `POST /wotd/skip`). ADR-012 (`jp_grammar_days`/`jp_grammar_seen` Mongo), ADR-013 (Postgres
+  `lesson_progress`), and ADR-019 re-pointed at their kind's file — their progress _stores_ are
+  superseded, the policies stand. Pool refreshes are SHA-pinned (no manifest/shard version mixing);
+  ADR-026's push trigger corrected to `cards/**` so `progress/**`/`sync/**` commits never trigger
+  runs. ARD §4.3/§4.4 "progress counters in Postgres" joins the owed-on-approval ARD edits.
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 

@@ -59,8 +59,9 @@ that repo is part of its own deployable. Split by rate of change:
 AnkiWeb credentials stay **learning-repo Actions secrets**, passed into the action as inputs —
 the monorepo holds code, never secrets. Triggers, on the caller:
 
-- **`push`** filtered to `japanese/**` and `tech/**` — every saved or edited card syncs within
-  minutes, from any device, desktop off.
+- **`push`** filtered to `cards/**` — every saved or edited card syncs within minutes, from
+  any device, desktop off. (The filter matches ADR-024's layout; `progress/**` and `sync/**`
+  commits never trigger a run.)
 - **`schedule` (daily)** — reviews done on mobile change stats without any commit, so the
   snapshot (below) refreshes at least daily; and a daily run turns sync-protocol drift into a
   red run within a day instead of a silent failure months later.
@@ -82,7 +83,9 @@ Run steps, in order — the order is load-bearing:
 3. Ensure decks and note types exist (`col.decks.id()` creates on demand; models by name →
    create). A missing model is the normal state of a fresh runner, not an error.
 4. Upsert a note for **every** card file with `anki: true` (below), keyed on `CardId`. Every
-   file, every run — convergence by re-derivation, not by tracking deltas.
+   file, every run — convergence by re-derivation, not by tracking deltas. A file that fails
+   front-matter validation is **skipped and recorded** in `state.json.errors` — one
+   hand-edited card never fails the run (product-owner decision 2026-07-17).
 5. **Sync up** (`sync_collection` again), then `col.close()`.
 6. Report results and stats to the API (below).
 
@@ -223,7 +226,9 @@ Three honest states, surfaced in the learning widget's footer:
 - **Synced** — "Anki synced 8 min ago" (relative time from `lastSyncAt`,
   `Intl.RelativeTimeFormat`).
 - **Pending** — "N waiting for sync": card commits since `lastSyncAt` (a cheap commits-list
-  query on `cards/`, excluding the Action's own commits). The normal window is a couple of
+  query on `cards/`, excluding the Action's own commits — concretely, commits authored by
+  `github-actions[bot]` are filtered out, so the counter can honestly reach zero). The
+  normal window is a couple of
   minutes — commit, run, state — on **any** device. The old design's "pending possibly for
   days until desktop Anki opens" state no longer exists.
 - **Failed** — `state.json` marks the run or an item `failed`. "View run" links to the

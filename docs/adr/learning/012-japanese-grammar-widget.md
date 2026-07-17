@@ -1,7 +1,9 @@
 # ADR-012: Japanese Grammar-point widget
 
 - **Status:** proposed
-- **Date:** 2026-07-13
+- **Date:** 2026-07-13 (edited 2026-07-17: the Anki path is re-pointed from the
+  superseded AnkiConnect queue-and-flush to ADR-024/026's card-file save + learning-repo
+  Action sync)
 - **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
@@ -14,15 +16,17 @@ Forces:
 
 - ARD §4.3: Japanese content lives in Mongo, owned by `JapaneseModule`; the client never touches Mongo —
   everything goes through the NestJS REST API at `/api/v1` (ADR-004, ADR-007).
-- ADR-011 (WOTD widget) already decides the shared machinery: on-read deterministic daily selection
-  pinned in a per-day document, worker-driven content-pool refresh with `jp_content` doubling as the
-  seeded cache, `rubySegments` precomputed at ingest, event-driven streaks, and the Anki queue-and-flush
-  protocol. This ADR reuses all of it and decides only what is grammar-specific: the pick _policy_
+- ADR-011 (WOTD widget) and the batch-2 ADRs already decide the shared machinery: on-read
+  deterministic daily selection, pinned-ingest content sourcing (ADR-032) with `jp_content` doubling
+  as the seeded cache, `rubySegments` precomputed at ingest, event-driven streaks, and the Anki path —
+  saving a card file to the learning repo, synced onward by its GitHub Action (ADR-024/026). This ADR
+  reuses all of it and decides only what is grammar-specific: the pick _policy_
   (sequenced curriculum vs. hash-random) and the seen/progress model that policy needs.
 - Grammar, unlike vocabulary, is cumulative: 〜てから presumes て-form. Random daily picks would routinely
   show patterns whose prerequisites the user hasn't met.
 - NFR-11 (a11y), NFR-12 (furigana, externalized UI copy), §2 failure posture (content sources down →
-  serve seeded cache), §4.5 Anki queue-and-flush, §8 R5 (content licensing — attribute sources).
+  serve seeded cache), Anki sync via the learning repo's Action (ADR-026), §8 R5 (content licensing —
+  attribute sources).
 - Module rules (§4.1): domain modules never import each other; streaks live in `LearningModule` +
   Postgres `streaks`, reached via the event bus only.
 
@@ -37,11 +41,13 @@ a `WidgetDefinition` (ARD §4.2):
   `span-3` footprint; the taller size shows two examples instead of one).
 - `settingsSchema` (zod, drives the auto-generated settings panel), reusing ADR-011's setting names for
   shared concepts: `{ jlptCeiling: enum("N5","N4","N3","N2","N1") = "N5", showFurigana: boolean = true,
-showRomaji: boolean = false, revealTranslation: enum("always","tap") = "always",
-ankiDeckName: string = "Japanese", ankiNoteType: string = "Basic" }`.
-- `quickActions`: **"Add example to Anki"** and **"Mark studied"**. Anki reuses ADR-011's queue-and-flush
-  protocol verbatim (probe → direct `addNotes` when reachable, else queue; three-layer idempotency) —
-  the widget shares the same `ankiConnectClient` and queue endpoints. No second sync mechanism.
+showRomaji: boolean = false, revealTranslation: enum("always","tap") = "always" }`. Deck and
+  note-type naming belongs to the sync configuration (ADR-026 — grammar cards land in the Japanese
+  deck, tagged `cc::grammar`), not to a widget setting.
+- `quickActions`: **"Add example to Anki"** and **"Mark studied"**. Anki reuses the ADR-024/026 path
+  verbatim: the action saves a card file (`anki: true`, deck `japanese`) via the learning API, and the
+  learning repo's Action upserts it into the deck keyed on the deterministic card id. No widget↔Anki
+  traffic, no second sync mechanism.
 - The widget renders inside the shell-provided error boundary and its own suspense boundary; data comes
   from a generated hook in `packages/contracts` (`useGrammarToday()`), never from Supabase/Mongo directly.
 
@@ -50,8 +56,9 @@ ankiDeckName: string = "Japanese", ankiNoteType: string = "Basic" }`.
 We will serve grammar from `JapaneseModule` (it already owns `jp_content`), with:
 
 - **Selection machinery: ADR-011's, unchanged.** Computed on read (no worker tick to miss), then pinned
-  in a per-day document so refreshes never change today's point. Grammar gets its own day collection
-  (`jp_grammar_days`, mirror of `jp_wotd_days`) because the two widgets advance independently.
+  in the kind's progress file so refreshes never change today's point. Grammar gets its own file
+  (`progress/grammar.json`, ADR-024's per-kind progress mechanism) because the two widgets advance
+  independently.
 - **Selection policy — the grammar-specific decision: sequenced, not hash-random.** Where WOTD hashes
   `(userId, localDate, rerollCount)` over the pool, grammar picks the lowest-`sequence` **unseen** point
   with `level <= jlptCeiling`. When the ceiling is exhausted, the service switches to review mode:
@@ -101,11 +108,12 @@ the shapes honest; a compound index `(type, jlptLevel, sequence)` serves the seq
 
 - `rubySegments` are precomputed at ingest (ADR-011) — `<ruby>` renders from data, no runtime tokenizer,
   and the furigana toggle is a pure render switch.
-- Per-user state, owned by `JapaneseModule`:
-  `jp_grammar_days` `{ userId, localDate, contentId, advanceCount, viewedAt, studiedAt }` (unique
-  `(userId, localDate)`, mirroring `jp_wotd_days`) and `jp_grammar_seen`
-  `{ userId, contentId, seenAt, studiedAt? }` — the seen-set the sequenced policy and review rotation
-  read; WOTD's random policy doesn't need one. Streaks/counters stay in Postgres via events.
+- Per-user state rides ADR-024's per-kind progress file, `progress/grammar.json` (2026-07-17
+  decision: progress for every card kind lives in the learning repo): a `current` day pin
+  `{ date, contentId, advanceCount }` plus a `seen` map `{ contentId: { seenAt, studiedAt? } }` —
+  the seen-set the sequenced policy and review rotation read. The 2026-07-13 draft's
+  `jp_grammar_days`/`jp_grammar_seen` Mongo collections are superseded by it. Streaks/counters
+  stay in Postgres via events.
 
 ### API contract
 
@@ -118,9 +126,11 @@ REST under `/api/v1/japanese/grammar`, zod-validated, OpenAPI-generated client (
 - `POST /api/v1/japanese/grammar/advance` → marks today's point seen and records the next one as today's
   selection ("show another"; increments `advanceCount`); same response shape. Idempotent per point.
 - `POST /api/v1/japanese/grammar/:id/studied` → records `studiedAt`, emits `grammar.studied`. 204.
-- Anki: the quick action calls ADR-011's `POST /api/v1/japanese/anki/queue` with a `clientRequestId` and
-  a rendered note (front: example JA with ruby markup; back: EN + pattern + note), and rides the same
-  flush/PATCH lifecycle. No new endpoint, no grammar-specific queue.
+- Anki: the quick action calls ADR-024's `POST /api/v1/learning/cards/grammar` — the shared card
+  contract with the kind in the path; the server-side grammar formatter derives the card id from the
+  point's `slug` and builds the fields (example JA with furigana, EN, pattern, note) — riding the
+  same save→sync lifecycle and status surface (ADR-026). No new contract, no grammar-specific sync
+  mechanism.
 
 ### Accessibility
 
@@ -142,7 +152,7 @@ REST under `/api/v1/japanese/grammar`, zod-validated, OpenAPI-generated client (
   `prefers-reduced-motion`.
 - Announcements follow ADR-011's pattern: "Next point" swaps the card without moving focus, so the
   new pattern is announced via the shared polite live region; "Mark studied" and Anki outcomes
-  announce there too ("Marked studied", "Added to Anki", "Queued — Anki offline"), and failures use
+  announce there too ("Marked studied", "Example saved — syncs to Anki"), and failures use
   `role="alert"`.
 
 ### UX states & interaction
@@ -160,12 +170,13 @@ REST under `/api/v1/japanese/grammar`, zod-validated, OpenAPI-generated client (
 
 ## Consequences
 
-- Grammar rides ADR-011's rails (on-read + day-pin selection, content refresh, ruby-at-ingest, Anki
-  queue, event-driven streaks) — those mechanisms now have two consumers, so changes to them must check
-  both ADRs; divergence between the widgets' pipelines is a bug.
+- Grammar rides the shared learning rails (on-read selection, pinned-ingest content, ruby-at-ingest,
+  the ADR-024/026 save→sync Anki path, event-driven streaks) — those mechanisms now have two consumers,
+  so changes to them must check both ADRs; divergence between the widgets' pipelines is a bug.
 - Sequenced progression requires curating a `sequence` order for the grammar dataset before launch —
-  more editorial work than a random pick, but it is what makes the widget pedagogically coherent. It
-  also means grammar needs a per-user seen-set (`jp_grammar_seen`) that WOTD doesn't carry.
+  more editorial work than a random pick, but it is what makes the widget pedagogically coherent. Its
+  progress file also carries more than WOTD's: study state per point (`studiedAt`), not just seen
+  dates.
 - Streaks-by-event keeps module boundaries clean but means streak credit is eventually consistent with
   the studied action (acceptable: same process, in-memory bus).
 - Settings-driven ceiling read server-side means changing JLPT level in settings takes effect on the next
@@ -188,5 +199,5 @@ REST under `/api/v1/japanese/grammar`, zod-validated, OpenAPI-generated client (
 - **Tracking "seen" in Postgres under `LearningModule`** — rejected: selection needs the seen-set on the
   hot read path inside `JapaneseModule`; putting it in another module's store forces either a cross-module
   import or a cross-database join, both banned (§4.1, §4.3). Postgres keeps only derived streak counters.
-- **A dedicated `/api/v1/japanese/grammar/anki` endpoint** — rejected: §4.5 already defines
-  queue-and-flush; a second mechanism would fork offline behavior and sync-state handling.
+- **A dedicated `/api/v1/japanese/grammar/anki` endpoint** — rejected: ADR-024/026 already define the
+  save→sync path and its status surface; a second mechanism would fork sync-state handling.

@@ -1,7 +1,11 @@
 # ADR-011: Japanese Word-of-the-Day widget (incl. "Add to Anki")
 
 - **Status:** proposed
-- **Date:** 2026-07-13
+- **Date:** 2026-07-13 (edited 2026-07-17: the content store and the whole Anki path now
+  follow ADR-024/026 — the GitHub learning repo is the store, and its Action syncs to
+  AnkiWeb. The original Mongo collections and AnkiConnect queue-and-flush design are
+  superseded and survive only in git history; the widget surface, a11y, and streak
+  decisions stand.)
 - **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
@@ -9,22 +13,27 @@
 Phase 3 opens the Learning area, and the Japanese Word-of-the-Day (WOTD) widget is its
 anchor (dashboard mock: `docs/design/dashboard-mock.html`, "Japanese · Word of the day"
 card). The widget shows one word per day — kanji with furigana, romaji, meaning/POS/JLPT
-level, an example sentence (JA + EN) — plus a streak pill, a "New word" reroll, and an
-"Add to Anki" action with a sync note ("Anki synced 8 min ago").
+level, an example sentence (JA + EN) — plus a streak pill, a skip action ("I know this
+word" — the mock's "New word" button, sharpened: skipping retires the word and draws a
+replacement), and an "Add to Anki" action with a sync note ("Anki synced 8 min ago").
 
 Forces at play:
 
-- **Anki reachability (ARD §4.5, R2):** AnkiConnect runs inside desktop Anki on
-  `localhost:8765`. The cloud API can never reach it; only the user's browser can, and
-  only when desktop Anki is open. The ARD mandates a queue-and-flush design, with review
-  stats pushed client → API and cached in `anki_snapshots`.
-- **Module boundaries (ADR-002, §4.1):** `JapaneseModule` owns `jp_content` and
-  `anki_snapshots` (Mongo, §4.3). Streaks live in Postgres and belong to the
-  streaks/progress concept under `LearningModule`; domain modules must not import each
-  other — cross-domain effects go through the event bus.
-- **Content sourcing (R5, §2):** primary dataset is JMdict (CC BY-SA — attribution is a
-  license obligation, not a nicety); when external content sources are down we serve
-  from the pre-seeded cache.
+- **Store & Anki path (ADR-024/026):** the private `learning-center` GitHub repo is the
+  store — the seeded word pool (`pool/japanese/`) and saved card files
+  (`cards/japanese/…`) live there, read/written by `LearningModule` via the Contents API.
+  Saving a card file with `anki: true` front-matter _is_ "Add to Anki": the commit
+  triggers the repo's GitHub Action, which runs the official `anki` library against
+  AnkiWeb (ADR-026). No desktop in the loop, no browser↔Anki traffic — the widget's only
+  Anki surface is rendering sync status.
+- **Module boundaries (ADR-002, §4.1):** `LearningModule` owns the repo access and the
+  learning endpoints (ADR-024); no Mongo for learning data. Streaks live in Postgres and
+  belong to ADR-014's `StreaksService`, whose event handler is the only writer of
+  `streaks` rows — cross-domain effects go through the event bus.
+- **Content sourcing (R5, ADR-032):** primary dataset is JMdict (CC BY-SA — attribution
+  is a license obligation, not a nicety), ingested as pinned release artefacts by
+  `tools/jmdict-ingest` and committed to the pool (ADR-024). The API serves its cached
+  pool through any GitHub outage, so external sources are never on the read path.
 - **A11y/i18n (NFR-11, NFR-12):** proper furigana rendering, correct language tagging
   (the mock already uses `lang="ja"` on Japanese spans), WCAG 2.1 AA, EN UI copy
   externalized from day one.
@@ -33,109 +42,101 @@ Forces at play:
 
 ## Decision
 
-We will build the WOTD widget as a `japanese-wotd` widget in `apps/web/widgets/`,
-backed by `JapaneseModule` endpoints under `/api/v1/japanese/*`, with a client-driven
-Anki queue-and-flush protocol as specified below.
+We will build the WOTD widget as a `japanese-wotd` widget in `apps/web/widgets/`, backed
+by `LearningModule` endpoints under `/api/v1/learning/*` (ADR-024), with "Add to Anki" as
+a card-file save that the learning repo's GitHub Action syncs onward to AnkiWeb (ADR-026).
 
 ### Frontend
 
 - One folder `apps/web/widgets/japanese-wotd/` exporting a `WidgetDefinition` with
   `id: "japanese-wotd"`, supported sizes matching the mock's wide card plus a compact
-  variant, `quickActions: [addToAnki, newWord]`, and a zod `settingsSchema`:
-  `{ showFurigana: boolean (default true), showRomaji: boolean (default true),
-ankiDeckName: string (default "Japanese"), ankiNoteType: string (default "Basic"),
-autoFlushQueue: boolean (default true) }`. The auto-generated settings panel renders
-  these; no bespoke settings UI.
-- Data via TanStack Query hooks generated into `packages/contracts` (ADR-007). The
-  widget never touches Supabase or Mongo directly.
-- An `ankiConnectClient` lives inside the widget folder (browser-only): probes
-  `http://localhost:8765` with a short-timeout `version` call, then uses `addNotes`,
-  `findNotes`, and deck/model listing. Reachability is re-probed on mount, on window
-  focus, and before every add. AnkiConnect's `webCorsOriginList` must include the app
-  origin (§5.2); the setup step is documented in the runbook and linked from the
-  widget's settings panel when the probe fails.
-- Streak pill: the widget calls the **LearningModule**-owned streaks read endpoint
-  (`GET /api/v1/streaks`, ADR-014) through its generated hook and picks out its own
-  `japanese-wotd` entry. Frontend composition, not backend composition —
-  `JapaneseModule` never imports `LearningModule` (and vice versa).
+  variant, `quickActions: [addToAnki, skipWord]`, and a zod `settingsSchema`:
+  `{ showFurigana: boolean (default true), showRomaji: boolean (default true) }`. The
+  auto-generated settings panel renders these; no bespoke settings UI. Anki deck and
+  note-type naming belongs to the sync configuration (ADR-026), not to a widget setting —
+  the earlier `ankiDeckName`/`ankiNoteType`/`autoFlushQueue` settings are gone with the
+  queue they configured.
+- Data via TanStack Query hooks generated into `packages/contracts` (ADR-007). The widget
+  never touches Supabase, GitHub, or Anki directly.
+- "Add to Anki" calls `POST /api/v1/learning/cards` (ADR-024) through its generated hook.
+  The footer renders sync state from `GET /api/v1/learning/anki-status` — ADR-026's three
+  honest states (synced / N waiting for sync / failed, with a "view run" link) — plus the
+  persistent EDRDG attribution line (ADR-032).
+- Streak pill: the widget calls ADR-014's streaks read endpoint (`GET /api/v1/streaks`)
+  through its generated hook and picks out its own `japanese-wotd` entry. Frontend
+  composition, not backend composition — the WOTD read stays streak-free and the streaks
+  endpoint stays widget-agnostic.
 
 ### Backend
 
-- `JapaneseModule` (NestJS): thin controller, `JapaneseWotdService`,
-  `AnkiQueueService`, Mongo repositories built on the `userId`-scoping base class
-  (§5.1).
-- **Daily selection is computed on read, deterministically** — not precomputed by the
-  worker. Selection = stable hash of `(userId, userLocalDate, rerollCount)` — the local
-  date taken in the user's profile-stored home IANA timezone (ADR-014 / ARD Q1) — mod the
-  eligible `jp_content` pool, then upserted into a `jp_wotd_days` document so the day's
-  pick is pinned even if the content pool later changes. Rationale: an on-read pick has
-  no missed-tick failure mode (widget works even if the worker is down or the user's
-  midnight passed while the worker was asleep), no timezone-edge scheduling, and the
-  read is one indexed Mongo fetch — comfortably inside NFR-2. The worker's role is
-  reduced to **content-pool refresh**: a low-frequency job ingesting/refreshing
-  `jp_content` from external sources. If those sources are down, nothing changes for
-  the user — reads always come from `jp_content`, which doubles as the pre-seeded cache
-  (§2 failure posture).
-- On first fetch of a given day the service emits `wotd.viewed`; a successful
-  "Add to Anki" (queued or direct) emits `wotd.studied`. `LearningModule` listens and
-  updates the `streaks` row for `japanese-wotd` (once per user-local day, idempotent).
-  Reroll does not re-emit `wotd.viewed`.
+- Serving follows ADR-024: `LearningModule` holds the pool in API memory (ETag-refreshed,
+  SHA-pinned per refresh, served stale indefinitely on GitHub trouble) and picks the day's
+  word with a date-seeded hash over the **eligible** set — the pool minus what
+  `progress/japanese-wotd.json` marks seen or skipped (ADR-024). The client supplies its
+  local date (`?date=YYYY-MM-DD`) — the server never guesses timezones. The first serve of
+  a day pins the pick in the progress file's `current` and marks it seen (one commit), so
+  a refresh never changes today's word and no word repeats until the whole pool has been
+  seen — then the cycle resets.
+- **Skip ("I know this one"):** `POST /wotd/skip` adds the current word to `skipped` and
+  immediately pins the next eligible pick — a replacement word right away, one commit.
+  Skipped words never return; un-skipping is deleting a line in the progress file.
+- On reads the service emits `wotd.viewed`; a successful card save emits `wotd.studied`.
+  ADR-014's `StreaksService` (same module, same process — the one event→streak path)
+  credits the `japanese-wotd` streak at most once per user-local day; the handler's
+  idempotency means the emitter needs no extra per-day state. Skip does not re-emit
+  `wotd.viewed`.
 
 ### Data model
 
-Mongo, all owned by `JapaneseModule`, all documents carrying `userId` where per-user:
-
-- `jp_content` (global, seeded from JMdict + curated examples):
-  `{ _id, source: "jmdict", sourceRef, headword, readingKana, romaji,
-rubySegments: [{ base, ruby? }], senses: [{ gloss, pos }], jlptLevel,
-examples: [{ ja, en, rubySegments }], license: { name: "CC BY-SA 4.0", attribution } }`.
-  `rubySegments` is precomputed at ingest so the client never guesses furigana
-  alignment.
-- `jp_wotd_days`: `{ _id, userId, localDate: "YYYY-MM-DD", contentId, rerollCount,
-viewedAt, studiedAt }`, unique index `(userId, localDate)`.
-- `anki_queue`: `{ _id, userId, clientRequestId (uuid, unique per (userId,
-clientRequestId)), contentId, deckName, modelName, fields, status:
-"pending" | "flushed" | "failed", createdAt, flushedAt, ankiNoteId, lastError }`.
-- `anki_snapshots` (per §4.3): `{ _id, userId, takenAt, deckName,
-counts: { new, learning, due }, reviewsToday }` — written only via client push.
+No database surface. Per ADR-024 the word pool (pinned JMdict subset, readings already in
+Anki bracket furigana, folded at ingest), this widget's per-user progress
+(`progress/japanese-wotd.json`: `current` day pin, `seen` map, `skipped` list — written
+only by the API), and the saved cards are all files in the learning-center repo, and sync
+results live in `sync/state.json` (ADR-026). Streak state stays in Postgres `streaks`
+(ADR-014). The 2026-07-13 draft's Mongo collections —
+`jp_content`, `jp_wotd_days`, `anki_queue`, `anki_snapshots` — are superseded and will
+not exist.
 
 ### API contract
 
-All under `/api/v1/japanese`, JWT-guarded, zod-validated (§5.2):
+ADR-024's, under `/api/v1/learning`, JWT-guarded, zod-validated (§5.2):
 
-- `GET /wotd` → today's item (content + `rerollCount` + `viewedAt`), plus
-  `lastSnapshotAt` and pending-queue count so the card renders sync state in one fetch.
-- `POST /wotd/reroll` → re-picks with `rerollCount + 1`, returns new item.
-- `POST /anki/queue` `{ clientRequestId, contentId, deckName, modelName, fields }` →
-  201 with the queue record; replays of the same `clientRequestId` return the existing
-  record (200), never a second one.
-- `GET /anki/queue?status=pending` → items awaiting flush.
-- `PATCH /anki/queue/:id` `{ status: "flushed", ankiNoteId }` or
-  `{ status: "failed", lastError }` — client reports flush outcomes.
-- `PUT /anki/snapshot` → client pushes review stats scraped via AnkiConnect
-  (`deckNames`/`getDeckStats`); server stamps `takenAt`.
+- `GET /wotd?date=YYYY-MM-DD` → `{ configured: false }` |
+  `{ configured: true, date, word, attribution, saved, cardPath? }` — `saved` lets the
+  card render "already in your deck" without a second call.
+- `POST /wotd/skip` `{ date }` → the same shape with the replacement word (ADR-024's
+  progress mechanics).
+- `POST /cards/japanese-wotd` `{ itemId, date? }` → `{ cardId, path, htmlUrl,
+alreadyExisted }` — ADR-024's shared card contract with the kind in the path; the
+  `japanese-wotd` formatter resolves `itemId` against the pool and writes the card file
+  with `anki: true`; the commit is what triggers Anki sync (ADR-026). Idempotent by
+  construction: the file path derives from the deterministic card id
+  (`jp-<JMdict ent_seq>`), so a retried or repeated save returns `alreadyExisted`, never
+  a duplicate.
+- `GET /anki-status` →
+  `{ configured, lastSyncAt, lastRunStatus, lastRunUrl, pendingCommits, decks }`
+  (ADR-026) — one fetch for the footer's sync state.
+
+Gone with the queue: the original draft's `POST/GET/PATCH /api/v1/japanese/anki/queue`
+and `PUT /api/v1/japanese/anki/snapshot` never ship (superseded by ADR-026).
 
 ### Anki integration
 
-The defining complexity. Protocol:
+Per ADR-026, nothing Anki-shaped runs in this widget or this API:
 
-1. **Add:** on click, the client probes AnkiConnect. If reachable, it calls `addNotes`
-   directly, then `POST /anki/queue` + immediate `PATCH … flushed` so the server holds
-   the durable record (one code path, and history survives cache clears). If
-   unreachable, only the `POST /anki/queue` happens and the card shows the queued state.
-2. **Flush:** whenever the probe succeeds (mount/focus, `autoFlushQueue` on), the client
-   pulls `GET /anki/queue?status=pending` and flushes each item.
-3. **Idempotency — no duplicate cards:** three layers. (a) `clientRequestId` upsert
-   means a retried button click or a flaky POST can't create two queue rows.
-   (b) Before `addNotes`, the client runs `findNotes` on a stable first-field key
-   (headword + reading) in the target deck; a hit short-circuits to
-   `PATCH … flushed` with the found note id. (c) `addNotes` is called with
-   `options.duplicateScope: "deck"` so Anki's own dedupe is the final net. A flush
-   retry after a crash between `addNotes` and `PATCH` is caught by (b).
-4. **Review stats:** after any successful flush (and at most once per hour on focus),
-   the client pushes deck stats via `PUT /anki/snapshot`. The card's sync note ("Anki
-   synced 8 min ago") is relative time from `lastSnapshotAt` — server-cached, so it
-   renders on mobile where AnkiConnect never exists.
+1. **Add:** on click, the client calls `POST /cards`. Saving the file is the entire
+   action. The learning repo's `anki-sync` workflow picks up the commit, upserts a note
+   keyed on the card id (searchable `CardId` field + deterministic guid `cc:<card-id>`)
+   into the Japanese deck, and syncs with AnkiWeb. Duplicate protection is the idempotent
+   save plus ADR-026's three layers — no `clientRequestId`, no probe, no flush.
+2. **Status:** the footer's "Anki synced 8 min ago" is relative time from `state.json`'s
+   `lastSyncAt`; "2 waiting for sync" counts card commits since then; a failed run shows
+   "failed — view run" linking to the Actions tab. All composed server-side by
+   `GET /anki-status`, so it is equally true on mobile — where the old design could never
+   show an honest green tick.
+3. **Latency posture:** the normal save→synced window is a couple of minutes
+   (push-triggered run), from any device, desktop off. The card shows "waiting for sync"
+   in that window — never a spinner implying live connectivity.
 
 ### Accessibility
 
@@ -143,40 +144,49 @@ The defining complexity. Protocol:
   Japanese glyph forms over Chinese variants under Han unification and makes screen
   readers switch to a Japanese voice.
 - Furigana rendered as `<ruby lang="ja">約束<rp>(</rp><rt>やくそく</rt><rp>)</rp></ruby>`
-  from `rubySegments`; `<rp>` parentheses keep the reading legible in non-ruby renderers
-  and clipboard copies. The `showFurigana` setting hides `<rt>` with the visually-hidden
-  clip technique, **not** `display: none`/`visibility: hidden` (either would remove the
-  reading from the accessibility tree, contradicting the intent that the kana stays in
-  accessible output). Note the reading is a supplement, not a crutch: with `lang="ja"` a
-  Japanese TTS voice already reads the kanji, and some screen-reader/voice combinations
-  announce base + `<rt>` doubled — verify with VoiceOver and NVDA before shipping.
-  `showRomaji` toggles the romaji span.
-- Sync/queue state is never color-only: "Queued — Anki offline" pairs a clock icon with
-  text; "Added to Anki ✓" pairs the check with text (NFR-11 contrast on both).
-- The "Add to Anki" button toggles `aria-busy` while working; success and queued outcomes
-  are announced via a visually-hidden `aria-live="polite"` region ("Added to Anki",
-  "Queued — Anki offline"), while failures ("Failed to add — will retry") use
-  `role="alert"`, matching the house pattern (errors alert, successes polite). Reroll
-  swaps the card content without moving focus, so the new word is announced through the
-  same polite region — otherwise a screen-reader user pressing "New word" hears nothing
-  change. All actions keyboard-reachable; reroll and add have visible focus states;
-  animations respect `prefers-reduced-motion`.
+  from the pool's bracket-notation reading (`約束[やくそく]`, ADR-024 — alignment folded
+  at ingest, so the client never guesses furigana segmentation); `<rp>` parentheses keep
+  the reading legible in non-ruby renderers and clipboard copies. The `showFurigana`
+  setting hides `<rt>` with the visually-hidden clip technique, **not**
+  `display: none`/`visibility: hidden` (either would remove the reading from the
+  accessibility tree, contradicting the intent that the kana stays in accessible output).
+  Note the reading is a supplement, not a crutch: with `lang="ja"` a Japanese TTS voice
+  already reads the kanji, and some screen-reader/voice combinations announce base +
+  `<rt>` doubled — verify with VoiceOver and NVDA before shipping. `showRomaji` toggles
+  the romaji span.
+- Sync state is never color-only: "Waiting for sync" pairs a clock icon with text;
+  "Saved ✓" pairs the check with text (NFR-11 contrast on both).
+- The "Add to Anki" button toggles `aria-busy` while working; the success outcome is
+  announced via a visually-hidden `aria-live="polite"` region ("Saved — syncs to Anki in
+  a few minutes"), while failures ("Save failed — retry") use `role="alert"`, matching
+  the house pattern (errors alert, successes polite). Skip swaps the card content
+  without moving focus, so the replacement word is announced through the same polite
+  region — otherwise a screen-reader user pressing "Skip" hears nothing change. All
+  actions keyboard-reachable; skip and add have visible focus states; animations respect
+  `prefers-reduced-motion`.
 
 ### UX states & interaction
 
 - **Loading:** skeleton mirroring the card layout (word block, meaning line, example,
   footer) to avoid layout shift.
-- **Content degraded:** external source outages are invisible (reads always hit
-  `jp_content`). If Mongo itself is down, the widget's error boundary shows the standard
-  fallback card with retry — the shell survives (§4.2, NFR-4).
-- **Anki degraded:** card stays fully functional; footer shows last-synced relative time
-  from the snapshot and, when the queue is non-empty, "2 queued" next to it. Button
-  states: idle → busy → "Added ✓" (transient) or persistent "Queued" chip.
-- **Streak pill** renders from the LearningModule hook; if that call fails, the pill is
-  simply omitted — never a broken card.
-- **Attribution (R5):** "Dictionary data from JMdict (EDRDG), CC BY-SA" lives in the
-  widget's settings/about panel and the app's about page — off the card, but one tap
-  away, satisfying the license without cluttering a daily-glance surface.
+- **Content degraded:** GitHub outages are invisible while the API holds a cached pool —
+  a stale word, not a broken widget (ADR-024). A cold boot mid-outage has no pool: the
+  card shows "Couldn't load today's word — try again later" with a retry (accepted per
+  ADR-024; WOTD is deliberately not crucial). With the env pair unset the API answers
+  `configured: false` and the card shows its "not configured" state with a runbook
+  pointer; a hard failure falls through to the standard error-boundary fallback card
+  (§4.2, NFR-4).
+- **Sync state:** the card stays fully functional regardless of sync health; the footer
+  shows ADR-026's three states (last-synced relative time; "2 waiting for sync" when card
+  commits are newer than `lastSyncAt`; "failed — view run" linking to the Actions tab).
+  Button states: idle → busy → "Saved ✓" (transient), after which the save counts under
+  "waiting for sync" until `state.json` reports it.
+- **Streak pill** renders from the ADR-014 hook; if that call fails, the pill is simply
+  omitted — never a broken card.
+- **Attribution (R5, ADR-032):** "Dictionary data © EDRDG (JMdict), CC BY-SA" is a
+  persistent one-line card footer. EDRDG's licence requires acknowledgement on each
+  screen display, so the about-panel-only placement this ADR first specified is
+  superseded by ADR-032; the settings/about panel keeps the full sources list.
 - **i18n (NFR-12):** all EN UI copy (button labels, sync notes, announcements) lives in
   the message catalog; the sync note's relative time ("8 min ago") is formatted with
   `Intl.RelativeTimeFormat`, not string concatenation. Japanese word/example text is
@@ -184,38 +194,49 @@ The defining complexity. Protocol:
 
 ## Consequences
 
-- **Easier:** the widget works everywhere — mobile and offline-from-Anki sessions
-  degrade to queued adds and cached stats instead of breaking; the on-read selection
-  removes a whole class of "worker didn't run" bugs; the frontend-composition rule for
-  streaks keeps `JapaneseModule` and `LearningModule` fully decoupled; the event-driven
-  streak update is reusable verbatim for grammar-of-the-day and tech-of-the-day widgets.
-- **Harder / committed to:** we own a three-layer idempotency protocol and must test it
-  (unit-test the flush state machine; e2e with a stubbed AnkiConnect). The first-field
-  dedupe key means note types whose first field isn't the word need mapping care.
-  Review stats are only as fresh as the last desktop session — accepted per R2.
-  `rubySegments` at ingest adds pipeline work but buys correct furigana forever.
-- **Security surface:** the browser calling `localhost:8765` is by design (§4.5);
-  AnkiConnect CORS is scoped to the app origin, and the API never proxies to it.
-- Attribution placement is a license commitment: any future content source added to
-  `jp_content` must carry its own `license` block and appear in the about panel.
+- **Easier:** the widget works everywhere — a save from any device is durable the moment
+  the card file lands in the repo, and the footer's sync state is as true on a phone as
+  at the desk; on-read selection (date + pool + progress file, no scheduler) removes the
+  whole missed-tick/timezone-edge class of bugs, and the progress file means no repeats
+  until the pool is exhausted; the widget carries no Anki protocol at all — the sync machinery, its idempotency
+  layers, and their tests live with ADR-026; the event-driven streak update is reusable
+  verbatim for grammar-of-the-day and tech-of-the-day widgets.
+- **Harder / committed to:** freshness is honest but asynchronous — "waiting for sync"
+  for a few minutes is the designed steady state, not an error, and a failed sync is
+  fixed in the Actions tab, not in the widget. Bracket furigana folded at ingest adds
+  pipeline work (ADR-024/032) but keeps every runtime component out of Japanese text
+  processing forever.
+- **Security surface:** none added — no tokens in the client, no browser↔Anki and no
+  browser↔GitHub traffic; the learning-repo PAT is custodied server-side per ADR-024
+  (§5.2), and AnkiWeb credentials never leave the learning repo's Actions secrets
+  (ADR-026).
+- Attribution placement is a license commitment (ADR-032): the footer line renders on
+  every word display, and any future content source added to the pool must carry its own
+  license/attribution block in the manifest.
 
 ## Alternatives considered
 
-- **Worker-precomputed daily picks** (nightly job writes `jp_wotd_days` for the next
-  day): rejected — adds a scheduler dependency and a tz-edge failure mode (user opens
-  the dashboard before the tick lands) for zero user-visible benefit; the worker keeps
-  the smaller content-refresh job instead.
-- **Server-side Anki sync via an API → AnkiConnect call:** impossible — AnkiConnect is
-  desktop-localhost only (§4.5). AnkiWeb scraping rejected on ToS grounds (R2).
-- **Composing streaks into the `/wotd` response server-side:** rejected — requires
-  `JapaneseModule` → `LearningModule` import or a shared repository, both banned by the
-  module rules (§4.1). Frontend composition costs one extra cached request.
-- **Local-only Anki queue (IndexedDB, no server record):** rejected — queue would be
-  lost on cache clear and invisible cross-device; the API queue is durable, and the ARD
-  explicitly places queued adds in the API (§4.5).
+- **Worker-precomputed daily picks** (nightly job writes the next day's pick): rejected —
+  adds a scheduler dependency and a tz-edge failure mode (user opens the dashboard before
+  the tick lands) for zero user-visible benefit; selection is computed on read from
+  (date, pool, progress).
+- **Zero-state hash selection, no progress file (the interim 2026-07-17 design):**
+  rejected — independent daily picks over ~2000 words start repeating within about two
+  months (birthday bound) and never cover the pool; the progress file buys no-repeats,
+  a true skip, and a pinned day for roughly one commit per day (ADR-024).
+- **AnkiConnect — direct or queue-and-flush (this ADR's original design):** superseded by
+  ADR-026's learning-repo Action → AnkiWeb sync. Desktop-gated adds, review state stale
+  until a desktop session, no honest mobile sync state, and a queue, flush lifecycle, and
+  CORS carve-out we owned. ADR-026 carries the full comparison; AnkiWeb _scraping_ stays
+  rejected on ToS grounds (the official library speaking the official sync protocol is a
+  different act).
+- **Composing streaks into the `/wotd` response server-side:** rejected — couples the hot
+  WOTD read to streak state for the sake of one pill, and forks the house pattern: every
+  widget composes its streak client-side from the shared ADR-014 endpoint. Frontend
+  composition costs one extra cached request.
 - **`kuroshiro`-style client-side furigana generation:** rejected — runtime kanji→kana
-  alignment is heavy and error-prone; precomputed `rubySegments` at ingest is
+  alignment is heavy and error-prone; bracket furigana folded at ingest (ADR-024/032) is
   deterministic and testable.
 - **Third-party dictionary API as the live read path:** rejected — availability and
-  licensing risk on the hot path (R5); external sources feed the seeded cache offline,
-  and reads never leave our Mongo.
+  licensing risk on the hot path (R5, ADR-032); pinned release artefacts feed the pool
+  offline, and reads never leave the API's cached copy.
