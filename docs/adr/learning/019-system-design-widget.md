@@ -68,8 +68,9 @@ module, no cross-module import.
   picture without a text equivalent cannot enter the collection — the validator enforces NFR-11 at
   the pipeline, not at review time.
 - **Selection reuses ADR-013 verbatim:** lowest unseen `seq` in the chosen area/depth lane, frozen on
-  the first request of the user's local calendar day (home IANA tz, ADR-014 / ARD Q1) into
-  `lesson_progress`. Same day-pinning, same carry-over of an unfinished lesson.
+  the first request of the user's local calendar day (home IANA tz, ADR-014 / ARD Q1) into the
+  lane's entry in `progress/system-design.json` (ADR-024's per-kind progress file). Same
+  day-pinning, same carry-over of an unfinished lesson.
 - **Completion emits `lesson.completed { userId, track: 'system-design', lessonId }`** on the event
   bus; ADR-014's StreaksService credits `streaks.widget_id = 'system-design'`. No inline streak write.
 - **"Add to Anki" is a repo write (ADR-024/026):** the quick action saves a card file (with
@@ -103,10 +104,11 @@ rather than a new collection:
 ```
 
 System content carries **no `userId`** — the documented §4.4 exception ADR-013 already took for
-shared read-only curriculum. User state stays in Postgres `lesson_progress` (ADR-013's table,
-unchanged): `(user_id, track, difficulty, next_seq, assigned_seq, assigned_date, completed_count)`
-with `track = 'system-design'` and `difficulty` carrying `depth`. Reusing the table (rather than a
-parallel one) is what makes streaks, progress and the future "learning overview" free.
+shared read-only curriculum. User state rides ADR-024's per-kind progress file —
+`progress/system-design.json`, the same per-lane shape as ADR-013's `progress/tech.json`, with
+lanes keyed `area:depth`. Reusing the shape (rather than inventing a parallel one) is what keeps
+progress and the future "learning overview" uniform; streaks stay in Postgres, credited via
+events (ADR-014).
 
 ### API contract
 

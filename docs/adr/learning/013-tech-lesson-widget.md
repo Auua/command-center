@@ -1,7 +1,9 @@
 # ADR-013: Tech "X of the day" micro-lesson widget
 
 - **Status:** proposed
-- **Date:** 2026-07-13
+- **Date:** 2026-07-13 (edited 2026-07-17: the Anki path is re-pointed from the
+  superseded AnkiConnect queue-and-flush to ADR-024/026's card-file save + learning-repo
+  Action sync)
 - **Review:** claude-reviewed — pending product-owner approval
 
 ## Context
@@ -12,8 +14,9 @@ snippet, and a takeaway — see the "TypeScript of the day" card in `docs/design
 Forces at play:
 
 - The ARD fixes the shape of every widget: SDK conformance (§4.2), data via REST `/api/v1` only,
-  `lesson_content` in MongoDB owned by `LearningModule` (§4.3), streaks and progress counters in
-  Postgres (§4.3, §4.4), and the queue-and-flush Anki path (§4.5).
+  `lesson_content` in MongoDB owned by `LearningModule` (§4.3), streaks in Postgres (§4.3, §4.4)
+  with per-kind progress in the learning repo (ADR-024, 2026-07-17 decision), and the Anki path via
+  the learning repo's GitHub Action (ADR-024/026).
 - The mock hand-rolls highlighting with `<span class="k">` etc. — fine for a static mock, but real
   content must never reach the DOM via `dangerouslySetInnerHTML` (§5.2 spirit), and highlighting
   four language grammars client-side is a bundle-size problem.
@@ -54,23 +57,29 @@ events.
 - **Daily deterministic selection = sequential curriculum with day-pinning.** Lessons are ordered
   (`seq`) per track+difficulty. Today's lesson is the lowest-`seq` lesson the user has not
   completed, **frozen on first request of the calendar day in the user's profile-stored home
-  timezone (ADR-014 / ARD Q1)** by writing
-  `assigned_seq` + `assigned_date` to `lesson_progress`. Repeat fetches return the pinned lesson;
+  timezone (ADR-014 / ARD Q1)** by writing the lane's
+  `assignedSeq` + `assignedDate` to `progress/tech.json` (ADR-024's per-kind progress file).
+  Repeat fetches return the pinned lesson;
   an unfinished lesson carries over to the next day rather than being skipped. Sequential beats
   shuffled because tracks are curricula (mapped types before `satisfies`); the mock's "Yesterday:
   mapped types" footer falls out of `seq - 1`.
-- **Completion emits events.** `POST …/complete` marks the lesson done, advances the pointer in
-  one Postgres transaction, and emits `lesson.completed { userId, track, lessonId }` on the
+- **Completion emits events.** `POST …/complete` marks the lesson done and advances the lane's
+  pointer in the progress file (sha-guarded, idempotent), then emits
+  `lesson.completed { userId, track, lessonId }` on the
   in-process event bus — the same pattern `AutomationModule` already consumes for
   `task.completed`, so "smart reminder after finishing a lesson" needs no new plumbing later.
   The `streaks` row (`widget_id = 'tech-lesson:{track}'`) is updated by ADR-014's StreaksService
   event handler (same module, same process), not inline — one event→streak path for every source.
-- **"Add to Anki" ships in v1**, reusing the §4.5 queue-and-flush path built for the Japanese
-  widget in the same phase: the action posts to ADR-011's shared queue endpoint
-  (`POST /api/v1/japanese/anki/queue`) with a `clientRequestId` and `fields` mapping
-  front → title, back → takeaway + code source; the client flushes to AnkiConnect via the shared
-  `ankiConnectClient` when reachable, riding the same idempotency and PATCH lifecycle. No new
+- **"Add to Anki" ships in v1**, reusing the ADR-024/026 path built for the Japanese widget:
+  the action saves a card file (`anki: true`, deck `tech`, tags `cc::tech::{track}`) via
+  ADR-024's `POST /api/v1/learning/cards/tech` (the shared card contract, kind in the path),
+  with the tech formatter mapping `fields` onto ADR-026's `CC Tech v1`
+  note type (Question → title, Answer → takeaway, Code → raw source — the sync script
+  HTML-escapes and `<pre>`-wraps it at note-build time — Language → track); the learning
+  repo's Action upserts it into the Tech deck keyed on the deterministic card id. No new
   infrastructure, high value for a learning widget — deferring it saves almost nothing.
+  (ADR-026's two-deck design already specs the Tech mapping; it activates with this
+  widget's content track, pending the ADR-032 sourcing investigation.)
 
 ### Data model
 
@@ -89,10 +98,13 @@ only through the API; user state lives in Postgres):
 }
 ```
 
-Postgres `lesson_progress` (RLS, user-scoped): `(user_id, track, difficulty, next_seq,
-assigned_seq, assigned_date, completed_count)`. Progress counters belong in Postgres per §4.3;
-keeping the pointer relational makes completion a single transactional write, with the streak
-credited via the `lesson.completed` event (ADR-014).
+Per-user progress rides ADR-024's per-kind file, `progress/tech.json` (2026-07-17 decision:
+per-kind progress lives in the learning repo), keyed by lane:
+`{ "typescript:intro": { nextSeq, assignedSeq, assignedDate, completedCount } }` — superseding
+this ADR's original Postgres `lesson_progress` table. Completion updates the lane and emits
+`lesson.completed`; the streak stays in Postgres, credited by ADR-014's event handler. The
+progress write is sha-guarded and idempotent rather than transactional — acceptable at personal
+scale (a lost race re-serves the same lesson; it never corrupts).
 
 ### API contract
 
@@ -101,7 +113,7 @@ REST under `/api/v1/learning` (OpenAPI-decorated; typed client generated into
 
 - `GET /lessons/today?track=&difficulty=` → `{ lesson, progress: { seq, total, streak }, previousTitle, stale: boolean }`. Performs the day-pinning described above; `stale: true` when serving fallback content.
 - `POST /lessons/:id/complete` → idempotent (completing an already-completed lesson is a no-op 200); returns updated progress + streak so the client can reconcile.
-- Anki: reuses the existing shared queue endpoint (`POST /api/v1/japanese/anki/queue`, ADR-011); no lesson-specific route.
+- Anki: no lesson-specific contract — the quick action saves a card file via ADR-024's `POST /api/v1/learning/cards/tech`, and ADR-026's Action does the rest.
 
 ### Accessibility
 
@@ -148,7 +160,7 @@ REST under `/api/v1/learning` (OpenAPI-decorated; typed client generated into
 - Harder: curriculum authoring becomes a real content pipeline (ordering, review, licensing notes
   per R5) — accepted, since content quality is the product here.
 - Committed to: sequential progression (no random daily surprise), per-track widget instances, and
-  the `lesson_progress` Postgres table shape.
+  the per-lane shape of `progress/tech.json` (ADR-024).
 
 ## Alternatives considered
 
@@ -167,5 +179,6 @@ REST under `/api/v1/learning` (OpenAPI-decorated; typed client generated into
   Anki" a well-defined front/back without parsing.
 - **Date-hash shuffled selection (`hash(user, track, date) % n`)** — rejected: deterministic but
   pedagogically random; breaks prerequisite ordering and the "Yesterday: …" affordance.
-- **Defer "Add to Anki" past v1** — rejected: the queue-and-flush path ships in the same phase for
-  the Japanese widget; reuse cost is one quick action and a payload mapper.
+- **Defer "Add to Anki" past v1** — rejected: the save→sync path (ADR-024/026) exists independently
+  of this widget; reuse cost is one quick action and the `CC Tech v1` field mapping ADR-026 already
+  specifies.

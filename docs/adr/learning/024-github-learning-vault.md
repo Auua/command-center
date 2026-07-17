@@ -41,6 +41,9 @@ learning-center/
 ├── pool/japanese/manifest.json      # schemaVersion, pinned upstream release tags,
 │                                    #   shard list, count, attribution block (ADR-032)
 ├── pool/japanese/words-000.jsonl …  # ~500 words/shard, ~2000 total, from jmdict-ingest
+├── progress/japanese-wotd.json      # per-kind user progress (current/seen/skipped) —
+│                                    #   written by the API; grammar/tech/system-design
+│                                    #   files land with their kinds (ADR-012/013/019)
 ├── cards/japanese/2026/jp-1590480.md         # saved cards, sharded by save year
 ├── cards/japanese/imported/2019/…            # existing-deck import (ADR-026), sharded by
 │                                             #   note-creation year (Anki noteId = epoch ms)
@@ -50,7 +53,10 @@ learning-center/
 
 Sharding is deliberate: JSONL shards stay under the Contents API's 1 MB response comfort
 zone, and year directories stay under GitHub's 1 000-entry listing truncation. Everything is
-human-editable on github.com — that is a feature, not a risk to reconcile away.
+human-editable on github.com — that is a feature, not a risk to reconcile away. The flip side
+is specced, not assumed: consumers validate card files against the shared schema and
+**skip + report** malformed ones — the API ignores them, and ADR-026's sync run records them
+in `state.json.errors` and carries on. A hand-edit can break one card, never the feature.
 
 ### Card file format
 
@@ -89,17 +95,50 @@ GitHub client is plain `fetch` (four endpoints; no Octokit dependency).
 GitHub sits on the read path **behind a cache, never behind a spinner**:
 
 - the pool loads into API memory (manifest + shards), TTL ~6 h, refreshed with conditional
-  requests (ETag → 304); on any GitHub error the API **serves the cached pool indefinitely**
-  — an outage means a stale word, never a broken widget;
+  requests (ETag → 304). Each refresh is **pinned to a single commit** — resolve the repo's
+  current SHA once, then fetch manifest and shards at `?ref=<sha>` — so a pool push landing
+  mid-refresh can never mix manifest and shard versions; on any GitHub error the API
+  **serves the cached pool indefinitely**
+  — an outage means a stale word while the process holds a cache. The cache is process
+  memory only: after a cold boot during an outage there is no pool, and the endpoint
+  returns an explicit unavailable state that the widget renders as "couldn't load — try
+  again later" with a retry (product-owner decision 2026-07-17: WOTD is not crucial enough
+  to buy a disk snapshot or boot-warming machinery);
 - `sync/state.json` is cached ~60 s for the Anki status surface (ADR-026);
 - writes (`PUT` a card file) are synchronous and idempotent by construction: the path is
   deterministic from the card id, so a retried save finds the file and reports
   `alreadyExisted` instead of erroring. A failed write is shown honestly with a retry — at
-  one-user save volume, an in-flight loss costs one button press, not a durability story.
+  one-user save volume, an in-flight loss costs one button press, not a durability story;
+- **credential failures are not outages:** a 401/403 from GitHub (expired or revoked PAT)
+  never hides behind serve-stale — `GET /wotd` and `GET /anki-status` flip to an explicit
+  token-invalid state, so the first symptom is a labelled card, not a save failing months
+  after the pool went quietly stale. The PAT's ≤1 y expiry gets a dated rotation reminder
+  in the runbook.
 
-Word-of-the-day selection is **zero-state**: a date-seeded hash over the pool (stable for the
-whole browser-local day, `?date=YYYY-MM-DD` supplied by the client — the server never guesses
-timezones). No progress tables, no cron, nothing to migrate.
+### Per-kind progress: `progress/<kind>.json`
+
+Per-user progress lives in the repo too — **one JSON file per card kind**
+(`progress/japanese-wotd.json` in v1; `grammar`, `tech`, `system-design` land with their
+kinds), written only by the API. Progress is deliberately a **separate file from the pool**:
+the pool is machine-generated content, wholesale re-emitted by ingest; progress is user
+state a pool regeneration must never touch. Each kind's schema is owned by its widget ADR;
+for WOTD the file holds `{ current: { date, id }, skipped: [id …], seen: { id: date } }`:
+
+- **selection:** eligible = pool − `skipped` − `seen`; the day's pick is a date-seeded hash
+  over the eligible set (`?date=YYYY-MM-DD` supplied by the client — the server never
+  guesses timezones), pinned in `current` and marked `seen` on the first serve of the day —
+  one commit per day. No repeats until the whole pool has been seen; then `seen` resets and
+  a new cycle starts (`skipped` persists).
+- **skip** ("I know this one"): adds the current word to `skipped` and immediately pins the
+  next eligible pick — a replacement word right away, one commit.
+- **writes are sha-guarded:** a concurrent write (two devices at day rollover) refetches,
+  reapplies, and retries; both converge on the same deterministic pick.
+- **hand-editable like everything else** (un-skip a word by deleting its line); a malformed
+  progress file is skipped + reported like a malformed card, and the API degrades to a
+  progress-less pick rather than a broken widget.
+
+Progress commits touch `progress/**` only and never trigger the anki-sync workflow (its
+push trigger is path-filtered to `cards/**`, ADR-026).
 
 ### API contract
 
@@ -107,8 +146,15 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
 
 - `GET /wotd?date=YYYY-MM-DD` → `{ configured: false }` |
   `{ configured: true, date, word, attribution, saved, cardPath? }`
-- `POST /cards` `{ itemId, date? }` → `{ cardId, path, htmlUrl, alreadyExisted }` — writes
-  the card file with `anki: true`; the commit is what triggers Anki sync (ADR-026).
+- `POST /wotd/skip` `{ date }` → the same shape with the replacement word — adds the
+  current pick to `skipped`, pins the next eligible pick (one commit).
+- `POST /cards/:kind` `{ itemId, date? }` → `{ cardId, path, htmlUrl, alreadyExisted }` —
+  **one request contract for every card source; the path carries the kind**
+  (`japanese-wotd` in v1; `grammar`, `tech`, `system-design` land with their widgets). A
+  server-side formatter per kind resolves `itemId` against that kind's content source and
+  derives the card id, deck, and `fields` — the client never sends card content, and a new
+  source is a formatter registration, not a contract change. Writes the card file with
+  `anki: true`; the commit is what triggers Anki sync (ADR-026).
 - `GET /anki-status` → composed from `sync/state.json` + a commits count (ADR-026).
 
 ## Consequences
@@ -119,9 +165,13 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
   the whole learning feature adds zero database surface.
 - **Harder / accepted:** GitHub is on the read path — bounded by in-memory caching,
   conditional requests, and serve-stale-forever degradation; the felt worst case is a stale
-  word and a save button that errors until GitHub returns. Rate limits (5 000 req/h) are
+  word (or, cold-booted mid-outage, a "try again later" card) and a save button that errors
+  until GitHub returns. Rate limits (5 000 req/h) are
   three orders of magnitude above actual volume. If this ever hurts in practice, the first
   draft's cache-in-a-DB design is the known escape hatch — revisit then, not preemptively.
+- **Progress-in-repo costs commits:** roughly one a day per active kind (day pin + seen)
+  plus one per skip or completion — accepted as the price of memory with no database.
+  Per-review SRS state stays rejected (ADR-025/026): that volume would be noise.
 - **Security surface:** one fine-grained PAT, single repo, Contents-only. Compromise of the
   API host exposes learning notes only.
 - **Privacy rules (hard, unchanged):** the repo holds only learning content. Never written:
@@ -156,6 +206,11 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
 - **Runtime dictionary API for new content:** rejected (ADR-032) — no terms of service on the
   obvious candidate (Jisho's unofficial API, whose data _is_ JMdict), and an external
   dependency on every read for data that a pinned, licensed artifact provides offline.
+- **Folders-as-state for progress (`seen/` / `skip/` / `show/` directories):** rejected —
+  it forces file-per-word (the pool is JSONL shards), the Contents API has no atomic move
+  (a move is delete + create, two commits), and pool regeneration would have to reconcile
+  every word's current location — the mirror machinery this rewrite deleted. A per-kind
+  progress file gives the same repo-visible, hand-editable state in one-line diffs.
 - **Storing SRS state in front-matter:** rejected — a commit per review, and it contests
   Anki's ownership of its own schedule (ADR-025/026).
 - **Obsidian-vault-in-Git / third-party sync services:** rejected — nothing to integrate
