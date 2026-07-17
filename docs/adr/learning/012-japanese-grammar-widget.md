@@ -66,10 +66,12 @@ We will serve grammar from `JapaneseModule` (it already owns `jp_content`), with
 - Content ingestion follows ADR-011: the worker's content-refresh job feeds `jp_content` from external
   sources; a seed script guarantees a baseline N5 grammar set at deploy time. Reads always come from
   Mongo, so a content-source outage degrades ingestion, never the widget (ARD §2 failure posture).
-- Progress events, not imports (mirroring ADR-011's `wotd.viewed`/`wotd.studied`): first fetch of a day
-  emits `grammar.viewed`; "mark studied" (or a successful Anki add) emits `grammar.studied`
-  (`{ userId, contentId, date }`). `LearningModule` listens and updates the Postgres `streaks` row for
-  `widget_id = "japanese-grammar"`, idempotent per user-local day. `JapaneseModule` never writes `streaks`.
+- Progress events, not imports (mirroring ADR-011's `wotd.viewed`/`wotd.acknowledged`): first fetch of
+  a day emits `grammar.viewed`; **"mark studied" alone** emits `grammar.studied`
+  (`{ userId, contentId, date }`) — an Anki save is deck management and never a study/streak signal
+  (the 2026-07-17 acknowledge rule; a saved example can be a pattern the user already knows).
+  `LearningModule` listens and updates the Postgres `streaks` row for `widget_id = "japanese-grammar"`,
+  idempotent per day. `JapaneseModule` never writes `streaks`.
 
 ### Data model
 

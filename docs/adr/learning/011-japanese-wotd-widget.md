@@ -12,10 +12,13 @@
 
 Phase 3 opens the Learning area, and the Japanese Word-of-the-Day (WOTD) widget is its
 anchor (dashboard mock: `docs/design/dashboard-mock.html`, "Japanese · Word of the day"
-card). The widget shows one word per day — kanji with furigana, romaji, meaning/POS/JLPT
-level, an example sentence (JA + EN) — plus a streak pill, a skip action ("I know this
-word" — the mock's "New word" button, sharpened: skipping retires the word and draws a
-replacement), and an "Add to Anki" action with a sync note ("Anki synced 8 min ago").
+card). The widget shows one word per day — kanji with furigana, romaji, meaning/POS (plus
+a JLPT chip when the pool carries a level), an example sentence (JA + EN; rendered plain —
+the dataset aligns furigana for headwords only, ADR-024) — plus a streak pill, an
+**acknowledge** action ("learned it" — the only thing that feeds the streak), a **skip**
+action ("already knew it" — retires the word and draws a replacement; the mock's "New
+word" button, sharpened), and an "Add to Anki" action with a sync note ("Anki synced 8
+min ago").
 
 Forces at play:
 
@@ -50,7 +53,7 @@ a card-file save that the learning repo's GitHub Action syncs onward to AnkiWeb 
 
 - One folder `apps/web/widgets/japanese-wotd/` exporting a `WidgetDefinition` with
   `id: "japanese-wotd"`, supported sizes matching the mock's wide card plus a compact
-  variant, `quickActions: [addToAnki, skipWord]`, and a zod `settingsSchema`:
+  variant, `quickActions: [acknowledgeWord, addToAnki, skipWord]`, and a zod `settingsSchema`:
   `{ showFurigana: boolean (default true), showRomaji: boolean (default true) }`. The
   auto-generated settings panel renders these; no bespoke settings UI. Anki deck and
   note-type naming belongs to the sync configuration (ADR-026), not to a widget setting —
@@ -70,28 +73,36 @@ a card-file save that the learning repo's GitHub Action syncs onward to AnkiWeb 
 ### Backend
 
 - Serving follows ADR-024: `LearningModule` holds the pool in API memory (ETag-refreshed,
-  SHA-pinned per refresh, served stale indefinitely on GitHub trouble) and picks the day's
-  word with a date-seeded hash over the **eligible** set — the pool minus what
-  `progress/japanese-wotd.json` marks seen or skipped (ADR-024). The client supplies its
-  local date (`?date=YYYY-MM-DD`) — the server never guesses timezones. The first serve of
-  a day pins the pick in the progress file's `current` and marks it seen (one commit), so
-  a refresh never changes today's word and no word repeats until the whole pool has been
-  seen — then the cycle resets.
-- **Skip ("I know this one"):** `POST /wotd/skip` adds the current word to `skipped` and
-  immediately pins the next eligible pick — a replacement word right away, one commit.
-  Skipped words never return; un-skipping is deleting a line in the progress file.
-- On reads the service emits `wotd.viewed`; a successful card save emits `wotd.studied`.
-  ADR-014's `StreaksService` (same module, same process — the one event→streak path)
-  credits the `japanese-wotd` streak at most once per user-local day; the handler's
-  idempotency means the emitter needs no extra per-day state. Skip does not re-emit
-  `wotd.viewed`.
+  SHA-pinned per refresh, served stale indefinitely on GitHub trouble) and picks with a
+  date-seeded hash over the **eligible** set — the pool minus what
+  `progress/japanese-wotd.json` marks seen or skipped. The learning day is **UTC** (one
+  fixed source of truth — no client-supplied date, no timezone guessing). A new word is
+  drawn and pinned only on the first serve of a UTC day whose previous word was
+  **resolved** — acknowledged or skipped; an untouched word **carries over** (ADR-013's
+  unfinished-lesson rule applied to words), so the pace is set by engagement, not the
+  calendar. A refresh never changes today's word; no word repeats until the whole pool has
+  been seen — then the cycle resets.
+- **Acknowledge ("learned it"):** `POST /wotd/acknowledge` stamps the current word, moves
+  it into `seen`, and flips the card to its learned state — next word tomorrow. This is
+  the deliberate "it was new to me and I studied it" gesture, distinct from both skip and
+  save.
+- **Skip ("already knew it"):** `POST /wotd/skip` adds the current word to `skipped` and
+  immediately pins the next eligible pick — a replacement word right away, one commit, no
+  streak. Skipped words never return; un-skipping is deleting a line in the progress file.
+- Events: reads emit `wotd.viewed` (informational — never a streak source). Acknowledge
+  emits `wotd.acknowledged { userId, itemId, date }` (UTC date) — **the only event
+  ADR-014's map turns into the `japanese-wotd` streak**; the daily pin already makes more
+  than one per UTC day impossible. Saving a card emits no learning event — a saved word
+  can be one the user already knows: deck management, not evidence of study
+  (product-owner rule, 2026-07-17). Skip emits nothing.
 
 ### Data model
 
 No database surface. Per ADR-024 the word pool (pinned JMdict subset, readings already in
 Anki bracket furigana, folded at ingest), this widget's per-user progress
-(`progress/japanese-wotd.json`: `current` day pin, `seen` map, `skipped` list — written
-only by the API), and the saved cards are all files in the learning-center repo, and sync
+(`progress/japanese-wotd.json`: `current` day pin with `acknowledgedAt`, `seen` map,
+`skipped` list — written only by the API), and the saved cards are all files in the
+learning-center repo, and sync
 results live in `sync/state.json` (ADR-026). Streak state stays in Postgres `streaks`
 (ADR-014). The 2026-07-13 draft's Mongo collections —
 `jp_content`, `jp_wotd_days`, `anki_queue`, `anki_snapshots` — are superseded and will
@@ -101,11 +112,15 @@ not exist.
 
 ADR-024's, under `/api/v1/learning`, JWT-guarded, zod-validated (§5.2):
 
-- `GET /wotd?date=YYYY-MM-DD` → `{ configured: false }` |
-  `{ configured: true, date, word, attribution, saved, cardPath? }` — `saved` lets the
-  card render "already in your deck" without a second call.
-- `POST /wotd/skip` `{ date }` → the same shape with the replacement word (ADR-024's
-  progress mechanics).
+- `GET /wotd` → `{ configured: false }` |
+  `{ configured: true, date, word, acknowledged, attribution, saved, cardPath? }` —
+  `date` is the serving UTC day; `saved` lets the card render "already in your deck"
+  without a second call.
+- `POST /wotd/acknowledge` `{ itemId }` → the same shape with `acknowledged: true`; 409
+  when `itemId` is not the current word, so a stale client never resolves the wrong word
+  (midnight race).
+- `POST /wotd/skip` `{ itemId }` → the same shape with the replacement word (same 409
+  guard; ADR-024's progress mechanics).
 - `POST /cards/japanese-wotd` `{ itemId, date? }` → `{ cardId, path, htmlUrl,
 alreadyExisted }` — ADR-024's shared card contract with the kind in the path; the
   `japanese-wotd` formatter resolves `itemId` against the pool and writes the card file
@@ -124,8 +139,8 @@ and `PUT /api/v1/japanese/anki/snapshot` never ship (superseded by ADR-026).
 
 Per ADR-026, nothing Anki-shaped runs in this widget or this API:
 
-1. **Add:** on click, the client calls `POST /cards`. Saving the file is the entire
-   action. The learning repo's `anki-sync` workflow picks up the commit, upserts a note
+1. **Add:** on click, the client calls `POST /cards/japanese-wotd`. Saving the file is
+   the entire action. The learning repo's `anki-sync` workflow picks up the commit, upserts a note
    keyed on the card id (searchable `CardId` field + deterministic guid `cc:<card-id>`)
    into the Japanese deck, and syncs with AnkiWeb. Duplicate protection is the idempotent
    save plus ADR-026's three layers — no `clientRequestId`, no probe, no flush.
@@ -159,10 +174,11 @@ Per ADR-026, nothing Anki-shaped runs in this widget or this API:
 - The "Add to Anki" button toggles `aria-busy` while working; the success outcome is
   announced via a visually-hidden `aria-live="polite"` region ("Saved — syncs to Anki in
   a few minutes"), while failures ("Save failed — retry") use `role="alert"`, matching
-  the house pattern (errors alert, successes polite). Skip swaps the card content
-  without moving focus, so the replacement word is announced through the same polite
-  region — otherwise a screen-reader user pressing "Skip" hears nothing change. All
-  actions keyboard-reachable; skip and add have visible focus states; animations respect
+  the house pattern (errors alert, successes polite). Acknowledge announces "Marked
+  learned — next word tomorrow" politely; skip swaps the card content without moving
+  focus, so the replacement word is announced through the same polite region — otherwise
+  a screen-reader user pressing "Skip" hears nothing change. All actions
+  keyboard-reachable with visible focus states; animations respect
   `prefers-reduced-motion`.
 
 ### UX states & interaction
@@ -181,6 +197,15 @@ Per ADR-026, nothing Anki-shaped runs in this widget or this API:
   commits are newer than `lastSyncAt`; "failed — view run" linking to the Actions tab).
   Button states: idle → busy → "Saved ✓" (transient), after which the save counts under
   "waiting for sync" until `state.json` reports it.
+- **Acknowledged:** after acknowledge the card keeps showing the word in a "learned ✓ —
+  next word tomorrow" state; skip disappears, "Add to Anki" stays available.
+- **Token expired:** ADR-024's explicit token-invalid state renders as its own labelled
+  card ("GitHub token expired — see runbook"), distinct from outage staleness — the
+  widget is never silently stale on a dead credential.
+- **Optional fields:** the JLPT chip renders only when the pool carries a level (the
+  curated join is partial — ADR-024/032); example sentences render plain when no furigana
+  alignment exists (`lang="ja"` still selects the Japanese TTS voice). Both are normal
+  states, never errors.
 - **Streak pill** renders from the ADR-014 hook; if that call fails, the pill is simply
   omitted — never a broken card.
 - **Attribution (R5, ADR-032):** "Dictionary data © EDRDG (JMdict), CC BY-SA" is a
@@ -230,6 +255,10 @@ Per ADR-026, nothing Anki-shaped runs in this widget or this API:
   CORS carve-out we owned. ADR-026 carries the full comparison; AnkiWeb _scraping_ stays
   rejected on ToS grounds (the official library speaking the official sync protocol is a
   different act).
+- **Streak credit on view or on save:** rejected — a streak earnable by glancing measures
+  opening the app, and a save can be a word the user already knows; only the explicit
+  acknowledge ("it was new and I studied it") is evidence of learning. One deliberate
+  gesture, one streak source.
 - **Composing streaks into the `/wotd` response server-side:** rejected — couples the hot
   WOTD read to streak state for the sake of one pill, and forks the house pattern: every
   widget composes its streak client-side from the shared ADR-014 endpoint. Frontend
