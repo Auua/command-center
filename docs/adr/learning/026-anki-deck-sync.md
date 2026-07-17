@@ -1,10 +1,10 @@
 # ADR-026: Anki two-deck sync (Japanese + Tech) — learning-repo GitHub Action → AnkiWeb
 
-- **Status:** proposed
+- **Status:** Accepted (2026-07-17)
 - **Date:** 2026-07-16 (rewritten twice: the 2026-07-14 draft used AnkiConnect
   queue-and-flush; the same-day revision then dropped Mongo with ADR-024 — GitHub is the
   store, and sync results live in `sync/state.json` instead of a report endpoint)
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed, PO-reviewed — accepted 2026-07-17
 
 ## Context
 
@@ -159,9 +159,10 @@ jmdict-ingest from JmdictFurigana alignments, so card files are legible on their
 card template just renders `{{furigana:Reading}}`. Neither the API nor the Python mapper ever
 touches Japanese text.
 
-Card templates ship with the model: Japanese generates recognition (Expression → Meaning) and,
-optionally, recall (Meaning → Expression) cards; Tech generates one card (Question → Answer +
-Code). Card files store `code` raw (readable in GitHub); the sync script HTML-escapes it and
+Card templates ship with the model: Japanese generates recognition (Expression → Meaning)
+cards — recall (Meaning → Expression) is **off by default** (→ _PO-review 2026-07-17_;
+adding it later is a non-destructive template addition on the versioned model); Tech
+generates one card (Question → Answer + Code). Card files store `code` raw (readable in GitHub); the sync script HTML-escapes it and
 wraps it in `<pre>` at note-build time — Anki templates are HTML, and un-escaped code in a
 card is both broken rendering and a (self-inflicted) injection.
 
@@ -295,11 +296,14 @@ authenticated as the account owner, at personal-use volume. The previous draft's
   `anki_snapshots` row (deleted, not moved).
 - **Media** (images/audio, e.g. ADR-019's diagrams) stays out of v1; when wanted it is one
   more call in the same run (`col.sync_media`), not a new architecture.
-- **Open questions for the product owner:** (1) Recall (Meaning → Expression) cards for Japanese: on or
-  off by default? (2) Deck names — literally `Japanese` and `Tech`, or nested under an
-  existing parent deck? (3) Comfortable with the AnkiWeb password in Actions secrets, or gate
-  this ADR on trying it with a throwaway AnkiWeb account first? (The "do the decks already
-  have content" question is answered: yes — import mode exists for exactly that.)
+- **Open questions — resolved at the 2026-07-17 walkthrough:** (1) recall cards **off by
+  default** — recognition only; enabling later is a non-destructive template addition on
+  the versioned note type. (2) Deck names **literally `Japanese` and `Tech`** (top-level,
+  configurable in settings) — per-deck scheduling stays independent. (3) **Real AnkiWeb
+  account** in the learning repo's Actions secrets — a private repo with no third-party
+  workflows, and the never-full-upload rule bounds the damage; no throwaway-trial gate.
+  (The "do the decks already have content" question is answered: yes — import mode exists
+  for exactly that.)
 
 ## Alternatives considered
 

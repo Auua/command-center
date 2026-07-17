@@ -36,7 +36,7 @@ history as the starting point if in-app reading is ever wanted.
 | --- | --------------------------------------- | --------------- | ------------------- |
 | 024 | GitHub learning-center repo (the store) | claude-reviewed | ✓ 2026-07-17        |
 | 025 | Spaced-repetition review widget         | claude-reviewed | rejected 2026-07-17 |
-| 026 | Anki deck sync via learning-repo Action | claude-reviewed |                     |
+| 026 | Anki deck sync via learning-repo Action | claude-reviewed | ✓ 2026-07-17        |
 
 ## Batch 3 — README future extensions
 
@@ -199,6 +199,15 @@ learning-center v1 slice):
   ADR-013/019's home-timezone day-pinning should be confirmed against the UTC rule. The approved
   learning-center v1 plan (2026-07-16) predates the progress-file/acknowledge design and needs a
   refresh before build.
+- 2026-07-17 walkthrough: **ADR-011 accepted** (carry-over pacing confirmed; `showRomaji`
+  default off) and **ADR-026 accepted** — recall cards off by default (recognition only; a later
+  template addition is non-destructive on the versioned model), literal top-level
+  `Japanese`/`Tech` deck names, **real AnkiWeb account** in the learning repo's Actions secrets
+  (no throwaway-trial gate). The big owed ARD rewrite was applied in 026's acceptance commit:
+  AnkiConnect has left the architecture (§4.5 rewritten to the repo-Action → AnkiWeb sync, §2
+  diagram + failure rows gained the learning repo and lost AnkiConnect, §5.2 CORS carve-out
+  dropped, §4.3 lost `anki_snapshots`, R2 repurposed to sync-protocol drift, Phase 3 reworded).
+  Learning batch remaining: 012, 013, 014, 019, 032.
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 
