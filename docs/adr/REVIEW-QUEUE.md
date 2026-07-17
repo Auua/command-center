@@ -208,6 +208,15 @@ learning-center v1 slice):
   diagram + failure rows gained the learning repo and lost AnkiConnect, §5.2 CORS carve-out
   dropped, §4.3 lost `anki_snapshots`, R2 repurposed to sync-protocol drift, Phase 3 reworded).
   Learning batch remaining: 012, 013, 014, 019, 032.
+- 2026-07-17 walkthrough: **ADR-012 accepted, rewritten in place** (the ADR-020 precedent) —
+  grammar content moves to **authored `pool/grammar/` files in the learning repo** (no open JLPT
+  grammar dataset, ADR-032; authoring = a reviewed commit), served by `LearningModule`:
+  **`JapaneseModule` dissolves** and `jp_content` is retired unbuilt. Carry-over pacing on the UTC
+  day confirmed (same as 011); the JLPT ceiling now rides the request (`?ceiling=`) — the drafted
+  server-side read of `WidgetRegistryModule` settings was the only endpoint reaching into another
+  module's data and is rejected. Bracket furigana repo-wide. ARD updated in the same commit (module
+  diagram, §4.3 Mongo list, Atlas ownership row, 012 summary row); ADR-024's layout gains
+  `pool/grammar/`. Learning batch remaining: 013, 014, 019, 032.
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 
