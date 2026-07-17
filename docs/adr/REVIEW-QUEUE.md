@@ -187,6 +187,18 @@ learning-center v1 slice):
   that view ever needs scheduling, ADR-025's FSRS/`srs_owner` design is the recorded starting
   point. ADR-012's "Anki _is_ the SRS" stance stands un-superseded; the §4.4
   `review_cards`/`review_logs` owed ARD edit is cancelled with the rejection.
+- 2026-07-17, ADR-011 verification pass (product-owner decisions): pool ingest gains **romaji + POS
+  always, JLPT via curated join where available** — `jlptLevel` optional, chip renders only when
+  present; **examples stay plain** (no sentence-level furigana; headword alignment only);
+  **acknowledge** joins skip and save as the third word action and is **the only streak source** —
+  a save never credits a streak (can be an already-known word; ripples into ADR-012's
+  `grammar.studied`), an unacknowledged word **carries over** (ADR-013's rule applied to words);
+  the **learning day is UTC** (no client date; acknowledge/skip guard on `itemId` with 409);
+  token-invalid card state added to ADR-011's UX. Note for pending walkthroughs: ADR-014 must
+  absorb the UTC learning day + `wotd.acknowledged` mapping (alongside 027's `recomputeDay`), and
+  ADR-013/019's home-timezone day-pinning should be confirmed against the UTC rule. The approved
+  learning-center v1 plan (2026-07-16) predates the progress-file/acknowledge design and needs a
+  refresh before build.
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 

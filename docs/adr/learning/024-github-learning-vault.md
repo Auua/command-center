@@ -76,8 +76,13 @@ New Japanese content is **not** a runtime API: a repo tool (`tools/jmdict-ingest
 TypeScript) downloads **pinned** jmdict-simplified (`jmdict-examples-eng`, which bundles
 Tatoeba example sentences) and JmdictFurigana release artifacts, filters to a frequency-led
 subset (priority `ichi1`/`nf01–nf12`, must have a furigana alignment and an English gloss,
-archaic/obscure senses dropped, top ~2000), folds furigana to bracket notation, and emits the
-manifest + shards. The user runs it against a local clone and commits the output — bumping a pin
+archaic/obscure senses dropped, top ~2000), folds furigana to bracket notation, derives
+romaji from the kana reading, keeps JMdict's POS tags, and joins a curated JLPT-level list
+where an entry exists (ADR-032's annotation stance) — **`jlptLevel` is optional**: a missing
+level is normal, not an error, and consumers render it only when present (product-owner
+decision 2026-07-17). Example sentences carry **no furigana alignment** (JmdictFurigana
+covers headwords only) — consumers render them plain, accepted the same day. The tool emits
+the manifest + shards. The user runs it against a local clone and commits the output — bumping a pin
 is a reviewed commit, per ADR-032's stance. The manifest's attribution block carries EDRDG's
 required acknowledgement line, which the widget renders on every word display (ADR-032: a
 legal requirement, not styling). **Tech lesson content is deferred** — no open-licensed
@@ -122,15 +127,22 @@ Per-user progress lives in the repo too — **one JSON file per card kind**
 kinds), written only by the API. Progress is deliberately a **separate file from the pool**:
 the pool is machine-generated content, wholesale re-emitted by ingest; progress is user
 state a pool regeneration must never touch. Each kind's schema is owned by its widget ADR;
-for WOTD the file holds `{ current: { date, id }, skipped: [id …], seen: { id: date } }`:
+for WOTD the file holds
+`{ current: { date, id, acknowledgedAt? }, skipped: [id …], seen: { id: date } }`:
 
-- **selection:** eligible = pool − `skipped` − `seen`; the day's pick is a date-seeded hash
-  over the eligible set (`?date=YYYY-MM-DD` supplied by the client — the server never
-  guesses timezones), pinned in `current` and marked `seen` on the first serve of the day —
-  one commit per day. No repeats until the whole pool has been seen; then `seen` resets and
-  a new cycle starts (`skipped` persists).
-- **skip** ("I know this one"): adds the current word to `skipped` and immediately pins the
-  next eligible pick — a replacement word right away, one commit.
+- **selection:** eligible = pool − `skipped` − `seen`; the learning day is **UTC**
+  (product-owner decision 2026-07-17 — one fixed source of truth; no client-supplied date,
+  no timezone guessing). A new pick (date-seeded hash over the eligible set) is drawn and
+  pinned in `current` only on the first serve of a UTC day whose previous word was
+  **resolved** — acknowledged or skipped; an untouched word **carries over** (ADR-013's
+  unfinished-lesson rule applied to words). No repeats until the whole pool has been seen;
+  then `seen` resets and a new cycle starts (`skipped` persists).
+- **acknowledge** ("learned it — it was new to me"): stamps `current.acknowledgedAt`, moves
+  the id into `seen`, and emits the kind's acknowledged event — **the only streak source**.
+  Saving a card to Anki is deck management and never credits a streak (a saved word can be
+  one the user already knows); skip never credits one either.
+- **skip** ("I already knew this one"): adds the current word to `skipped` and immediately
+  pins the next eligible pick — a replacement word right away, one commit, no streak.
 - **writes are sha-guarded:** a concurrent write (two devices at day rollover) refetches,
   reapplies, and retries; both converge on the same deterministic pick.
 - **hand-editable like everything else** (un-skip a word by deleting its line); a malformed
@@ -144,10 +156,14 @@ push trigger is path-filtered to `cards/**`, ADR-026).
 
 Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (ADR-004/007):
 
-- `GET /wotd?date=YYYY-MM-DD` → `{ configured: false }` |
-  `{ configured: true, date, word, attribution, saved, cardPath? }`
-- `POST /wotd/skip` `{ date }` → the same shape with the replacement word — adds the
-  current pick to `skipped`, pins the next eligible pick (one commit).
+- `GET /wotd` → `{ configured: false }` |
+  `{ configured: true, date, word, acknowledged, attribution, saved, cardPath? }` — `date`
+  is the serving UTC day, derived server-side.
+- `POST /wotd/acknowledge` `{ itemId }` → the same shape with `acknowledged: true` — 409
+  when `itemId` is not the current word (midnight race: a stale client can never resolve
+  the wrong word).
+- `POST /wotd/skip` `{ itemId }` → the same shape with the replacement word — same 409
+  guard; adds the pick to `skipped`, pins the next eligible pick (one commit).
 - `POST /cards/:kind` `{ itemId, date? }` → `{ cardId, path, htmlUrl, alreadyExisted }` —
   **one request contract for every card source; the path carries the kind**
   (`japanese-wotd` in v1; `grammar`, `tech`, `system-design` land with their widgets). A
@@ -169,8 +185,8 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
   until GitHub returns. Rate limits (5 000 req/h) are
   three orders of magnitude above actual volume. If this ever hurts in practice, the first
   draft's cache-in-a-DB design is the known escape hatch — revisit then, not preemptively.
-- **Progress-in-repo costs commits:** roughly one a day per active kind (day pin + seen)
-  plus one per skip or completion — accepted as the price of memory with no database.
+- **Progress-in-repo costs commits:** at most one pin a day per active kind, plus one per
+  acknowledge, skip, or completion — accepted as the price of memory with no database.
   Per-review SRS state stays rejected (ADR-025/026): that volume would be noise.
 - **Security surface:** one fine-grained PAT, single repo, Contents-only. Compromise of the
   API host exposes learning notes only.
