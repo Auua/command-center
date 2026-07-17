@@ -32,11 +32,11 @@ history as the starting point if in-app reading is ever wanted.
 
 ## Batch 2 — learning center
 
-| ADR | Title                                   | Review state    | Approved |
-| --- | --------------------------------------- | --------------- | -------- |
-| 024 | GitHub learning-center repo (the store) | claude-reviewed |          |
-| 025 | Spaced-repetition review widget         | claude-reviewed |          |
-| 026 | Anki deck sync via learning-repo Action | claude-reviewed |          |
+| ADR | Title                                   | Review state    | Approved            |
+| --- | --------------------------------------- | --------------- | ------------------- |
+| 024 | GitHub learning-center repo (the store) | claude-reviewed | ✓ 2026-07-17        |
+| 025 | Spaced-repetition review widget         | claude-reviewed | rejected 2026-07-17 |
+| 026 | Anki deck sync via learning-repo Action | claude-reviewed |                     |
 
 ## Batch 3 — README future extensions
 
@@ -179,6 +179,14 @@ learning-center v1 slice):
   superseded, the policies stand. Pool refreshes are SHA-pinned (no manifest/shard version mixing);
   ADR-026's push trigger corrected to `cards/**` so `progress/**`/`sync/**` commits never trigger
   runs. ARD §4.3/§4.4 "progress counters in Postgres" joins the owed-on-approval ARD edits.
+- 2026-07-17 walkthrough: **ADR-024 accepted**; **ADR-025 rejected** — Anki is the SRS for
+  everything. With every saved card Anki-bound (ADR-024/026), the app-owned review population
+  ADR-025 schedules would never exist; reviewing happens in Anki on every device via AnkiWeb.
+  No in-app scheduler and no review widget will be built — the product owner may later add a
+  **learning-center view** (a dedicated page for this kind of study task), but not a widget; if
+  that view ever needs scheduling, ADR-025's FSRS/`srs_owner` design is the recorded starting
+  point. ADR-012's "Anki _is_ the SRS" stance stands un-superseded; the §4.4
+  `review_cards`/`review_logs` owed ARD edit is cancelled with the rejection.
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 

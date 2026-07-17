@@ -1,10 +1,10 @@
 # ADR-024: GitHub learning-center repo — the store for learning content and cards
 
-- **Status:** proposed
+- **Status:** Accepted
 - **Date:** 2026-07-16 (rewritten; the 2026-07-14 draft — "GitHub learning vault" — made Mongo
   `vault_items` the system of record with GitHub as a write-behind mirror. Product-owner decision:
   **no Mongo for learning data, GitHub is the store.** This rewrite records that.)
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed — PO-reviewed
 
 ## Context
 
@@ -178,8 +178,8 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
   journal/mood/appreciation content, tokens, subscriptions, addresses.
 - **Supersedes:** the 2026-07-14 draft's `VaultModule`, Mongo `vault_items`, `vault.push`
   queue, reconcile job, `vault.item_saved` event, and `/api/v1/vault/*` endpoints — none will
-  exist. ADR-025 (review widget, deferred) composed against those and needs re-alignment
-  when it is picked up. ARD edits owed on approval: §4.3 loses the planned `vault_items` row;
+  exist. ADR-025, which composed against those, was rejected on 2026-07-17 —
+  Anki is the only SRS. ARD edits owed on approval: §4.3 loses the planned `vault_items` row;
   the ADR-024 summary row.
 - **Open questions for the product owner:** (1) repo name literally `learning-center`? (2) Is a ~2000-word
   pool the right starting size? (3) When tech lessons land, same repo under `pool/tech/` +

@@ -30,8 +30,8 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 021 | [Stock & FX watchlist widget](external-data/021-stocks-widget.md)                                                                  | external-data | accepted |
 | 022 | [Weather forecast widget](external-data/022-weather-widget.md)                                                                     | external-data | accepted |
 | 023 | [Work tracker widget (wins, impact, review evidence)](reflection/023-work-tracker-widget.md)                                       | reflection    | accepted |
-| 024 | [GitHub learning-center repo — the store for learning content and cards](learning/024-github-learning-vault.md)                    | learning      | proposed |
-| 025 | [Spaced-repetition review widget](learning/025-review-widget.md)                                                                   | learning      | proposed |
+| 024 | [GitHub learning-center repo — the store for learning content and cards](learning/024-github-learning-vault.md)                    | learning      | accepted |
+| 025 | [Spaced-repetition review widget](learning/025-review-widget.md)                                                                   | learning      | rejected |
 | 026 | [Anki two-deck sync (Japanese + Tech) — learning-repo GitHub Action → AnkiWeb](learning/026-anki-deck-sync.md)                     | learning      | proposed |
 | 027 | [Habit tracking widget](productivity/027-habit-widget.md)                                                                          | productivity  | accepted |
 | 028 | [Pomodoro timer widget](productivity/028-pomodoro-widget.md)                                                                       | productivity  | accepted |
