@@ -17,7 +17,7 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 008 | [Tasks (todo) widget](productivity/008-tasks-widget.md)                                                                            | productivity  | accepted |
 | 009 | [Mood check-in + 7-day trend widget](reflection/009-mood-widget.md)                                                                | reflection    | accepted |
 | 010 | [Braindump widget](productivity/010-braindump-widget.md)                                                                           | productivity  | accepted |
-| 011 | [Japanese Word-of-the-Day widget (incl. "Add to Anki")](learning/011-japanese-wotd-widget.md)                                      | learning      | proposed |
+| 011 | [Japanese Word-of-the-Day widget (incl. "Add to Anki")](learning/011-japanese-wotd-widget.md)                                      | learning      | accepted |
 | 012 | [Japanese Grammar-point widget](learning/012-japanese-grammar-widget.md)                                                           | learning      | proposed |
 | 013 | [Tech "X of the day" micro-lesson widget](learning/013-tech-lesson-widget.md)                                                      | learning      | proposed |
 | 014 | [Streaks widget](learning/014-streaks-widget.md)                                                                                   | learning      | proposed |

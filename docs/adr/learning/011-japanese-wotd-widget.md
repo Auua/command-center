@@ -1,12 +1,13 @@
 # ADR-011: Japanese Word-of-the-Day widget (incl. "Add to Anki")
 
-- **Status:** proposed
+- **Status:** Accepted (2026-07-17)
 - **Date:** 2026-07-13 (edited 2026-07-17: the content store and the whole Anki path now
   follow ADR-024/026 — the GitHub learning repo is the store, and its Action syncs to
   AnkiWeb. The original Mongo collections and AnkiConnect queue-and-flush design are
   superseded and survive only in git history; the widget surface, a11y, and streak
-  decisions stand.)
-- **Review:** claude-reviewed — pending product-owner approval
+  decisions stand. Accepted the same day with carry-over pacing confirmed and
+  `showRomaji` flipped to default-off.)
+- **Review:** claude-reviewed, PO-reviewed — accepted 2026-07-17
 
 ## Context
 
@@ -54,8 +55,10 @@ a card-file save that the learning repo's GitHub Action syncs onward to AnkiWeb 
 - One folder `apps/web/widgets/japanese-wotd/` exporting a `WidgetDefinition` with
   `id: "japanese-wotd"`, supported sizes matching the mock's wide card plus a compact
   variant, `quickActions: [acknowledgeWord, addToAnki, skipWord]`, and a zod `settingsSchema`:
-  `{ showFurigana: boolean (default true), showRomaji: boolean (default true) }`. The
-  auto-generated settings panel renders these; no bespoke settings UI. Anki deck and
+  `{ showFurigana: boolean (default true), showRomaji: boolean (default false) }`. The
+  auto-generated settings panel renders these; no bespoke settings UI.
+  → _PO-review (2026-07-17):_ romaji default flipped to **off** — kana-first reading
+  practice; the mock's visible romaji is the opt-in state. Anki deck and
   note-type naming belongs to the sync configuration (ADR-026), not to a widget setting —
   the earlier `ankiDeckName`/`ankiNoteType`/`autoFlushQueue` settings are gone with the
   queue they configured.
@@ -82,6 +85,8 @@ a card-file save that the learning repo's GitHub Action syncs onward to AnkiWeb 
   unfinished-lesson rule applied to words), so the pace is set by engagement, not the
   calendar. A refresh never changes today's word; no word repeats until the whole pool has
   been seen — then the cycle resets.
+  → _PO-review (2026-07-17):_ carry-over pacing confirmed — engagement-paced, not
+  calendar-paced; an untouched word waits, even across days.
 - **Acknowledge ("learned it"):** `POST /wotd/acknowledge` stamps the current word, moves
   it into `seen`, and flips the card to its learned state — next word tomorrow. This is
   the deliberate "it was new to me and I studied it" gesture, distinct from both skip and
