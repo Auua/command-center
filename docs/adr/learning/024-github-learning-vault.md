@@ -41,6 +41,7 @@ learning-center/
 ├── pool/japanese/manifest.json      # schemaVersion, pinned upstream release tags,
 │                                    #   shard list, count, attribution block (ADR-032)
 ├── pool/japanese/words-000.jsonl …  # ~500 words/shard, ~2000 total, from jmdict-ingest
+├── pool/grammar/te-kara.md …        # authored grammar points (ADR-012, accepted 2026-07-17)
 ├── progress/japanese-wotd.json      # per-kind user progress (current/seen/skipped) —
 │                                    #   written by the API; grammar/tech/system-design
 │                                    #   files land with their kinds (ADR-012/013/019)

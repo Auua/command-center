@@ -86,8 +86,9 @@ module, no cross-module import.
 ### Data model
 
 MongoDB `lesson_content` (owner: `LearningModule`), extended to a **discriminated union on `kind`** —
-the same "one collection, discriminated docs" call ADR-012 made for grammar inside `jp_content`,
-rather than a new collection:
+the same "one collection, discriminated docs" call ADR-012 originally made for grammar inside
+`jp_content` (grammar has since moved to authored repo files — ADR-012 as accepted — but the
+discriminated-union reasoning still holds for `lesson_content`), rather than a new collection:
 
 ```
 { _id, kind: "system-design", area, depth, seq,      // unique index (kind, area, depth, seq)
@@ -202,8 +203,8 @@ pinned lesson rather than an error (ARD §2 failure posture).
   costs one ingest step and keeps all three.
 - **Author diagrams as ASCII art in a `<pre>`** — genuinely injection-proof and zero-pipeline. Rejected:
   it's illegible at phone widths, unreadable to screen readers as a graph, and unstylable.
-- **Its own Mongo collection (`system_design_content`)** — rejected for the same reason ADR-012 kept
-  grammar in `jp_content`: a needless split of one owner's content, doubling indexes and ingest wiring
+- **Its own Mongo collection (`system_design_content`)** — rejected for the same reason ADR-012's
+  draft kept grammar in `jp_content`: a needless split of one owner's content, doubling indexes and ingest wiring
   for documents that share a lifecycle. `kind` discriminates; the unique index carries the rest.
 - **Random/shuffled daily topic** — rejected for the same pedagogic reason as ADR-013: caching before
   consistency, load balancing before sharding. Sequence is the curriculum.
