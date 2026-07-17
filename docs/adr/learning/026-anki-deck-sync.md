@@ -209,14 +209,13 @@ store — with GitHub as the store (ADR-024), sync results are just more repo st
 - `errors` for anything non-fatal worth surfacing.
 
 The API reads this file (ETag-cached) to serve the status surface. The `srs_owner` hinge to
-the in-app review widget (ADR-025) is **deferred with that widget**; when it lands, ownership
-transfer keys off `state.json`'s per-card results instead of a pushed event — same one-item,
-one-scheduler invariant, different transport.
+the in-app review widget went with that widget: **ADR-025 was rejected on 2026-07-17** — Anki
+is the only scheduler, so there is no ownership transfer to signal.
 
-The collection is fully readable during a run, so a per-card schedule import into ADR-025's
-FSRS is now _possible_ — it remains **rejected**, on ADR-025's own grounds (a partial import
-silently corrupts FSRS state; ownership transfer is one-way), no longer on reachability
-grounds. A run that syncs but crashes before committing state merely leaves `lastSyncAt`
+The collection is fully readable during a run, so a per-card schedule export is _possible_ —
+it stays unused: with ADR-025 rejected there is no app-side scheduler to feed, and a partial
+schedule import into any future one would silently corrupt it (the grounds ADR-025 itself
+recorded). A run that syncs but crashes before committing state merely leaves `lastSyncAt`
 stale until the next run; the Actions tab is the ground truth the status surface links to.
 
 ### "Synced for me": the status surface
@@ -343,7 +342,7 @@ authenticated as the account owner, at personal-use volume. The previous draft's
 - **Anki's `guid` as the _only_ identity (no `CardId` field):** rejected — guid is invisible
   in the Anki UI and unsearchable by the user; the field costs nothing and is the debuggable
   handle. We set both.
-- **Importing Anki's per-card scheduling state back into ADR-025's FSRS:** still rejected —
-  now as a choice (the collection is readable in the run) rather than an impossibility; a
-  partial import silently corrupts FSRS state, and ownership transfer stays one-way. (Import
-  mode deliberately exports _content_ only, never scheduling.)
+- **Importing Anki's per-card scheduling state into an app-side SRS:** moot since ADR-025's
+  rejection (there is no app-side scheduler), and rejected on its merits regardless — a
+  partial import silently corrupts scheduler state. (Import mode deliberately exports
+  _content_ only, never scheduling.)

@@ -1,11 +1,19 @@
 # ADR-025: Spaced-repetition review widget
 
-- **Status:** proposed
-- **Date:** 2026-07-14 (Anki rationale edited 2026-07-17 after ADR-026's rewrite retired
-  the AnkiConnect/desktop reachability constraint. This ADR still composes against
-  ADR-024's superseded vault draft — `vault_items`, `vault.item_saved`, `/api/v1/vault/*`
-  — and owes a full re-alignment when this widget is picked up, per ADR-024/026.)
-- **Review:** claude-reviewed — pending product-owner approval
+- **Status:** rejected (product owner, 2026-07-17)
+- **Date:** 2026-07-14 (Anki rationale edited 2026-07-17 after ADR-026's rewrite; rejected
+  the same day at the walkthrough)
+- **Review:** claude-reviewed — PO-reviewed and **rejected**
+
+> **Rejection (2026-07-17, product-owner decision): Anki is the SRS for everything.**
+> Every saved card is Anki-bound (ADR-024/026 — saving _is_ adding to Anki), so the
+> app-owned review population this widget schedules would never exist, and reviewing
+> happens in Anki on every device via AnkiWeb. No in-app scheduler will be built;
+> ADR-012's "Anki _is_ the SRS" stance stands un-superseded. The product owner may later
+> add a **learning-center view** — a dedicated page in the app for this kind of study
+> task — but it will not be a dashboard widget. If that view ever needs scheduling, this
+> ADR's design (FSRS, the `srs_owner` one-scheduler invariant,
+> `review_cards`/`review_logs`) is the starting point, preserved below unchanged.
 
 ## Context
 
