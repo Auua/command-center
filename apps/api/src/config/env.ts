@@ -15,7 +15,7 @@ export const EnvSchema = z.object({
   /** Supabase anon (publishable) key — RLS-respecting role, never service_role. */
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1, 'SUPABASE_PUBLISHABLE_KEY is required'),
   /**
-   * MongoDB Atlas connection string (ARD §4.3 — document store). May omit a
+   * MongoDB Atlas connection string (ADR §4.3 — document store). May omit a
    * database name in the path; MongoService then falls back to
    * "command_center".
    */

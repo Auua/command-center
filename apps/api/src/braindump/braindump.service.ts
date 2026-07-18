@@ -9,7 +9,7 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import { BraindumpRepository } from './braindump.repository';
 
 /**
- * Business rules for braindump notes (controllers stay thin — ARD §4.1).
+ * Business rules for braindump notes (controllers stay thin — ADR §4.1).
  * A malformed or foreign note id is deliberately indistinguishable from a
  * missing one: both 404, nothing leaks about other users' data.
  */

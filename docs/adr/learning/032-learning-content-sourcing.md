@@ -8,7 +8,7 @@
 
 ## Context
 
-ARD §8 **R5** — _"Content sourcing for WOTD/lessons (licensing, quality) — learning widgets are the heart
+ADR §8 **R5** — _"Content sourcing for WOTD/lessons (licensing, quality) — learning widgets are the heart
 of the product"_ — is the oldest open risk in the document, and four ADRs have now been written on top of
 it without closing it:
 
@@ -27,7 +27,7 @@ So the widgets have a content pipeline with a hole in the middle. Forces:
   a demand about _placement_ that ADR-011's about-panel rule does not satisfy (see below). This is the
   finding that makes this ADR worth writing rather than a wiki page.
 - **The read path is already decided and must not be reopened.** ADR-011 rejected "third-party dictionary
-  API as the live read path" and ARD §2's failure table says content-source outages degrade to the
+  API as the live read path" and ADR §2's failure table says content-source outages degrade to the
   pre-seeded cache. So the question is _not_ "which dictionary API do we call" — it is "what do we ingest,
   from where, under what terms, and how do we prove it later".
 - **NFR-8 / G2.** Whatever we choose must cost nothing and need no babysitting.
@@ -96,7 +96,7 @@ This **narrows ADR-011's worker "content-pool refresh" job**: there is no recurr
   fail-closed, licence-typed rules here apply to either target.)_
 - Why not a worker cron: dictionary data changes weekly and nobody would notice if we were a year behind,
   while a cron that downloads a multi-megabyte JSON into a €0 backend on a schedule is a real operational
-  hazard for zero user-visible benefit (G2). The ARD's §2 promise "content sources down → serve pre-seeded
+  hazard for zero user-visible benefit (G2). The ADR's §2 promise "content sources down → serve pre-seeded
   cache" becomes vacuously true: there is only the cache. Nothing to be down.
 - Ingest **fails closed**: a pool entry without a complete `license` block, a bracket-furigana reading
   that doesn't reconstruct the headword, or an example sentence whose Tatoeba id doesn't resolve, is
@@ -156,7 +156,7 @@ returns an empty `sources` list and no line.
 
 ### Failure & rate-limit posture
 
-There is no runtime provider, therefore no rate limit, no key, no quota, no outage, and no entry in ARD
+There is no runtime provider, therefore no rate limit, no key, no quota, no outage, and no entry in ADR
 §2's dependency table. The only failure mode is a failed ingest, which is a CI failure and leaves the last
 good content in place. This is the entire reason for the shape.
 
@@ -211,7 +211,7 @@ must not forget:
 
 ## Consequences
 
-- **R5 closes.** Every learning document will carry a machine-readable, validated provenance, and the ARD's
+- **R5 closes.** Every learning document will carry a machine-readable, validated provenance, and the ADR's
   R5 row can be marked decided with a pointer here.
 - **Easier:** the learning widgets acquire no new dependency, no key, no quota and no upstream availability
   risk — the strongest possible answer to a sourcing risk is to have nothing to be unavailable.
@@ -269,7 +269,7 @@ must not forget:
   grammar explanation is precisely the failure this ADR is meant to prevent. (Using an LLM as an _authoring
   assistant_ whose output the user reviews and signs is fine — that produces `proprietary-own` content with a
   human author, which is a different thing.)
-- **Scraping a grammar reference site.** Rejected on the same ToS principle the ARD applies to AnkiWeb (R2)
+- **Scraping a grammar reference site.** Rejected on the same ToS principle the ADR applies to AnkiWeb (R2)
   and ADR-021 applies to Yahoo — a line we do not cross even when it is convenient.
 - **Making `license` optional (status quo of ADR-013/019).** Rejected: an optional provenance field is an
   absent provenance field, and the failure only surfaces on the day someone asks a question we can no longer

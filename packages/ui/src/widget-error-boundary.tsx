@@ -12,7 +12,7 @@ interface State {
 }
 
 /**
- * Per-widget error boundary (ARD §4.2): a broken widget renders a fallback
+ * Per-widget error boundary (ADR §4.2): a broken widget renders a fallback
  * card, never a blank dashboard.
  */
 export class WidgetErrorBoundary extends Component<Props, State> {

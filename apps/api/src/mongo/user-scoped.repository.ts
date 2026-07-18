@@ -11,20 +11,20 @@ import type {
 } from 'mongodb';
 
 /**
- * Every MongoDB document carries the owning user's id (ARD §4.4) — the
+ * Every MongoDB document carries the owning user's id (ADR §4.4) — the
  * Supabase auth user UUID, stored as a plain string (opaque cross-DB
- * reference, ARD §4.3).
+ * reference, ADR §4.3).
  */
 export interface UserOwnedDocument extends Document {
   userId: string;
 }
 
 /**
- * Base class for all Mongo repositories (ARD §4.4): every query is filtered
+ * Base class for all Mongo repositories (ADR §4.4): every query is filtered
  * on `userId` here, in one place. Subclasses never touch the collection
  * directly for reads/writes — they go through these protected helpers, so a
  * missing user filter is structurally impossible rather than a code-review
- * concern (ARD §5.1: user id comes from the verified JWT, never the body).
+ * concern (ADR §5.1: user id comes from the verified JWT, never the body).
  */
 export abstract class UserScopedRepository<TDoc extends UserOwnedDocument> {
   protected constructor(private readonly collection: Collection<TDoc>) {}

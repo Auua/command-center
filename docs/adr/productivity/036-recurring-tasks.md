@@ -42,7 +42,7 @@ Forces:
 We will model a recurring task as **a normal open task that respawns when completed**. Exactly one
 open occurrence of a series exists at any time. Completing it (`PATCH … completed: true`) does, in
 one transaction: mark the row completed (server clock, per ADR-008), compute the next occurrence
-date **strictly after the completion day** (user's home timezone, ARD Q1), and insert a fresh open
+date **strictly after the completion day** (user's home timezone, ADR Q1), and insert a fresh open
 row with the same title/priority/tags, the new deadline, and the live rule. An uncompleted
 recurring task simply goes overdue and _stays_ a single overdue item — missed occurrences do not
 pile up, deliberately: a stack of five "water the plants (missed)" rows is a guilt generator
@@ -154,7 +154,7 @@ one-expander principle).
   treat projected items as read-only and tentative. Two meanings now ride one endpoint — accepted
   because both are "task-shaped things with dates in a range" and a second endpoint would just
   duplicate the range/validation plumbing.
-- ADR-008's schema and quick-add grammar are extended in place (this ADR is the record); the ARD
+- ADR-008's schema and quick-add grammar are extended in place (this ADR is the record); the ADR
   §4.4 `tasks` sketch owes the new columns once approved.
 
 ## Alternatives considered

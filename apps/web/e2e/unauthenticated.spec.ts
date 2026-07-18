@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * Auth policy from ARD §5.1 / lib/supabase/middleware.ts: everything except
+ * Auth policy from ADR §5.1 / lib/supabase/middleware.ts: everything except
  * /login and /auth/* requires a session. These tests need no credentials.
  */
 
@@ -26,7 +26,7 @@ test.describe('unauthenticated access', () => {
     await expect(page.getByLabel('Password')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
     // No sign-up affordance: single-user app, accounts are provisioned in
-    // Supabase directly (ARD §1.3).
+    // Supabase directly (ADR §1.3).
     await expect(page.getByRole('button', { name: 'Sign up' })).toHaveCount(0);
   });
 });

@@ -23,7 +23,7 @@ const deleteMock = vi.mocked(deleteTask);
 function task(overrides: Partial<Task> = {}): Task {
   return {
     id: '6f9c2d1e-0000-4000-8000-000000000001',
-    title: 'Review ARD feedback notes',
+    title: 'Review ADR feedback notes',
     priority: 1,
     tags: [],
     deadline: null,
@@ -51,11 +51,11 @@ describe('TasksWidget', () => {
 
     renderWithQuery(<TasksWidget />);
 
-    expect(await screen.findByText('Review ARD feedback notes')).toBeInTheDocument();
+    expect(await screen.findByText('Review ADR feedback notes')).toBeInTheDocument();
     expect(screen.getByText('P1')).toBeInTheDocument();
     expect(
       screen.getByRole('checkbox', {
-        name: 'Mark "Review ARD feedback notes" complete',
+        name: 'Mark "Review ADR feedback notes" complete',
       }),
     ).toHaveAttribute('aria-checked', 'false');
   });
@@ -82,11 +82,11 @@ describe('TasksWidget', () => {
     renderWithQuery(<TasksWidget />);
 
     const toggle = await screen.findByRole('checkbox', {
-      name: 'Mark "Review ARD feedback notes" incomplete',
+      name: 'Mark "Review ADR feedback notes" incomplete',
     });
     expect(toggle).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByText('done')).toBeInTheDocument();
-    expect(screen.getByText('Review ARD feedback notes').closest('li')).toHaveClass('done');
+    expect(screen.getByText('Review ADR feedback notes').closest('li')).toHaveClass('done');
   });
 
   it('shows an empty state when there are no tasks', async () => {
@@ -194,6 +194,6 @@ describe('TasksWidget', () => {
     await user.type(input, 'doomed{Enter}');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn.t save/i);
-    expect(screen.getByText('Review ARD feedback notes')).toBeInTheDocument();
+    expect(screen.getByText('Review ADR feedback notes')).toBeInTheDocument();
   });
 });

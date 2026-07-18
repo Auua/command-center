@@ -33,11 +33,11 @@ import { WidgetRegistryModule } from './widget-registry/widget-registry.module';
         {
           name: 'default',
           ttl: 60_000, // 1 minute window
-          limit: 100, // 100 requests/min per user (ARD §5.2)
+          limit: 100, // 100 requests/min per user (ADR §5.2)
         },
       ],
     }),
-    // In-process event bus for cross-domain reactions (ARD §4.1) — e.g.
+    // In-process event bus for cross-domain reactions (ADR §4.1) — e.g.
     // TasksModule emits task.completed; AutomationModule listens in Phase 2.
     EventEmitterModule.forRoot(),
     AuthModule,

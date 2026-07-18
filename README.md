@@ -3,7 +3,7 @@
 Personal dashboard: learning (Japanese + tech micro-lessons), tasks, automations,
 mood tracking, and journaling — one customizable widget grid.
 
-Architecture: [docs/ARD.md](docs/ARD.md) · ADRs: [docs/adr/](docs/adr/)
+Architecture: [docs/ADR.md](docs/ADR.md) · ADRs: [docs/adr/](docs/adr/)
 
 ## Stack
 
@@ -11,13 +11,12 @@ Architecture: [docs/ARD.md](docs/ARD.md) · ADRs: [docs/adr/](docs/adr/)
 - **apps/api** — NestJS modular monolith (API + worker entrypoints)
 - **packages/contracts** — shared zod schemas (end-to-end types FE↔BE)
 - **packages/ui** — widget SDK (widget contract, registry, error boundaries)
-- Supabase (auth + Postgres + RLS) · MongoDB Atlas (Phase 1+)
+- Supabase (auth + Postgres + RLS) · MongoDB Atlas (braindump + document-shaped modules)
 
 ## Quickstart (target: ≤ 15 min, NFR-9)
 
 ```bash
 corepack enable pnpm       # or: npm i -g pnpm
-npm install -g pnpm
 
 bash scripts/setup-env.sh  # creates apps/web/.env.local + apps/api/.env
 # → fill in the Supabase URL + anon key (see docs/ENV_SETUP.md)
@@ -26,136 +25,35 @@ bash scripts/setup-env.sh  # creates apps/web/.env.local + apps/api/.env
 pnpm dev                   # web on :3000, api on :3001
 ```
 
-Other commands: `pnpm build` · `pnpm typecheck` · `pnpm lint` · `pnpm test`
+Other commands: `pnpm build` · `pnpm typecheck` · `pnpm lint` · `pnpm test` · `pnpm test:e2e`
 
-## Delivery phases
+`pnpm test:e2e` runs the API suite (supertest + mongodb-memory-server + stubbed
+JWT verifier; hermetic) and the web suite (Playwright; the authed dashboard flow
+needs `E2E_EMAIL`/`E2E_PASSWORD` and a running API).
 
-Phase 0 (this) proves the whole pipe: monorepo, CI, auth end-to-end, dashboard
-shell + widget registry, clock widget. See ARD §9 for Phases 1–4.
+## Current state
 
-# Command Center — Personal Dashboard
+Phase 0 (monorepo, CI, auth end-to-end, dashboard shell + widget registry) is
+done and Phase 1 is underway. Widgets so far: clock, braindump, tasks, mood.
+Braindump is the first MongoDB-backed module; tasks and mood live in Supabase
+Postgres (`supabase/migrations/`). See ADR §9 for Phases 1–4.
 
-## Overview
+Design decisions are recorded as ADRs under `docs/adr/` in domain subfolders
+(productivity / reflection / learning / external-data / lifestyle), indexed in
+[docs/adr/README.md](docs/adr/README.md).
 
-Command Center is your all‑in‑one personal dashboard: a single place to track learning, automate your day, manage tasks, reflect on your mood, and journal. It brings together multiple widgets—each focused on a different part of your life—into one cohesive, customizable interface.
+## Widget roadmap
 
-## Tech Stack
+Each life area arrives as widgets on the shared grid — addable, removable,
+reorderable, customizable, all following the same contract (title, content,
+quick actions, settings):
 
-- NextJS + TypeScript (Vercel)
-- Modular backend services using NestJS + TypeScript
-- Supabase + MongoDB integrations
-
-## Learning Modules
-
-### Japanese Learning
-
-- Word of the Day — daily vocabulary with reading, meaning, and usage
-- Grammar Point — bite‑sized grammar explanations with example sentences
-- Anki Integration — sync decks, track reviews, and show spaced‑repetition stats
-
-### Tech Learning
-
-Daily micro‑lessons to keep your skills sharp:
-
-- Java of the Day — snippet, concept, or pattern
-- SQL of the Day — query patterns, joins, indexing tips
-- TypeScript of the Day — typing tricks, utility types, patterns
-- ReactJS of the Day — hooks, components, patterns
-- Extendable with Python, Rust, DevOps, algorithms, etc.
-
-Each learning widget supports:
-
-- Progress tracking
-- Streaks
-- Quick notes
-- “Add to Anki” button
-
-## Productivity & Organization
-
-### Todo List
-
-A simple but powerful task manager with:
-
-- Priorities
-- Tags
-- Deadlines
-- Quick‑add shortcuts
-- Recurring events
-
-### Braindump
-
-A frictionless space to dump ideas, thoughts, and reminders.
-
-### Calendar
-
-Daily, weekly, and monthly views integrated with your tasks and automations.
-
-## Automation & Notifications
-
-### Daily Triggers
-
-Create custom automations to remind you about:
-
-- Learning tasks
-- Mood check‑ins
-- Journaling
-- Hydration
-- Breaks
-- Anything else you want to remember
-
-Supports:
-
-- Time‑based triggers
-- Repeating schedules
-- Smart reminders (e.g., “after finishing a task”)
-
-## Mood & Reflection
-
-### Mood Checker
-
-Track your emotional state throughout the day with:
-
-- Mood sliders
-- Tags (stress, energy, focus)
-- Notes
-- Trends over time
-
-### Appreciation Tracker
-
-Record small wins, gratitude moments, and positive events.
-
-## Journaling
-
-### Journal
-
-A clean, distraction‑free writing space with:
-
-- Daily prompts
-- Rich text
-- Search
-- Tags
-- Timeline view
-
-## Architecture & Widget System
-
-Widgets are modular and can be:
-
-- Added
-- Removed
-- Reordered
-- Customized
-
-Each widget follows a consistent structure:
-
-- Title
-- Content area
-- Quick actions
-- Settings
-
-## Future Extensions
-
-- Habit tracking
-- Pomodoro timer
-- Fitness & health widgets
-- Finance dashboard
-- Home Assistant integration
+- **Learning** — Japanese word of the day, grammar points, Anki sync; daily
+  Java/SQL/TypeScript/React micro-lessons with streaks and "Add to Anki"
+- **Productivity** — todo list (priorities, tags, deadlines, recurrence),
+  braindump, calendar (daily/weekly/monthly)
+- **Automation** — time-based and repeating triggers, smart reminders
+  (e.g., "after finishing a task")
+- **Reflection** — mood checker (sliders, tags, trends), appreciation tracker,
+  journaling (prompts, rich text, search, timeline)
+- **Future** — habits, Pomodoro, fitness & health, finance, Home Assistant

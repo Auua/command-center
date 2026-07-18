@@ -15,10 +15,10 @@ review document.
 
 Forces:
 
-- **This is a §5.3-class asset.** The ARD names journal and mood as the highest-value private data;
+- **This is a §5.3-class asset.** The ADR names journal and mood as the highest-value private data;
   work-tracker entries belong in the same class and arguably above it. They contain colleagues' names,
   incident details, sometimes the honest version of a project's history, and they are compensation-
-  adjacent — the one dataset here that could hurt the user professionally if it leaked. Everything the ARD
+  adjacent — the one dataset here that could hurt the user professionally if it leaked. Everything the ADR
   says about journal privacy applies verbatim, plus one more rule: this data must never be inferred
   automatically (see UX).
 - **Storage split (§4.3) is genuinely arguable here.** Entries have a body, which whispers "document,
@@ -131,7 +131,7 @@ reject-unknown-fields on (§5.2); `user_id` always from the token, never the bod
   it (the ADR-009 rule about aggregation staying server-side).
 - `POST /entries` `{ title, body?, occurredOn?, impact?, projects?, skills?, links? }` → 201. Only
   `title` is required: the quick-add path must be one field. `occurredOn` defaults to the server's
-  current date in the user's home timezone (ARD Q1).
+  current date in the user's home timezone (ADR Q1).
 - `PATCH /entries/:id` — partial update, bumps `updated_at`. **This module has a PATCH** (see Frontend).
 - `DELETE /entries/:id` → 204; hard delete, undo by re-POST (ADR-017's precedent — no `deleted_at`
   filter polluting every query).

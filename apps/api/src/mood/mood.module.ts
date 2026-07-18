@@ -5,7 +5,7 @@ import { MoodRepository } from './mood.repository';
 import { MoodService } from './mood.service';
 
 /**
- * MoodModule (ARD §4.1): mood check-ins + the data behind the trend chart.
+ * MoodModule (ADR §4.1): mood check-ins + the data behind the trend chart.
  * Owns the `mood_checkins` table exclusively; no other module may touch it
  * (module ownership rule, ADR-002).
  */

@@ -6,7 +6,7 @@
 
 ## Context
 
-The README lists a finance dashboard under Future Extensions; the ARD names it in G4. Nothing is implemented — this is a planning ADR.
+The README lists a finance dashboard under Future Extensions; the ADR names it in G4. Nothing is implemented — this is a planning ADR.
 
 _PO-review (2026-07-16):_ **parked.** The user's current finance interest is market watching only — the stocks/FX watchlist (ADR-021) — not tracking their own balances or spending. This ADR is deliberately left proposed rather than rejected: the design (CSV import, no-bank-connection gate, privacy rules) stays valid if the need ever appears, and the no-credential-custody rule and the §5 threat-model gate on bank integration hold **regardless** of whether this widget is ever built. Provisional answers to the open questions were recorded below so a future pass doesn't start cold; the v1-scope question (Q-A) reopens if the widget is picked up.
 
@@ -15,7 +15,7 @@ Two questions dominate, and everything else follows from them.
 **1. Bank integration or not.** "Finance dashboard" invites automatic transaction sync via an open-banking aggregator (Nordigen/GoCardless, Tink, Plaid, TrueLayer). The consequences of saying yes:
 
 - **Cost.** PSD2 aggregators are commercial products. GoCardless has a free tier with per-connection limits; Tink/Plaid are enterprise-priced. Any of them is a real dependency against **NFR-8 (≤ €20/mo total infra)** and G2 (must survive weeks of neglect — bank connections expire every 90 days under SCA and need re-consent).
-- **Threat model.** It puts a live, refreshable authorization to read the user's real bank accounts inside a personal hobby project's blast radius (§5). Today, ARD §5.3's worst case is "a compromised automation can annoy, not exfiltrate". A bank-linked finance module makes the worst case _"an attacker reads your full transaction history"_ — the most identity-revealing dataset in the app, worse than journal in some respects (it locates you in space and time).
+- **Threat model.** It puts a live, refreshable authorization to read the user's real bank accounts inside a personal hobby project's blast radius (§5). Today, ADR §5.3's worst case is "a compromised automation can annoy, not exfiltrate". A bank-linked finance module makes the worst case _"an attacker reads your full transaction history"_ — the most identity-revealing dataset in the app, worse than journal in some respects (it locates you in space and time).
 - **Ops.** Consent renewal, webhook/poll infra, per-institution quirks, and a silent-staleness failure mode. This is ADR-018's rejected calendar-sync bundle, with money attached.
 
 **2. Boundary with the stocks widget.** **ADR-021 (in progress, being written in parallel)** covers a stocks widget. Overlap is inevitable unless the line is drawn explicitly, so: **stocks = market data (a watchlist of instruments the user does not necessarily own, prices from a public API, no personal financial position); finance = the user's own money (balances, spending, budgets).** They are separate modules, separate tables, separate widgets. A future "portfolio value" feature — the user's actual holdings, priced with market data — would be the _composition_ of the two and belongs in **this** module (it is the user's own money), consuming market prices via the API layer, never by importing `StocksModule` (§4.1). Flagged as Q-B.

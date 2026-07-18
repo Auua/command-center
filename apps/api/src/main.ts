@@ -8,7 +8,7 @@ import { configureApp } from './bootstrap';
 import type { Env } from './config/env';
 
 /**
- * API process entrypoint (ARD §3.1). Structured JSON logs (NFR-10); the
+ * API process entrypoint (ADR §3.1). Structured JSON logs (NFR-10); the
  * shared HTTP configuration (prefix, CORS, headers, filters) lives in
  * bootstrap.ts so the e2e tests run the same setup.
  *

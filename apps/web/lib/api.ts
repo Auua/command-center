@@ -2,7 +2,7 @@ import { getApiUrl } from '@/lib/env';
 import { createClient } from '@/lib/supabase/client';
 
 /**
- * Authenticated fetch against the NestJS API (ARD §3.1: all domain traffic
+ * Authenticated fetch against the NestJS API (ADR §3.1: all domain traffic
  * goes through /api/v1 with the Supabase access token as Bearer auth).
  * Throws on missing session or non-2xx responses — widget hooks surface that
  * as the widget's error state.

@@ -9,7 +9,7 @@ function isPublicPath(pathname: string): boolean {
 
 /**
  * Refreshes the Supabase session on every request and enforces the
- * phase-0 auth policy (ARD §5.1):
+ * phase-0 auth policy (ADR §5.1):
  * - unauthenticated users are redirected to /login (except /login, /auth/*)
  * - authenticated users are redirected away from /login
  */

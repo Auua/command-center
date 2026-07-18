@@ -20,7 +20,7 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import { MoodService } from './mood.service';
 
 /**
- * /api/v1/mood — mood check-ins (ARD §4.1 MoodModule). Validation is
+ * /api/v1/mood — mood check-ins (ADR §4.1 MoodModule). Validation is
  * explicit zod `.parse` (ZodErrors become 400s via the global
  * ZodExceptionFilter); unknown-field rejection is baked into the write
  * schema. The user always comes from the verified JWT.

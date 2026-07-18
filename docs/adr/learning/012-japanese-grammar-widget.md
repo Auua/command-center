@@ -10,7 +10,7 @@
 
 ## Context
 
-Phase 3 delivers the learning widgets that are the heart of the product (ARD §8 R5). The Grammar-point
+Phase 3 delivers the learning widgets that are the heart of the product (ADR §8 R5). The Grammar-point
 widget shows one Japanese grammar pattern per day — pattern (e.g. 〜てから), a plain-English note, and an
 example sentence in JA + EN — as mocked in `docs/design/dashboard-mock.html` (the "Grammar point" card).
 
@@ -40,7 +40,7 @@ Forces:
 ### Frontend
 
 We will implement the widget as `apps/web/widgets/japanese-grammar/`, registered in the widget registry as
-a `WidgetDefinition` (ARD §4.2):
+a `WidgetDefinition` (ADR §4.2):
 
 - `id: "japanese-grammar"`, `title` from the EN i18n catalog, `sizes: ["3x1", "3x2"]` (matches the mock's
   `span-3` footprint; the taller size shows two examples instead of one).

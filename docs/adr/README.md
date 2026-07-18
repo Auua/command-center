@@ -3,12 +3,12 @@
 One folder per product domain; the ADR **number is the record's identity** and is global across
 folders — files sort chronologically within a domain. New ADRs: copy [template.md](template.md)
 into the fitting domain folder, take the next free number, add a row here and a summary row in
-`docs/ARD.md` §7. Review state for unapproved ADRs is tracked in
+`docs/ADR.md` §7. Review state for unapproved ADRs is tracked in
 [REVIEW-QUEUE.md](REVIEW-QUEUE.md).
 
 **ADRs 001–007** (foundation: monorepo, NestJS modular monolith, dual-DB ownership split,
 API-only data access, pg-boss jobs, hosting, REST + OpenAPI) predate this folder and live as
-summary rows in [`docs/ARD.md` §7](../ARD.md) only.
+summary rows in [`docs/ADR.md` §7](../ADR.md) only.
 
 ## Index
 

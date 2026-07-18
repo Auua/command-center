@@ -6,7 +6,7 @@
 
 ## Context
 
-The README lists habit tracking under "Future Extensions"; the ARD names it in G4 as a widget that must plug in "without core changes". This ADR plans it — nothing is implemented, and several questions are flagged for the product owner rather than pre-decided.
+The README lists habit tracking under "Future Extensions"; the ADR names it in G4 as a widget that must plug in "without core changes". This ADR plans it — nothing is implemented, and several questions are flagged for the product owner rather than pre-decided.
 
 Habits sit awkwardly close to two things that already exist, and most of the design work is drawing those lines:
 

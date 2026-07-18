@@ -11,13 +11,13 @@ import { TASK_COMPLETED_EVENT, type TaskCompletedEvent } from './task-completed.
 import { TasksRepository, type TaskPatch } from './tasks.repository';
 
 /**
- * Business rules for tasks (controllers stay thin — ARD §4.1). A malformed
+ * Business rules for tasks (controllers stay thin — ADR §4.1). A malformed
  * or foreign task id is deliberately indistinguishable from a missing one:
  * both 404, nothing leaks about other users' data.
  *
  * Completion time is set here from the clock, never taken from the client,
  * and completing a task emits `task.completed` on the in-process event bus
- * (ARD §4.1 — AutomationModule's smart reminders hook in there in Phase 2).
+ * (ADR §4.1 — AutomationModule's smart reminders hook in there in Phase 2).
  */
 @Injectable()
 export class TasksService {

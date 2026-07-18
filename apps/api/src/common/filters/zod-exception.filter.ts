@@ -5,7 +5,7 @@ import { ZodError } from 'zod';
 /**
  * Maps ZodErrors thrown by explicit `schema.parse(...)` calls in controllers
  * into 400 responses with a structured issue list. This is the "global zod
- * validation" mechanism for Phase 0 — no class-validator (ARD §5.2 uses zod
+ * validation" mechanism for Phase 0 — no class-validator (ADR §5.2 uses zod
  * at the contract layer).
  *
  * Note: repositories must NOT let ZodErrors escape for data *they* read from

@@ -5,14 +5,14 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import { LayoutService } from './layout.service';
 
 /**
- * Reject unknown top-level fields on the write path (ARD §5.2
+ * Reject unknown top-level fields on the write path (ADR §5.2
  * reject-unknown-fields). Nested item fields are governed by the shared
  * contract schema, which strips unknown keys.
  */
 const PutLayoutRequestStrictSchema = PutLayoutRequestSchema.strict();
 
 /**
- * /api/v1/layout — dashboard layout persistence (ARD §4.2, §4.5).
+ * /api/v1/layout — dashboard layout persistence (ADR §4.2, §4.5).
  * Validation is explicit zod `.parse` (ZodErrors become 400s via the global
  * ZodExceptionFilter); the user always comes from the verified JWT.
  */

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Task — todo item with optional priority, tags, and deadline (ARD §4.4:
+ * Task — todo item with optional priority, tags, and deadline (ADR §4.4:
  * relational, lives in Postgres `tasks`, owned by TasksModule). Priority is
  * 1 (highest) to 3; absent means unprioritized. Deadline is a plain calendar
  * date — tasks are day-granular, not scheduled to the minute.
@@ -35,7 +35,7 @@ const TagsSchema = z
 
 /**
  * Write-path schemas reject unknown top-level fields here in the contract
- * (ARD §5.2 reject-unknown-fields): the update schema's `.refine` wrapper
+ * (ADR §5.2 reject-unknown-fields): the update schema's `.refine` wrapper
  * means the API controller couldn't bolt `.strict()` on afterwards.
  */
 export const CreateTaskRequestSchema = z

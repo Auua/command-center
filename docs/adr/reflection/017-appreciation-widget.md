@@ -6,7 +6,7 @@
 
 ## Context
 
-Phase 4 (ARD §9) includes the appreciation tracker: a lightweight gratitude log — one short line per entry ("Neighbour's dog said hi"), timestamped, optionally tagged. The ARD's data-ownership table (§4.3) already assigns `appreciation_entries` to **Supabase Postgres**, in contrast to journal entries, which are rich-text Mongo documents owned by `JournalModule`.
+Phase 4 (ADR §9) includes the appreciation tracker: a lightweight gratitude log — one short line per entry ("Neighbour's dog said hi"), timestamped, optionally tagged. The ADR's data-ownership table (§4.3) already assigns `appreciation_entries` to **Supabase Postgres**, in contrast to journal entries, which are rich-text Mongo documents owned by `JournalModule`.
 
 Two forces are in tension:
 
@@ -101,7 +101,7 @@ No PATCH in v1: entries are one-liners; edit = delete + re-add. Revisit if dogfo
 - **Harder / committed to:** one more module, migration, and widget folder to maintain for a small feature; the dashboard has two reflection cards where the mock showed one, so the default layout must be tuned so the pairing still reads as a unit; hard delete means undo depends on the client re-posting (accepted: entries are one-liners, and avoiding soft-delete keeps the table trivial); adding tags UI later must not compromise the one-line capture speed.
 - Prompts as seeded reference data mean changing them is a data edit, not a deploy (_PO-review:_ chosen over the drafted frontend-copy approach). Cost: one more (tiny, cacheable) read endpoint, a seed migration, and the widget's graceful placeholder fallback when the prompt fetch fails.
 - Emitting `appreciation.added` commits us to keeping that event name stable once Automation subscribes to it; it becomes part of the module's public contract alongside its REST surface.
-- The ARD's data-ownership table (§4.3) needs no change — it already lists `appreciation_entries` under Postgres; this ADR gets a summary row in §7.
+- The ADR's data-ownership table (§4.3) needs no change — it already lists `appreciation_entries` under Postgres; this ADR gets a summary row in §7.
 
 ## Alternatives considered
 

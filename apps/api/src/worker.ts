@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { WorkerModule } from './worker/worker.module';
 
 /**
- * Worker entrypoint (ARD §3.1): boots a NestJS application context — no HTTP
+ * Worker entrypoint (ADR §3.1): boots a NestJS application context — no HTTP
  * listener — so a stuck job can never block interactive API requests.
  *
  * Phase 0: heartbeat stub only (see HeartbeatService).

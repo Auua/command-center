@@ -1,5 +1,5 @@
 /**
- * Emitted when a task transitions to completed (ARD §4.1). AutomationModule
+ * Emitted when a task transitions to completed (ADR §4.1). AutomationModule
  * (Phase 2) listens for this to evaluate "after finishing a task" smart
  * reminders; nothing consumes it yet, but the seam is load-bearing.
  */

@@ -1,6 +1,6 @@
 # Environment setup
 
-Secrets never live in the repo (ARD §5.2). Local dev needs two gitignored files;
+Secrets never live in the repo (ADR §5.2). Local dev needs two gitignored files;
 `bash scripts/setup-env.sh` creates both with placeholders.
 
 ## 1. Create a Supabase project
@@ -35,13 +35,13 @@ Secrets never live in the repo (ARD §5.2). Local dev needs two gitignored files
 | `SUPABASE_PUBLISHABLE_KEY` | same anon key (API queries run under the user's JWT + RLS)                  |
 | `MONGODB_CONNECT`          | MongoDB Atlas connection string (Phase 1: braindump; later journal/content) |
 
-No `service_role` key anywhere — the API deliberately runs RLS-scoped (ARD §5.1).
+No `service_role` key anywhere — the API deliberately runs RLS-scoped (ADR §5.1).
 
 ### MongoDB Atlas (Phase 1)
 
 1. <https://cloud.mongodb.com> → create a free **M0** cluster (NFR-8). Enable 2FA (NFR-6).
 2. Database Access → create a dedicated user for this app, **read/write scoped to
-   one database only** (ARD §5.1) — not `atlasAdmin`.
+   one database only** (ADR §5.1) — not `atlasAdmin`.
 3. Network Access → allow your dev IP (and later the backend host's egress IPs).
 4. Copy the connection string into `MONGODB_CONNECT`. If the URI path names a
    database (`…mongodb.net/command_center`), that database is used; without a
@@ -57,5 +57,5 @@ migration step.
 
 ## 4. Deploy targets
 
-Set the same variables in the platform dashboards: Vercel (web) and
-Render (api + worker). `CORS_ORIGIN` must list the deployed web origin.
+Set the same variables in the platform dashboards: Vercel hosts both web and
+api (+ worker entrypoint). `CORS_ORIGIN` must list the deployed web origin.

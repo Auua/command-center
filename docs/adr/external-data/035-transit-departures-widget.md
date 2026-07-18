@@ -36,7 +36,7 @@ Forces, and they cut against the established patterns in interesting ways:
   in a way NFR-8 cares about: the failure mode of a free tier is "the terms change and the widget dies", and a
   municipal transit authority's open API is about as durable as free APIs get.
 - NFR-11 (a departures board is a table, and "the 550 in 3 min" must not be conveyed by colour), NFR-12
-  (Finnish stop and route names are content), NFR-2, ARD §2's degrade-don't-die posture.
+  (Finnish stop and route names are content), NFR-2, ADR §2's degrade-don't-die posture.
 
 ## Decision
 
@@ -89,7 +89,7 @@ cache-aside shape is right — but with a much shorter TTL and one extra guard.
   in a world of background tabs. Written down as a test, because "real-time so we poll on read" is exactly the
   reasoning that would wreck the markets widget if it were copied there without the first condition.
 - **No worker job, no events, no automations.** A "leave now" push notification is explicitly **not** in v1 —
-  it would need a per-minute evaluator against a 30-second cache and a notification budget, and the ARD's
+  it would need a per-minute evaluator against a 30-second cache and a notification budget, and the ADR's
   60-second automation SLO (NFR-3) is not good enough to tell someone to run for a bus. A dashboard that is
   wrong about a bus is worse than a dashboard that is silent about one.
 

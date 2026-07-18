@@ -107,7 +107,7 @@ function TrendChart({ trend }: { trend: TrendDay[] }): ReactElement {
 }
 
 /**
- * Mood check-in — the reflection widget (ARD Phase 1, mock's "Mood check-in"
+ * Mood check-in — the reflection widget (ADR Phase 1, mock's "Mood check-in"
  * card). Tapping a face logs a check-in immediately with whichever tags are
  * toggled on (frictionless, like braindump); Undo deletes it. The 7-day
  * trend averages each local day's check-ins.

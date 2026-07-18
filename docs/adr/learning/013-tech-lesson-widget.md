@@ -15,7 +15,7 @@ per track (TypeScript, SQL, Java, React): a title, a short explanation, a syntax
 snippet, and a takeaway — see the "TypeScript of the day" card in `docs/design/dashboard-mock.html`.
 Forces at play:
 
-- The ARD fixes the shape of every widget: SDK conformance (§4.2), data via REST `/api/v1` only,
+- The ADR fixes the shape of every widget: SDK conformance (§4.2), data via REST `/api/v1` only,
   lesson content in the learning repo owned by `LearningModule` (ADR-024 as accepted — the repo is
   the store for learning data; the Mongo `lesson_content` collection this ADR first drafted is
   retired unbuilt), streaks in Postgres (§4.3, §4.4)

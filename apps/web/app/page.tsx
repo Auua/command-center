@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { DashboardGrid } from '@/components/dashboard-grid';
 import { signOut } from './auth/actions';
 
-/** Dashboard shell (ARD §4.2). Server Component; widgets hydrate client-side. */
+/** Dashboard shell (ADR §4.2). Server Component; widgets hydrate client-side. */
 export default async function DashboardPage(): Promise<ReactElement> {
   const supabase = await createClient();
   const {

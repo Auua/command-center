@@ -3,7 +3,7 @@ import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } fro
 const HEARTBEAT_INTERVAL_MS = 60_000;
 
 /**
- * Phase 0 worker stub: proves the second process (ARD §3.1 — same codebase,
+ * Phase 0 worker stub: proves the second process (ADR §3.1 — same codebase,
  * separate entrypoint) by logging a heartbeat every 60s. The interval also
  * keeps the Node event loop alive.
  *

@@ -10,7 +10,7 @@
 
 ## Context
 
-Phase 3 introduces streaks (ARD §9): consecutive-day counters for habits like Japanese study,
+Phase 3 introduces streaks (ADR §9): consecutive-day counters for habits like Japanese study,
 journaling, or the daily TypeScript lesson. The dashboard mock (`docs/design/dashboard-mock.html`)
 shows a card with rows of {day count, streak name, last-7-days dots} and a "Best: Japanese, 31 days"
 footer.
@@ -121,7 +121,7 @@ two tasks completed the same day) are naturally idempotent. `current_len` / `bes
 in the same transaction. The table is no longer strictly append-only: `recomputeDay` (above) may
 delete the named day's row for a retracting source — still idempotent, since deleting an absent
 row and recomputing from unchanged marks is a no-op. RLS on both tables per §5.1. This extends
-§4.4; the ARD ER diagram gets a follow-up edit.
+§4.4; the ADR ER diagram gets a follow-up edit.
 
 ### API contract
 

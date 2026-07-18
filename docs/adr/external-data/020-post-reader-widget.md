@@ -193,5 +193,5 @@ Errors: 400 for shape violations; `POST /feeds` failures are typed (`not_a_feed`
   the problem (G3).
 - **Mongo for items.** Rejected under the new scope: an item is a flat row with two flags and no body —
   §4.3's Postgres column. (The draft's Mongo half was justified only by stored bodies.)
-- **Poll from the API process instead of the worker.** Rejected: ARD §3.1 keeps long jobs out of the
+- **Poll from the API process instead of the worker.** Rejected: ADR §3.1 keeps long jobs out of the
   interactive process; a slow feed must never eat an API request slot.

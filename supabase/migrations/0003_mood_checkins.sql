@@ -1,5 +1,5 @@
 -- 0003_mood_checkins.sql
--- Mood check-ins: 1-5 score with optional tags and note (ARD §4.4, owner:
+-- Mood check-ins: 1-5 score with optional tags and note (ADR §4.4, owner:
 -- MoodModule). Same posture as 0001/0002: RLS on with auth.uid() = user_id
 -- policies; the API uses the RLS-respecting anon role + the user's JWT,
 -- never service_role.

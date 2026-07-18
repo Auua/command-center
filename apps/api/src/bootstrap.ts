@@ -32,7 +32,7 @@ export function configureApp(app: NestExpressApplication): void {
   });
 
   // Minimal helmet-style hardening; the full CSP story lives in the web app
-  // middleware (ARD §5.2). Kept dependency-free for Phase 0.
+  // middleware (ADR §5.2). Kept dependency-free for Phase 0.
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');

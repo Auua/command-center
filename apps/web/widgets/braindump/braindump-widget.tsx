@@ -60,7 +60,7 @@ function PencilIcon(): ReactElement {
 
 /**
  * Braindump — quick, frictionless thought capture (first Mongo-backed
- * widget, ARD §9 Phase 1). Mirrors the design mock's card: a pill-shaped
+ * widget, ADR §9 Phase 1). Mirrors the design mock's card: a pill-shaped
  * capture input on top, then a flat list of notes (newest first) separated
  * by hairlines, each with a casual relative timestamp.
  */

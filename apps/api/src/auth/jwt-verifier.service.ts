@@ -4,7 +4,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyOptions }
 import type { Env } from '../config/env';
 
 /**
- * Verifies Supabase-issued JWTs (ARD §5.1) against the project's remote JWKS
+ * Verifies Supabase-issued JWTs (ADR §5.1) against the project's remote JWKS
  * (`/auth/v1/.well-known/jwks.json`) — asymmetric keys, no secret in the API.
  * The `aud` claim must be "authenticated".
  */
