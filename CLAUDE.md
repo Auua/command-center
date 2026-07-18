@@ -26,6 +26,18 @@ Data split so far: braindump is MongoDB-backed (`braindump_notes` collection); w
 
 Note `turbo build` depends on `lint` and `typecheck`, and `lint` runs Prettier via the root `format` task — a build failure may actually be a lint/format failure.
 
+## Commit Rules
+
+Every commit must pass lint, typecheck, tests, and build. The Husky pre-commit hook (`.husky/pre-commit`) enforces this: it runs `lint-staged` (Prettier on staged files), `pnpm build` (which covers `lint` and `typecheck` via Turborepo task deps), and `pnpm test`. Don't run these manually before committing — the hook is the single runner, and `build`/`test` are turbo-cached anyway. If the hook fails, the commit aborts: fix the failure and commit again. Never bypass the hook (`HUSKY=0`, `--no-verify`) except when the user explicitly asks.
+
+Prepare each commit so it lands complete:
+
+1. **Bump versions** — bump `version` (semver) in the `package.json` of every workspace package the commit touches. Internal deps use `workspace:*`, so no cross-package version references need editing.
+2. **Update dependencies where affected** — if the commit adds/changes a package's exports or peer requirements, update the `package.json` of consuming workspace packages accordingly and re-run `pnpm install` so the lockfile is committed in sync.
+3. **Update docs where the change is used** — keep `CLAUDE.md` (Current State, Commands), `README.md`, `docs/ENV_SETUP.md`, and any affected ADRs in step with the change; new load-bearing decisions get an ADR per the Architecture Reference section above.
+
+Include the version bumps, lockfile, and doc updates in the same commit as the change they describe.
+
 ## What This Project Is
 
 Command Center is a personal dashboard composed of modular widgets covering:
