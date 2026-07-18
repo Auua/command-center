@@ -1,8 +1,10 @@
 # ADR-032: Content sourcing & licensing for the learning widgets
 
-- **Status:** proposed
-- **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Status:** accepted
+- **Date:** 2026-07-14 (accepted 2026-07-18, amended for ADR-011/012/024/026 as accepted: repo pool
+  replaces `jp_content`, bracket furigana replaces `rubySegments`, manifest replaces `content_sources`,
+  and the attribution footer is withdrawn for the private deployment — see Licensing)
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -44,11 +46,11 @@ strongest possible answer to R5's "if unavailable" column.
 
 Verified sources:
 
-| Source                                                          | What it gives us                                                     | Auth | Distribution                                                                         | Licence                                                                    |
-| --------------------------------------------------------------- | -------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| **jmdict-simplified** (`github.com/scriptin/jmdict-simplified`) | JMdict (words, senses, POS), JMnedict, KANJIDIC2, Kradfile — as JSON | none | GitHub Releases, **rebuilt automatically every Monday**; tags like `3.6.2+2026…`     | JMdict/JMnedict: **EDRDG Licence = CC BY-SA 4.0**; KANJIDIC2: CC BY-SA 4.0 |
-| **JmdictFurigana** (`github.com/Doublevil/JmdictFurigana`)      | kanji→kana alignment per entry — i.e. **ADR-011's `rubySegments`**   | none | GitHub Releases, rebuilt monthly (25th); JSON + compact text                         | **CC BY-SA** (follows JMdict)                                              |
-| **Tatoeba** (`tatoeba.org/en/downloads`)                        | JA↔EN example sentence pairs — **ADR-011's `examples[]`**            | none | Bulk downloads (sentences, links, sentence pairs); an API exists but we don't use it | **CC BY 2.0 FR** (some sentences CC0)                                      |
+| Source                                                          | What it gives us                                                                                              | Auth | Distribution                                                                         | Licence                                                                    |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| **jmdict-simplified** (`github.com/scriptin/jmdict-simplified`) | JMdict (words, senses, POS), JMnedict, KANJIDIC2, Kradfile — as JSON                                          | none | GitHub Releases, **rebuilt automatically every Monday**; tags like `3.6.2+2026…`     | JMdict/JMnedict: **EDRDG Licence = CC BY-SA 4.0**; KANJIDIC2: CC BY-SA 4.0 |
+| **JmdictFurigana** (`github.com/Doublevil/JmdictFurigana`)      | kanji→kana alignment per entry — the source ingest uses to emit the pool's **bracket furigana** (ADR-011/024) | none | GitHub Releases, rebuilt monthly (25th); JSON + compact text                         | **CC BY-SA** (follows JMdict)                                              |
+| **Tatoeba** (`tatoeba.org/en/downloads`)                        | JA↔EN example sentence pairs — **ADR-011's `examples[]`**                                                     | none | Bulk downloads (sentences, links, sentence pairs); an API exists but we don't use it | **CC BY 2.0 FR** (some sentences CC0)                                      |
 
 Verified by fetching `edrdg.org/edrdg/licence.html`, both GitHub project pages, and `tatoeba.org/en/downloads`
 on 2026-07-14. All three permit personal _and_ commercial use provided attribution (and, for the BY-SA
@@ -96,15 +98,16 @@ This **narrows ADR-011's worker "content-pool refresh" job**: there is no recurr
   while a cron that downloads a multi-megabyte JSON into a €0 backend on a schedule is a real operational
   hazard for zero user-visible benefit (G2). The ARD's §2 promise "content sources down → serve pre-seeded
   cache" becomes vacuously true: there is only the cache. Nothing to be down.
-- Ingest **fails closed**: a document without a complete `license` block, a `rubySegments` alignment that
-  doesn't reconstruct the headword, or an example sentence whose Tatoeba id doesn't resolve, is rejected
-  and the previous content stays. A bad release is a red CI run, never a broken card.
+- Ingest **fails closed**: a pool entry without a complete `license` block, a bracket-furigana reading
+  that doesn't reconstruct the headword, or an example sentence whose Tatoeba id doesn't resolve, is
+  rejected and the previous content stays. A bad release is a red CI run, never a broken card.
 - ADR-011's on-read day-pinned selection is untouched; ADR-012's `sequence` curation is untouched.
 
 ### Data model — the `license` block becomes required and typed
 
-ADR-012's `"license": { "name": "…" }` placeholder is replaced. Every document in `jp_content`
-(ADR-011/012) and `lesson_content` (ADR-013/019) carries:
+ADR-012's `"license": { "name": "…" }` placeholder is replaced. Every content item — a pool entry in
+the `pool/japanese/` shards (ADR-024), a `pool/grammar/` file's front-matter (ADR-012 as accepted), a
+`lesson_content` document (ADR-013/019) — carries:
 
 ```ts
 license: {
@@ -117,16 +120,18 @@ license: {
 }
 ```
 
-A single document may carry **several** provenances (a JMdict headword + JmdictFurigana ruby + a Tatoeba
-example), so `license` is an **array** on the document and the strictest term wins for the document as a
-whole. Ingest computes that. A `content_sources` collection holds one row per source × release — its
-licence, its attribution string, its URL, the date we pinned it — and it is what the about page renders.
-`sourceRef` finally gives ADR-011's field a defined meaning: it is how, two years from now, we answer
-"where did this word come from and under what terms".
+A single item may carry **several** provenances (a JMdict headword + JmdictFurigana ruby + a Tatoeba
+example), so `license` is an **array** on the item and the strictest term wins for the item as a
+whole. Ingest computes that. The pool **manifest** (ADR-024) holds one row per source × release — its
+licence, its attribution string, its URL, the date we pinned it — and it is what the about panel
+renders; there is no separate Mongo `content_sources` collection. `sourceRef` finally gives ADR-011's
+field a defined meaning: it is how, two years from now, we answer "where did this word come from and
+under what terms".
 
 ### API contract
 
-No new endpoints. `GET /japanese/wotd`, `/japanese/grammar/today` and `/lessons/today` gain one field:
+No new endpoints. The `today` reads under `/api/v1/learning` (WOTD, grammar, lessons — ADR-011/012/013
+as accepted) gain one field:
 
 ```ts
 attribution: {
@@ -140,10 +145,13 @@ attribution: {
 }
 ```
 
-`line` is the short string the card must render (below); `sources` is the long form for the about panel.
-It is served from the API rather than hardcoded in the client for the same reason ADR-022 serves the
-weather `label` from the server: FE and BE must not be able to disagree about a legal obligation, and a
-new source must not require a frontend deploy to be credited.
+`line` is the short one-line credit; `sources` is the long form the about panel renders. While the
+deployment is private the card does not render `line` (see Licensing below) — the field exists so that
+flipping the footer on for a public deployment is a client change with the data already in place. It is
+served from the API rather than hardcoded in the client for the same reason ADR-022 serves the weather
+`label` from the server: FE and BE must not be able to disagree about a legal obligation, and a new
+source must not require a frontend deploy to be credited. Authored content (`proprietary-own` only)
+returns an empty `sources` list and no line.
 
 ### Failure & rate-limit posture
 
@@ -151,7 +159,7 @@ There is no runtime provider, therefore no rate limit, no key, no quota, no outa
 §2's dependency table. The only failure mode is a failed ingest, which is a CI failure and leaves the last
 good content in place. This is the entire reason for the shape.
 
-### Licensing & attribution — the correction to ADR-011 and ADR-012
+### Licensing & attribution — the private-deployment posture
 
 The EDRDG licence says, verbatim:
 
@@ -162,35 +170,43 @@ The EDRDG licence says, verbatim:
 and, for apps, that a menu screen such as "About" is acceptable but "it is not sufficient just to mention
 it on a start-up/launch page".
 
-Command Center is a **web** dashboard that displays dictionary entries. ADR-011 and ADR-012 put attribution
-in the widget's about panel only — **that does not satisfy the licence.** So:
+That clause binds a service **serving dictionary data to the public**. _PO-review (2026-07-18):_
+Command Center is a **private, single-user deployment** — the dashboard is auth-gated to its one user,
+the learning repo (ADR-024) is private, and nothing derived from the sources is distributed or publicly
+displayed. Attribution and ShareAlike are conditions on sharing, and no sharing occurs. So:
 
-- **The WOTD and grammar cards carry a persistent, visible attribution line** — `"JMdict · EDRDG ·
-CC BY-SA"` — in the same footer slot ADR-021 uses for "not investment advice". It is one line of small
-  text, it is always on screen while the word is, and it is a licence obligation, not decoration. The about
-  panel keeps the full `sources` list (which the licence also asks for). This supersedes the placement rule
-  in ADR-011's UX section and ADR-012's Consequences.
-- The licence's relaxation for _mixed_ sources ("a general acknowledgement is sufficient") is deliberately
-  **not** leaned on. The WOTD card is a dictionary display in the plain meaning of the phrase, and building
-  a legal argument to avoid rendering eleven characters is not a good use of anyone's afternoon.
-- Tatoeba examples add `"Examples: Tatoeba · CC BY"` to the same line when an example is shown.
+- **The always-visible footer line proposed in this ADR's draft is withdrawn.** ADR-011/012's original
+  placement — full attribution in the widget's **about panel**, one tap away — stands as the shipped
+  behaviour. The about panel renders the manifest's `sources` list, so every source is still credited
+  in-app.
+- **The screen-display clause is recorded here as a tripwire, not deleted.** On the day any part of this
+  is exposed beyond the owner — a public deployment, a demo instance, productization — the EDRDG clause
+  binds in full and the persistent footer line (`"JMdict · EDRDG · CC BY-SA"`, plus
+  `"Examples: Tatoeba · CC BY"` when an example is shown) becomes mandatory on the WOTD card **on day
+  one**. The API's `attribution.line` field ships now precisely so that flip is a client change, not a
+  pipeline change.
+- A side effect of ADR-012 as accepted: grammar content is authored (`proprietary-own`) and carries no
+  JMdict derivation, so even a public deployment would owe the footer only on the WOTD card — the
+  attribution rule follows the served content's provenance, which is why it is server-driven.
 
-**ShareAlike is the sharp edge.** JMdict is CC BY-**SA** 4.0, so our derived `jp_content` documents
-(ruby alignment, curated JLPT tags, curated example selection) are adaptations. Consequences we accept and
+**ShareAlike is the sharp edge.** JMdict is CC BY-**SA** 4.0, so our derived pool entries (bracket
+furigana, curated JLPT tags, curated example selection) are adaptations. Consequences we accept and
 must not forget:
 
 - **Distribution triggers SA, use does not.** Rendering to the user is not distribution. Three things could be:
-  1. **NFR-7's export endpoint** — a JSON dump containing `jp_content`-derived fields must carry the licence
-     block (it already will, since `license` is on the document — this is a second reason the field is
-     required rather than optional).
-  2. **ADR-024's GitHub learning vault** — the repo is **private**, so no distribution occurs. If it is ever
-     made public, JMdict-derived fields in a saved item become SA-encumbered and the repo must carry CC BY-SA.
-     Recorded here so that "make the vault public" is a decision with a known consequence rather than a
-     surprise.
+  1. **NFR-7's export endpoint** — a JSON dump containing pool-derived fields must carry the licence
+     block (it already will, since `license` is on the item — this is a second reason the field is
+     required rather than optional). Exporting for oneself is not distribution; handing the dump to
+     someone else is.
+  2. **ADR-024's GitHub learning repo** — the repo is **private**, so no distribution occurs. Note the
+     scope: with ADR-024 as accepted the repo holds not just saved cards but the **entire ingested
+     pool** (`pool/japanese/` shards are JMdict/JmdictFurigana/Tatoeba-derived). If the repo is ever
+     made public it must carry CC BY-SA as a whole. Recorded here so that "make the repo public" is a
+     decision with a known consequence rather than a surprise.
   3. **ADR-026's Anki decks** — cards in the user's personal collection are private use. **Sharing a deck on
      AnkiWeb is distribution**, and such a deck's description must carry the JMdict attribution.
-- Mixing CC BY-SA (JMdict) with CC BY 2.0 FR (Tatoeba) in one document makes the **document** BY-SA. Our own
-  authored lessons stay unencumbered because they never touch JMdict.
+- Mixing CC BY-SA (JMdict) with CC BY 2.0 FR (Tatoeba) in one item makes the **item** BY-SA. Our own
+  authored grammar and lessons stay unencumbered because they never touch JMdict.
 
 ## Consequences
 
@@ -200,11 +216,12 @@ must not forget:
   risk — the strongest possible answer to a sourcing risk is to have nothing to be unavailable.
 - **Easier:** "which JMdict build is this word from" is answerable, forever, from the document itself.
 - **Harder / committed to:** an ingest pipeline is now real infrastructure (download, validate, transform,
-  pin, upsert) with fail-closed validation, and bumping a source is a reviewed PR. This is the cost of
-  content quality being the product.
-- **Harder / committed to:** **an always-visible attribution line on the WOTD and grammar cards.** It is a
-  small permanent tax on the most glanceable surface in the app, and it supersedes ADR-011/012's about-panel
-  placement. Not optional, not negotiable, not a footnote.
+  pin, emit — ADR-024's `tools/jmdict-ingest`) with fail-closed validation, and bumping a source is a
+  reviewed commit. This is the cost of content quality being the product.
+- **Changed at acceptance:** the draft's always-visible attribution line is **withdrawn for the private
+  deployment** — attribution lives in the about panel (ADR-011/012's placement stands), served from the
+  manifest via the API's `attribution` field. The footer line is a recorded tripwire that becomes
+  mandatory on the WOTD card the day any deployment is public.
 - **Committed to:** grammar, tech and system-design content is **authored** — there is no rescue from a
   dataset later, and the curriculum backlog is a real, ongoing authoring commitment (ADR-013 already called
   this "a real content pipeline"; this ADR confirms there is no shortcut).
@@ -213,10 +230,21 @@ must not forget:
   shared Anki deck.
 - **Open questions for the product owner:** (1) The Japanese content is BY-SA and the authored content is ours — do we
   want the ingest to keep them in separate collections to make a future "publish the curriculum" clean, or
-  is the per-document licence block enough? (2) Which community JLPT list do we seed levels from, and is
-  "≈ N4" acceptable UI copy or should levels be hidden entirely until curated? (3) The attribution line on
+  is the per-document licence block enough?
+  -> _PO-review:_ mooted by construction — ADR-012/024 as accepted already separate them structurally
+  (ingested pool shards vs. authored grammar files vs. `lesson_content`); BY-SA and `proprietary-own`
+  content never share an item. The per-item licence block is the record.
+  (2) Which community JLPT list do we seed levels from, and is
+  "≈ N4" acceptable UI copy or should levels be hidden entirely until curated?
+  -> _PO-review:_ seed from the Jonathan Waller (tanos.co.uk) community lists, provenance recorded
+  per item; "≈ N4" is the copy; ADR-011 as accepted already made the level chip optional — it renders
+  only when a curated level is present, so unseeded items simply show no chip.
+  (3) The attribution line on
   the card — confirm you're happy with it, because it is the one visible cost of this ADR and it lands on
   the prettiest card in the dashboard.
+  -> _PO-review:_ **not shipped** — the deployment and the learning repo are private, nothing is
+  distributed or publicly displayed, so the obligation does not bind; about-panel attribution stands
+  and the footer is the recorded tripwire for any future public exposure (see Licensing).
 
 ## Alternatives considered
 
@@ -245,5 +273,7 @@ must not forget:
 - **Making `license` optional (status quo of ADR-013/019).** Rejected: an optional provenance field is an
   absent provenance field, and the failure only surfaces on the day someone asks a question we can no longer
   answer. Ingest fails closed instead.
-- **Attribution in the about panel only (status quo of ADR-011/012).** Rejected: it does not satisfy the
-  licence text for a web display of dictionary entries. The card gets a footer line.
+- **Attribution in the about panel only (status quo of ADR-011/012).** The draft rejected this as not
+  satisfying the licence text for a web display of dictionary entries. **Overturned at acceptance:** the
+  clause binds public-facing displays, and this deployment is private and single-user — the about panel
+  stands, and the footer line is the recorded obligation for any future public deployment.

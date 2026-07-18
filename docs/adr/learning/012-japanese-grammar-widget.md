@@ -195,9 +195,9 @@ REST under `/api/v1/learning/grammar`, zod-validated, OpenAPI-generated client (
   same process, in-memory bus).
 - The ceiling rides each request, so changing JLPT level in settings takes effect on the next fetch —
   not retroactively for today's already-pinned point.
-- Authored grammar is our own content — no attribution footer needed (unlike JMdict words, ADR-032);
-  if a point ever borrows external material, its front-matter carries a `license` block and ADR-032's
-  placement rules apply.
+- Authored grammar is our own content — no attribution owed at all (ADR-032 as accepted keeps even
+  JMdict attribution in the about panel while the deployment is private); if a point ever borrows
+  external material, its front-matter carries a `license` block and ADR-032's provenance rules apply.
 
 ## Alternatives considered
 

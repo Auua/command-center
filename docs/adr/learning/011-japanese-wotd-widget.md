@@ -66,8 +66,9 @@ a card-file save that the learning repo's GitHub Action syncs onward to AnkiWeb 
   never touches Supabase, GitHub, or Anki directly.
 - "Add to Anki" calls `POST /api/v1/learning/cards` (ADR-024) through its generated hook.
   The footer renders sync state from `GET /api/v1/learning/anki-status` — ADR-026's three
-  honest states (synced / N waiting for sync / failed, with a "view run" link) — plus the
-  persistent EDRDG attribution line (ADR-032).
+  honest states (synced / N waiting for sync / failed, with a "view run" link). EDRDG/Tatoeba
+  attribution lives in the about panel (ADR-032 as accepted — private deployment, no
+  persistent footer line).
 - Streak pill: the widget calls ADR-014's streaks read endpoint (`GET /api/v1/streaks`)
   through its generated hook and picks out its own `japanese-wotd` entry. Frontend
   composition, not backend composition — the WOTD read stays streak-free and the streaks
@@ -213,10 +214,12 @@ Per ADR-026, nothing Anki-shaped runs in this widget or this API:
   states, never errors.
 - **Streak pill** renders from the ADR-014 hook; if that call fails, the pill is simply
   omitted — never a broken card.
-- **Attribution (R5, ADR-032):** "Dictionary data © EDRDG (JMdict), CC BY-SA" is a
-  persistent one-line card footer. EDRDG's licence requires acknowledgement on each
-  screen display, so the about-panel-only placement this ADR first specified is
-  superseded by ADR-032; the settings/about panel keeps the full sources list.
+- **Attribution (R5, ADR-032):** the settings/about panel renders the full sources list
+  ("Dictionary data © EDRDG (JMdict), CC BY-SA" et al.) from the manifest's attribution
+  block. ADR-032's draft proposed a persistent card-footer line per EDRDG's
+  "each screen display" clause; at its acceptance (2026-07-18) the footer was withdrawn —
+  the deployment is private and single-user, so the clause does not bind; it becomes
+  mandatory on day one of any public deployment (the API already serves the line).
 - **i18n (NFR-12):** all EN UI copy (button labels, sync notes, announcements) lives in
   the message catalog; the sync note's relative time ("8 min ago") is formatted with
   `Intl.RelativeTimeFormat`, not string concatenation. Japanese word/example text is
@@ -240,9 +243,10 @@ Per ADR-026, nothing Anki-shaped runs in this widget or this API:
   browser↔GitHub traffic; the learning-repo PAT is custodied server-side per ADR-024
   (§5.2), and AnkiWeb credentials never leave the learning repo's Actions secrets
   (ADR-026).
-- Attribution placement is a license commitment (ADR-032): the footer line renders on
-  every word display, and any future content source added to the pool must carry its own
-  license/attribution block in the manifest.
+- Attribution is recorded, not rendered persistently (ADR-032 as accepted): the about
+  panel carries the sources list, and any future content source added to the pool must
+  carry its own license/attribution block in the manifest. A public deployment flips the
+  card-footer line on.
 
 ## Alternatives considered
 

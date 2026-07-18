@@ -84,9 +84,11 @@ level is normal, not an error, and consumers render it only when present (produc
 decision 2026-07-17). Example sentences carry **no furigana alignment** (JmdictFurigana
 covers headwords only) — consumers render them plain, accepted the same day. The tool emits
 the manifest + shards. The user runs it against a local clone and commits the output — bumping a pin
-is a reviewed commit, per ADR-032's stance. The manifest's attribution block carries EDRDG's
-required acknowledgement line, which the widget renders on every word display (ADR-032: a
-legal requirement, not styling). **Tech lesson content is deferred** — no open-licensed
+is a reviewed commit, per ADR-032's stance. The manifest's attribution block carries the
+source × release attribution rows (licence, credit line, URL), rendered in the widget's
+about panel (ADR-032 as accepted: no persistent card footer while the deployment is
+private; the line ships in the API so a public deployment can flip it on).
+**Tech lesson content is deferred** — no open-licensed
 dataset exists; sourcing (APIs, datasets, scraping with ToS/licence assessment) is an open
 investigation recorded in ADR-032.
 
