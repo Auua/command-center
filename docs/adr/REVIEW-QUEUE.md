@@ -123,6 +123,51 @@ no cross-module imports — the energy-balance view composes over APIs). The ADR
 committed next integration ADR, metric registry seeded weight/sleep/steps/activity, CSV/GPX import
 dropped) — the Withings sync ADR is owed next and will follow ADR-037's OAuth/worker pattern.
 
+## Batch 7 — Phase 2 automation delivery (product-owner decision, 2026-07-18)
+
+One ADR from the Phase 2 planning session (three expert passes: backend/queue, hosting,
+push/PWA). The product owner relaxed NFR-3 to best-effort delivery, which removed the always-on
+worker from the phase; ADR-039 records the resulting architecture.
+
+| ADR | Title                                          | Review state    | Approved |
+| --- | ---------------------------------------------- | --------------- | -------- |
+| 039 | Automation delivery — inline tick + pinger MVP | claude-reviewed | —        |
+
+**ADR-039 changes foundation rows** — the walkthrough should confirm these explicitly:
+
+- **ADR-005 (pg-boss) is deferred, not implemented** — no queue exists in the MVP; the
+  Railway-worker + session-pooler design is recorded in 039 as the upgrade path.
+- **ADR-006's revisit clause is resolved**: nothing leaves Vercel; the "worker's home" question
+  closes without a worker.
+- **§5.1 is amended**: the API gains its first RLS-bypassing credential (Supabase service-role
+  key), confined to the scheduler repository; plus `TICK_SECRET` and a second non-JWT route.
+
+## Review notes (batch 7 pass — security-focused, per product-owner ask)
+
+Rails check: §4.1 boundaries hold (a `scheduler` module owns the tick; the `task.completed`
+reaction stays on the event bus — no cross-module imports); §4.3 split holds (all new tables
+Postgres, RLS named on each: `user_profiles`, `automations`, `automation_runs` select-own,
+`notifications`, `push_subscriptions`, `scheduler_state` policy-less); §4.2 untouched (ADR-015's
+widget contract is explicitly not revisited); NFR-8 improves ($0/mo).
+
+Security pass findings, all resolved in the ADR's decision text:
+
+- Tick endpoint: constant-time secret compare, throttled, parameterless (nothing to inject),
+  `204` (nothing to learn), explicit tested exclusion from the JWT guard. Leaked-secret blast
+  radius bounded by the idempotent claim step to "runs the scheduler early".
+- Service-role key: single-consumer containment (scheduler repository only), server-only env,
+  never logged, rotatable — the §5.1 carve-out is explicit, not implied.
+- **SSRF via `push_subscriptions.endpoint` found and closed at drafting**: Web Push makes the
+  server POST to client-supplied URLs, so endpoints are restricted to HTTPS on known browser
+  push-service hosts at the contract layer.
+- Push payloads stay §5.2-compliant (encrypted, non-sensitive bodies); endpoints treated as
+  capability URLs (never logged in full). CSRF/CORS non-issues argued in place. §5.3's
+  notify-only tampering bound unchanged.
+
+The one decision most worth product-owner attention at the walkthrough: **timeliness is rented
+from a free third party** (cron-job.org) — correctness never depends on it (catch-up window +
+`skipped` honesty), but "typically 1–5 min, occasionally later" is the contract being signed.
+
 ## Review notes (batch 5 pass)
 
 Rails check as before, both hold: the Google refresh token is server-side only and encrypted at
