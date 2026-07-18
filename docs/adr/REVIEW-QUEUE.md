@@ -57,19 +57,21 @@ not one per API — the sweep produced more candidates than it kept.
 
 | ADR | Title                                           | Review state    | Approved            |
 | --- | ----------------------------------------------- | --------------- | ------------------- |
-| 032 | Content sourcing & licensing (learning widgets) | claude-reviewed |                     |
+| 032 | Content sourcing & licensing (learning widgets) | claude-reviewed | ✓ 2026-07-18        |
 | 033 | Public holidays in the calendar                 | claude-reviewed | ✓ 2026-07-16        |
 | 034 | FX from central-bank reference rates            | claude-reviewed | rejected 2026-07-16 |
 | 035 | Transit departures widget (HSL/Digitransit)     | claude-reviewed |                     |
 
 Three of the four **change ADRs that are already in this queue** — worth reading in that order:
 
-- **ADR-032 closes ARD risk R5** (content sourcing/licensing) and supersedes the attribution _placement_ in
-  ADR-011 and ADR-012: EDRDG's licence requires acknowledgement "on each screen display" for a web
-  dictionary display, so the WOTD and grammar cards get a persistent footer line rather than an about-panel
-  entry. It also narrows ADR-011's worker "content-pool refresh" job to a pinned CI ingest, and records that
-  no open-licensed JLPT _grammar_ dataset exists (grammar stays authored) and that JLPT levels are curated
-  approximations, not official.
+- **ADR-032 closes ARD risk R5** (content sourcing/licensing). Its draft superseded the attribution
+  _placement_ in ADR-011 and ADR-012 (a persistent footer line on the cards, per EDRDG's "each screen
+  display" clause); **at acceptance (2026-07-18) that footer was withdrawn** — the deployment and the
+  learning repo are private, so no distribution or public display occurs and the about-panel placement
+  stands, with the footer recorded as the tripwire for any public exposure. It also narrows ADR-011's
+  worker "content-pool refresh" job to a pinned CI ingest, and records that no open-licensed JLPT
+  _grammar_ dataset exists (grammar stays authored) and that JLPT levels are curated approximations,
+  not official.
 - **ADR-033** adds a `public_holidays` reference table to ADR-018's calendar — deliberately _not_
   `calendar_events` rows.
 - **ADR-034** moves the FX half of ADR-021's watchlist off the metered Twelve Data budget onto keyless ECB
@@ -239,16 +241,20 @@ analytics surface on a widget.
 The load-bearing claim in this batch is a **licensing** one, so I verified it against the source rather
 than the summary. EDRDG's licence page (fetched 2026-07-14) says verbatim: _"If a WWW server is providing
 a dictionary function or an on-screen display of words from the files, the acknowledgement must be made
-on each screen display, e.g. in the form of a message at the foot of the screen or page."_ ADR-032's
-persistent card-footer attribution is therefore a legal requirement, not a stylistic preference — and the
-about-panel placement in ADR-011/012 does not satisfy it. The ShareAlike consequence is the part worth
-explicit product-owner attention: it travels with _distribution_, so a public learning vault (ADR-024) or a
-shared AnkiWeb deck (ADR-026) would be encumbered. Keeping both private avoids the question entirely.
+on each screen display, e.g. in the form of a message at the foot of the screen or page."_ The draft read
+that as requiring a persistent card footer. _Resolved at acceptance (2026-07-18):_ the clause binds
+public-facing dictionary displays; this deployment is private and single-user, so the about-panel
+placement stands and the footer is the recorded obligation for any public exposure. The ShareAlike
+consequence travels with _distribution_, so a public learning repo (ADR-024) or a shared AnkiWeb deck
+(ADR-026) would be encumbered. Keeping both private avoids the question entirely — which is the accepted
+posture.
 
 Further supersessions to confirm in the walkthrough:
 
 - **ADR-032** supersedes the attribution _placement_ in ADR-011/012, and narrows ADR-011's worker
-  content-refresh job to a pinned CI ingest.
+  content-refresh job to a pinned CI ingest. _Resolved 2026-07-18: the placement supersession was
+  overturned at acceptance (about panel stands — private deployment); the pinned-ingest narrowing
+  stands._
 - **ADR-034** supersedes the FX half of ADR-021's provider choice (Twelve Data → keyless ECB rates via
   Frankfurter). The user-visible cost — EUR/JPY becomes a daily reference rate, not an intraday tick — is
   the single thing in this batch most likely to be wrong for the user, so it should be confirmed first.

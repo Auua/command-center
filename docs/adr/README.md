@@ -38,7 +38,7 @@ summary rows in [`docs/ARD.md` §7](../ARD.md) only.
 | 029 | [Fitness & health widget](lifestyle/029-fitness-widget.md)                                                                         | lifestyle     | accepted |
 | 030 | [Finance dashboard widget](lifestyle/030-finance-widget.md)                                                                        | lifestyle     | proposed |
 | 031 | [Home Assistant integration widget](lifestyle/031-home-assistant-widget.md)                                                        | lifestyle     | proposed |
-| 032 | [Content sourcing & licensing for the learning widgets](learning/032-learning-content-sourcing.md)                                 | learning      | proposed |
+| 032 | [Content sourcing & licensing for the learning widgets](learning/032-learning-content-sourcing.md)                                 | learning      | accepted |
 | 033 | [Public holidays in the calendar (and why name days are seeded, not called)](productivity/033-calendar-reference-data.md)          | productivity  | accepted |
 | 034 | [FX from central-bank reference rates (Frankfurter), not from the metered quote provider](external-data/034-fx-reference-rates.md) | external-data | rejected |
 | 035 | [Transit departures widget (HSL / Digitransit)](external-data/035-transit-departures-widget.md)                                    | external-data | proposed |
