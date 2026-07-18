@@ -10,7 +10,7 @@ import { MoodRepository } from './mood.repository';
 const DAY_MS = 86_400_000;
 
 /**
- * Business rules for mood check-ins (controllers stay thin — ARD §4.1).
+ * Business rules for mood check-ins (controllers stay thin — ADR §4.1).
  * The list window is timestamp-based (`days` back from now); calendar-day
  * bucketing for trends happens client-side in the user's own timezone.
  *

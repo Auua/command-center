@@ -104,7 +104,7 @@ function TaskRow({
 }
 
 /**
- * Tasks — the todo widget (ARD Phase 1, mock's "Today's tasks" card). Lists
+ * Tasks — the todo widget (ADR Phase 1, mock's "Today's tasks" card). Lists
  * tasks in API order (completed at the top, then open by priority/deadline,
  * per the mock), toggles completion, and quick-adds with the
  * "pay rent friday p1" syntax (see quick-add.ts).

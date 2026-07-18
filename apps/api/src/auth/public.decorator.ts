@@ -4,6 +4,6 @@ export const IS_PUBLIC_KEY = 'isPublic';
 
 /**
  * Marks a route (or controller) as publicly accessible, skipping the global
- * JWT guard. Per ARD §5.1 the only unauthenticated endpoint is /health.
+ * JWT guard. Per ADR §5.1 the only unauthenticated endpoint is /health.
  */
 export const Public = (): MethodDecorator & ClassDecorator => SetMetadata(IS_PUBLIC_KEY, true);

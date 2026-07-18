@@ -20,7 +20,7 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import { TasksService } from './tasks.service';
 
 /**
- * /api/v1/tasks — tasks CRUD (ARD §4.1 TasksModule). Validation is explicit
+ * /api/v1/tasks — tasks CRUD (ADR §4.1 TasksModule). Validation is explicit
  * zod `.parse` (ZodErrors become 400s via the global ZodExceptionFilter);
  * unknown-field rejection is baked into the task write schemas themselves.
  * The user always comes from the verified JWT.

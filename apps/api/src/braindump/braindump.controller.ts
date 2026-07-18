@@ -20,14 +20,14 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import { BraindumpService } from './braindump.service';
 
 /**
- * Reject unknown top-level fields on write paths (ARD §5.2
+ * Reject unknown top-level fields on write paths (ADR §5.2
  * reject-unknown-fields).
  */
 const CreateStrictSchema = CreateBraindumpNoteRequestSchema.strict();
 const UpdateStrictSchema = UpdateBraindumpNoteRequestSchema.strict();
 
 /**
- * /api/v1/braindump — braindump notes CRUD (ARD §4.1 BraindumpModule).
+ * /api/v1/braindump — braindump notes CRUD (ADR §4.1 BraindumpModule).
  * Validation is explicit zod `.parse` (ZodErrors become 400s via the global
  * ZodExceptionFilter); the user always comes from the verified JWT.
  */

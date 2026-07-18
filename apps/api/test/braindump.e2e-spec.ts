@@ -126,7 +126,7 @@ describe('Braindump (e2e)', () => {
     });
   });
 
-  describe('user isolation (ARD §5.1)', () => {
+  describe('user isolation (ADR §5.1)', () => {
     it("never exposes one user's notes to another", async () => {
       const created = await request(server)
         .post('/api/v1/braindump')

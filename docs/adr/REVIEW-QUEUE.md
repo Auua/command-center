@@ -6,7 +6,7 @@ this table mirrors it so the state is visible in one place.
 States:
 
 - `new` — drafted, not yet checked.
-- `claude-reviewed` — checked against the ARD's hard rails (§4.1 module boundaries, §4.3 data-ownership
+- `claude-reviewed` — checked against the ADR's hard rails (§4.1 module boundaries, §4.3 data-ownership
   split, §4.2 widget SDK, §5 security, §6 NFRs) and against the other new ADRs for cross-references.
   Ready to walk through together.
 - `approved` — the product owner signed off; the ADR's `Status:` flips to `accepted`.
@@ -64,7 +64,7 @@ not one per API — the sweep produced more candidates than it kept.
 
 Three of the four **change ADRs that are already in this queue** — worth reading in that order:
 
-- **ADR-032 closes ARD risk R5** (content sourcing/licensing). Its draft superseded the attribution
+- **ADR-032 closes ADR risk R5** (content sourcing/licensing). Its draft superseded the attribution
   _placement_ in ADR-011 and ADR-012 (a persistent footer line on the cards, per EDRDG's "each screen
   display" clause); **at acceptance (2026-07-18) that footer was withdrawn** — the deployment and the
   learning repo are private, so no distribution or public display occurs and the about-panel placement
@@ -167,14 +167,14 @@ learning-center v1 slice):
   re-pointed at the learning repo (the edit the v1 plan owed it); ADR-012/013 re-pointed their Anki
   quick actions at `POST /api/v1/learning/cards` and dropped the `ankiDeckName`/`ankiNoteType`
   settings; ADR-025's desktop-reachability rationale was replaced by the coupling argument (its full
-  ADR-024 re-alignment is still owed). ARD edits remain owed on approval, per ADR-026 and ARD §7.
+  ADR-024 re-alignment is still owed). ADR edits remain owed on approval, per ADR-026 and ADR §7.
 - 2026-07-17, ADR-024 walkthrough follow-ups (product-owner decisions): `POST /cards` is now
   `POST /cards/:kind` — one contract, path-typed, server-side formatter per kind (closes the seam
   ADR-012/013/019 point at); a cold boot during a GitHub outage shows "try again later" instead of
   buying snapshot/boot-warming machinery (WOTD is not crucial); malformed card files skip-and-report
   via `state.json.errors` (024 + 026); GitHub 401/403 surfaces as an explicit token-invalid state
   rather than hiding behind serve-stale. Separately, hosting references corrected to **Render**
-  (ARD ADR-006 row/diagram/NFR-13/secrets row, ENV_SETUP, ADR-031) — it was never Railway/Fly.
+  (ADR ADR-006 row/diagram/NFR-13/secrets row, ENV_SETUP, ADR-031) — it was never Railway/Fly.
 - 2026-07-17, later (product-owner decisions): **per-kind progress files in the learning repo** —
   `progress/<kind>.json`, mechanism + WOTD schema in ADR-024 (selection is no longer zero-state:
   eligible = pool − seen − skipped, day pin, ~1 commit/day; skip replaces reroll in ADR-011 with
@@ -182,7 +182,7 @@ learning-center v1 slice):
   `lesson_progress`), and ADR-019 re-pointed at their kind's file — their progress _stores_ are
   superseded, the policies stand. Pool refreshes are SHA-pinned (no manifest/shard version mixing);
   ADR-026's push trigger corrected to `cards/**` so `progress/**`/`sync/**` commits never trigger
-  runs. ARD §4.3/§4.4 "progress counters in Postgres" joins the owed-on-approval ARD edits.
+  runs. ADR §4.3/§4.4 "progress counters in Postgres" joins the owed-on-approval ADR edits.
 - 2026-07-17 walkthrough: **ADR-024 accepted**; **ADR-025 rejected** — Anki is the SRS for
   everything. With every saved card Anki-bound (ADR-024/026), the app-owned review population
   ADR-025 schedules would never exist; reviewing happens in Anki on every device via AnkiWeb.
@@ -190,7 +190,7 @@ learning-center v1 slice):
   **learning-center view** (a dedicated page for this kind of study task), but not a widget; if
   that view ever needs scheduling, ADR-025's FSRS/`srs_owner` design is the recorded starting
   point. ADR-012's "Anki _is_ the SRS" stance stands un-superseded; the §4.4
-  `review_cards`/`review_logs` owed ARD edit is cancelled with the rejection.
+  `review_cards`/`review_logs` owed ADR edit is cancelled with the rejection.
 - 2026-07-17, ADR-011 verification pass (product-owner decisions): pool ingest gains **romaji + POS
   always, JLPT via curated join where available** — `jlptLevel` optional, chip renders only when
   present; **examples stay plain** (no sentence-level furigana; headword alignment only);
@@ -207,7 +207,7 @@ learning-center v1 slice):
   default off) and **ADR-026 accepted** — recall cards off by default (recognition only; a later
   template addition is non-destructive on the versioned model), literal top-level
   `Japanese`/`Tech` deck names, **real AnkiWeb account** in the learning repo's Actions secrets
-  (no throwaway-trial gate). The big owed ARD rewrite was applied in 026's acceptance commit:
+  (no throwaway-trial gate). The big owed ADR rewrite was applied in 026's acceptance commit:
   AnkiConnect has left the architecture (§4.5 rewritten to the repo-Action → AnkiWeb sync, §2
   diagram + failure rows gained the learning repo and lost AnkiConnect, §5.2 CORS carve-out
   dropped, §4.3 lost `anki_snapshots`, R2 repurposed to sync-protocol drift, Phase 3 reworded).
@@ -218,13 +218,13 @@ learning-center v1 slice):
   **`JapaneseModule` dissolves** and `jp_content` is retired unbuilt. Carry-over pacing on the UTC
   day confirmed (same as 011); the JLPT ceiling now rides the request (`?ceiling=`) — the drafted
   server-side read of `WidgetRegistryModule` settings was the only endpoint reaching into another
-  module's data and is rejected. Bracket furigana repo-wide. ARD updated in the same commit (module
+  module's data and is rejected. Bracket furigana repo-wide. ADR updated in the same commit (module
   diagram, §4.3 Mongo list, Atlas ownership row, 012 summary row); ADR-024's layout gains
   `pool/grammar/`. Learning batch remaining: 013, 014, 019, 032.
 - 2026-07-18 walkthrough: **ADR-032 accepted** (stale-pass to the repo-store reality; the
   always-visible EDRDG card footer **withdrawn** — deployment and repo are private, no
   distribution; about-panel attribution stands with the footer as the public-exposure tripwire;
-  JLPT seeds from tanos.co.uk, "≈ N4" copy; R5 closed in ARD §8) and **ADR-013 accepted** —
+  JLPT seeds from tanos.co.uk, "≈ N4" copy; R5 closed in ADR §8) and **ADR-013 accepted** —
   day-pinning flips to the **UTC learning day** (one rule across learning kinds) and lesson
   content moves to **authored `pool/tech/<track>/` files** with Shiki token shards emitted by
   `tools/lesson-ingest`; Mongo `lesson_content` retired unbuilt, **Mongo's learning tenancy is
@@ -236,7 +236,7 @@ learning-center v1 slice):
   `habit.unmarked`; delete the day, recompute lengths, no-backfill untouched). The day-boundary
   conflict is resolved: **streaks credit the home-tz/03:00 day for every source** — the UTC
   learning day governs content pacing only (for a Finnish home tz the boundaries nearly coincide).
-  Owed ARD §4.4 edit applied: `streak_days` in the ER diagram, `UNIQUE(user_id, widget_id)` +
+  Owed ADR §4.4 edit applied: `streak_days` in the ER diagram, `UNIQUE(user_id, widget_id)` +
   `updated_at` on `streaks`, Q1 row updated. Learning batch remaining: 019.
 - 2026-07-18 walkthrough: **ADR-019 accepted** — inherits ADR-013's repo store (authored
   `pool/system-design/` files; `tools/lesson-ingest` grows the dagre step and emits the diagram
@@ -256,9 +256,9 @@ Deliberate supersessions to confirm during the walkthrough (they change already-
   `jp-<ent_seq>` id) _is_ "Add to Anki", and the learning repo's Action upserts notes keyed on it.
 - ADR-025 supersedes ADR-012's "Anki _is_ the SRS" — the in-app review widget schedules with FSRS, and
   `srs_owner` guarantees an item is scheduled by exactly one of the two.
-- These imply ARD edits (§4.3 loses the planned `vault_items`/`anki_snapshots` rows; §4.4 gains
+- These imply ADR edits (§4.3 loses the planned `vault_items`/`anki_snapshots` rows; §4.4 gains
   `review_cards` / `review_logs`; AnkiConnect leaves §4.5, the §2 diagram, §5.2 CORS, R2, and
-  Phase 3), noted in ARD §7 and owed once these are approved.
+  Phase 3), noted in ADR §7 and owed once these are approved.
 
 ## Review notes (batch 4 pass)
 
@@ -301,3 +301,9 @@ obligation and the honest UI stay the same line even under the private-deploymen
 also realigned the ADR to later acceptances (ADR-013's curriculum left the Postgres public-cache list;
 ADR-032's footer is no longer citable card furniture). With this, **every ADR 019–038 is decided** —
 nothing in this queue is pending review.
+
+**2026-07-18 — hosting corrected again: everything is on Vercel.** The 07-17 correction to Render
+described a deployment that never happened; web and api are in fact both hosted on Vercel. ADR-006
+(row + diagram), NFR-13, the secrets row, ENV_SETUP §4, and ADR-031's reachability premise now say
+Vercel. The constraint ADR-006 was built on still stands and is recorded in the row: a long-running
+pg-boss consumer doesn't fit Vercel functions, so the worker's home gets decided when Phase 2 lands.

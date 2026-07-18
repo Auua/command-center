@@ -4,7 +4,7 @@ import { validateEnv } from '../config/env';
 import { HeartbeatService } from './heartbeat.service';
 
 /**
- * Worker process root module (ARD §3.1): same codebase as the API, separate
+ * Worker process root module (ADR §3.1): same codebase as the API, separate
  * entrypoint, no HTTP surface. Shares the validated env contract so both
  * processes fail fast on misconfiguration.
  */

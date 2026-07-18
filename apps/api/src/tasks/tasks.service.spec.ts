@@ -13,7 +13,7 @@ const user: AuthenticatedUser = {
 
 const TASK: Task = {
   id: '9f8a2f10-4b6e-4b52-9c9d-1a2b3c4d5e6f',
-  title: 'Review ARD feedback notes',
+  title: 'Review ADR feedback notes',
   priority: 1,
   tags: [],
   deadline: null,

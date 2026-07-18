@@ -71,7 +71,7 @@ describe('UserScopedRepository', () => {
     const repo = new TestRepository(collection);
 
     // A filter that tries to smuggle in another user's id loses: the token
-    // user id is applied last (ARD §5.1 — user id never comes from input).
+    // user id is applied last (ADR §5.1 — user id never comes from input).
     await repo.find(USER, { userId: INTRUDER } as Filter<TestDoc>);
 
     expect(collection.find).toHaveBeenCalledWith({ userId: USER }, {});

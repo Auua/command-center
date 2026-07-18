@@ -5,7 +5,7 @@ import { HealthService } from './health.service';
 
 /**
  * GET /health — public liveness probe (NFR-10), excluded from the api/v1
- * global prefix in main.ts. The only unauthenticated endpoint (ARD §5.1).
+ * global prefix in main.ts. The only unauthenticated endpoint (ADR §5.1).
  */
 @Controller('health')
 export class HealthController {

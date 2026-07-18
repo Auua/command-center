@@ -6,12 +6,12 @@ import { SupabaseService } from '../supabase/supabase.service';
 const TABLE = 'widget_layouts';
 
 /**
- * Persistence for widget layouts (ARD §4.2 — layout stored per user in
+ * Persistence for widget layouts (ADR §4.2 — layout stored per user in
  * Postgres, JSONB for grid position and settings).
  *
  * Every query runs through an RLS-scoped client built from the caller's own
  * JWT; the explicit `user_id` filters (from the token, never the body) are a
- * second, application-level net (ARD §5.1).
+ * second, application-level net (ADR §5.1).
  */
 @Injectable()
 export class LayoutRepository {

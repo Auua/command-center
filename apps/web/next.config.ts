@@ -6,10 +6,10 @@ const securityHeaders = [
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains',
   },
-  // ARD §5.2: frame-ancestors none (legacy header + CSP directive).
+  // ADR §5.2: frame-ancestors none (legacy header + CSP directive).
   { key: 'X-Frame-Options', value: 'DENY' },
   // TODO(phase-1): full nonce-based CSP (no inline script) via middleware,
-  // per ARD §5.2. For phase 0 we only ship the frame-ancestors directive.
+  // per ADR §5.2. For phase 0 we only ship the frame-ancestors directive.
   { key: 'Content-Security-Policy', value: "frame-ancestors 'none'" },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

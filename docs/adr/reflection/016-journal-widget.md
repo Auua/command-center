@@ -6,11 +6,11 @@
 
 ## Context
 
-The Journal widget (Phase 4) is the reflection centerpiece: rich-text entries with prompts, tags, timeline browsing, and full-text search. The ARD constrains it heavily: entries live in MongoDB as structured JSON owned by `JournalModule` (§4.3), all access goes through the REST API at `/api/v1` (ADR-004), full-text search uses Atlas Search (§4.3), rich text is stored as the editor's JSON doc and rendered only through the editor's renderer — never `dangerouslySetInnerHTML` — with sanitization on ingest as defense in depth (§5.2). Journal data is the highest-value, most-private asset in the system (§5.3): no third-party analytics on journal routes, and NFR-7 requires the data to be exportable.
+The Journal widget (Phase 4) is the reflection centerpiece: rich-text entries with prompts, tags, timeline browsing, and full-text search. The ADR constrains it heavily: entries live in MongoDB as structured JSON owned by `JournalModule` (§4.3), all access goes through the REST API at `/api/v1` (ADR-004), full-text search uses Atlas Search (§4.3), rich text is stored as the editor's JSON doc and rendered only through the editor's renderer — never `dangerouslySetInnerHTML` — with sanitization on ingest as defense in depth (§5.2). Journal data is the highest-value, most-private asset in the system (§5.3): no third-party analytics on journal routes, and NFR-7 requires the data to be exportable.
 
 The dashboard mock (`docs/design/dashboard-mock.html`, "Journal · today's prompt" card) shows the widget as a **launcher**: a daily prompt plus a "Write today's entry" button. Actual writing happens in a dedicated full-screen editor view, so the widget itself stays small and the heavy editor code stays off the dashboard bundle.
 
-Open question **Q2** in ARD §8 — TipTap vs Plate vs Lexical — must be closed here, because the rich-text data format _is_ the editor's JSON doc model and is therefore sticky: every stored entry is committed to it. This ADR closes Q2.
+Open question **Q2** in ADR §8 — TipTap vs Plate vs Lexical — must be closed here, because the rich-text data format _is_ the editor's JSON doc model and is therefore sticky: every stored entry is committed to it. This ADR closes Q2.
 
 The widget's core UX promise is **never lose writing**. A journal that eats an entry once is never trusted again.
 

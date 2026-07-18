@@ -199,7 +199,7 @@ p {
   color: var(--cc-text-muted);
 }
 
-/* ---- Dashboard grid (ARD §4.2) ----
+/* ---- Dashboard grid (ADR §4.2) ----
    Pure CSS grid: works without any JS-measured sizing. Placement comes
    from --cc-col/--cc-row custom properties set per item. */
 

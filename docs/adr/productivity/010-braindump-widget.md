@@ -12,9 +12,9 @@ card). Its entire value is **zero-friction capture** — the user decides to rec
 and it lands, instantly, with nothing to configure and no way to lose the text. Everything
 else (triage, promotion to a task, archiving) is secondary and must never slow capture down.
 
-Architecturally it is load-bearing: it is the **first MongoDB-backed module** (ARD §9
+Architecturally it is load-bearing: it is the **first MongoDB-backed module** (ADR §9
 Phase 1), so it validates the dual-DB ownership split (ADR-003), the Mongo repository
-base class with enforced `userId` scoping (ARD §5.1), and the widget SDK contract (§4.2)
+base class with enforced `userId` scoping (ADR §5.1), and the widget SDK contract (§4.2)
 against a real read/write feature. The module and widget already exist
 (`apps/api/src/braindump/`, `apps/web/widgets/braindump/`); this ADR records the decisions
 they embody, and the target where the current implementation falls short.
@@ -26,7 +26,7 @@ Forces in tension:
 - Document flexibility (notes may grow tags, archive state, promotion links) vs. a stable,
   minimal wire contract.
 - Cross-domain "promote to task" vs. the hard module rule: domain modules never import
-  each other (ARD §4.1).
+  each other (ADR §4.1).
 
 ## Decision
 
@@ -55,7 +55,7 @@ until it is either persisted or explicitly abandoned by the user.
   `onSuccess` and disables submit while pending, so text is safe but rapid-fire capture
   blocks on the network. Moving to the optimistic model above is the target; the
   invariant already held ("never lose input") stays the acceptance bar.
-- No persistent offline queue (offline-first sync is an explicit non-goal, ARD §1.3);
+- No persistent offline queue (offline-first sync is an explicit non-goal, ADR §1.3);
   the retry affordance is in-memory for the session.
 - **Promote to task:** a per-note quick action calls `POST /api/v1/tasks` (Tasks contract)
   and, on success, archives the note — **client-side API composition**, two sequential
@@ -67,7 +67,7 @@ until it is either persisted or explicitly abandoned by the user.
 ### Backend
 
 - `BraindumpModule` (`apps/api/src/braindump/`): thin controller → service → repository,
-  matching the module template in ARD §4.1. Validation is explicit zod `.parse` with
+  matching the module template in ADR §4.1. Validation is explicit zod `.parse` with
   `.strict()` on write bodies (reject-unknown-fields, §5.2); zod errors become 400s via
   the global exception filter.
 - `BraindumpRepository` extends `UserScopedRepository`, so **every** query — list, insert,
@@ -133,7 +133,7 @@ Wire `BraindumpNote` is `{ id, content, createdAt, updatedAt }` (ISO strings, Mo
   above.") — an invitation, not a blank pane; input stays focused-ready.
 - **Error/degraded:** Mongo down means _this widget_ shows its error card ("Couldn't load
   braindump notes" + retry) while the rest of the dashboard renders normally — exactly
-  the ARD §2 failure-posture row for Atlas. Render crashes are caught by the per-widget
+  the ADR §2 failure-posture row for Atlas. Render crashes are caught by the per-widget
   error boundary (§4.2); the shell never blanks.
 - **Optimistic behavior:** capture per Frontend above; delete/archive is also optimistic
   (row removed immediately, restored with an alert on failure). Mutations invalidate the

@@ -295,7 +295,7 @@ authenticated as the account owner, at personal-use volume. The previous draft's
   revision (product-owner decision: GitHub is the store, no Mongo), the interim `PUT /api/v1/anki/report`
   endpoint, its machine token, `AnkiModule`, and the Mongo `anki_snapshots` collection —
   none of these will exist. ADR-019 and ADR-024/025 are edited in place (same unapproved
-  batch). ARD edits owed on approval: §4.5's Anki paragraph, the container diagram and
+  batch). ADR edits owed on approval: §4.5's Anki paragraph, the container diagram and
   failure-mode row, the AnkiConnect CORS row, R2, Phase 3's "queue-and-flush", and §4.3's
   `anki_snapshots` row (deleted, not moved).
 - **Media** (images/audio): amended at ADR-019's acceptance (2026-07-18) — system-design

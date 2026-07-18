@@ -4,7 +4,7 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import { LayoutRepository } from './layout.repository';
 
 /**
- * Business rules for widget layouts (controllers stay thin — ARD §4.1).
+ * Business rules for widget layouts (controllers stay thin — ADR §4.1).
  */
 @Injectable()
 export class LayoutService {

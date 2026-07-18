@@ -144,7 +144,7 @@ Under `/api/v1/learning`, zod schemas in `packages/contracts` (ADR-004/007), rej
 Error semantics match the house rules: request-shape violations are 400 (ZodError via the global
 filter); a stored shard that fails the contract is a 500 (corrupt content), never a client ZodError;
 missing/foreign ids are uniform 404s. GitHub trouble degrades to `stale: true` with the last
-pinned lesson from ADR-024's cache rather than an error (ARD §2 failure posture).
+pinned lesson from ADR-024's cache rather than an error (ADR §2 failure posture).
 
 ### Accessibility
 

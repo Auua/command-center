@@ -4,7 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Env } from '../config/env';
 
 /**
- * Factory for RLS-scoped Supabase clients (ARD §5.1).
+ * Factory for RLS-scoped Supabase clients (ADR §5.1).
  *
  * Clients are created per request with the anon key plus the caller's own
  * JWT in the Authorization header, so every Postgres query runs as that

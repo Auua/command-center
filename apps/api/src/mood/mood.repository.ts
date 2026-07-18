@@ -21,11 +21,11 @@ interface MoodCheckinRow {
 }
 
 /**
- * Persistence for mood check-ins (ARD §4.4 — Postgres `mood_checkins`).
+ * Persistence for mood check-ins (ADR §4.4 — Postgres `mood_checkins`).
  *
  * Every query runs through an RLS-scoped client built from the caller's own
  * JWT; the explicit `user_id` filters (from the token, never the body) are a
- * second, application-level net (ARD §5.1).
+ * second, application-level net (ADR §5.1).
  */
 @Injectable()
 export class MoodRepository {

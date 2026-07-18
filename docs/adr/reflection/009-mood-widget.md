@@ -6,12 +6,12 @@
 
 ## Context
 
-The mood widget is the Phase 1 "Reflection" widget (ARD §9): a 1–5 face scale to log how you feel, optional tags and a note, and a 7-day trend line. It is the first widget whose data the ARD names a **highest-value asset** (§5.3: "journal + mood data — private reflections"), so privacy decisions carry more weight here than for tasks or clock. It is also the first widget with a real chart, which forces us to settle chart accessibility patterns (NFR-11) that later widgets (streaks, finance) will copy.
+The mood widget is the Phase 1 "Reflection" widget (ADR §9): a 1–5 face scale to log how you feel, optional tags and a note, and a 7-day trend line. It is the first widget whose data the ADR names a **highest-value asset** (§5.3: "journal + mood data — private reflections"), so privacy decisions carry more weight here than for tasks or clock. It is also the first widget with a real chart, which forces us to settle chart accessibility patterns (NFR-11) that later widgets (streaks, finance) will copy.
 
 Forces in play:
 
 - The design mock (`docs/design/dashboard-mock.html`, "Mood check-in" card) shows a 5-face emoji scale as toggle buttons with `aria-pressed`, tag chips, and an SVG trend with a **hover-only** tooltip built in script. Hover-only is not keyboard- or touch-accessible and cannot ship as-is.
-- ARD hard rails: all data via NestJS REST `/api/v1` with zod contracts in `packages/contracts` (ADR-004/007); `mood_checkins` lives in Postgres under RLS, owned solely by `MoodModule` (§4.3–4.4); the widget conforms to the `WidgetDefinition` SDK (§4.2).
+- ADR hard rails: all data via NestJS REST `/api/v1` with zod contracts in `packages/contracts` (ADR-004/007); `mood_checkins` lives in Postgres under RLS, owned solely by `MoodModule` (§4.3–4.4); the widget conforms to the `WidgetDefinition` SDK (§4.2).
 - Ambiguity to resolve: one check-in per day or many? The mock's greeting says "mood not logged yet" (suggesting once daily) but the schema keys on `created_at` timestamps, and Phase 2 automations will prompt both morning and evening. -> _PO-review:_ 0–5 check-ins per day, cap enforced server-side (see Data model)
 - The widget already exists (commit dd30da4: `apps/web/widgets/mood/`, `apps/api/src/mood/`, `packages/contracts/src/schemas/mood.ts`, `supabase/migrations/0003_mood_checkins.sql`). This ADR records the decisions it embodies and names the gaps where it falls short of the target.
 
@@ -39,7 +39,7 @@ We will keep `MoodModule` a standard NestJS domain module (§4.1): thin controll
 - Logging a check-in emits `mood.checkin_recorded` (`{ userId, checkinId, createdAt }`) on the in-process event bus (§4.1); ADR-014's streak service and Phase 2 automations subscribe — `MoodModule` imports neither.
 - Trend windowing is server-side: the list endpoint returns only the requested `days` window (default 7, max 90) via an indexed `created_at >= since` query — the client never pulls full history.
 
-**Gap vs target:** day-bucketed averaging currently happens client-side over that fetched window — acceptable while the profile-stored home IANA timezone (`users.timezone`, ADR-014 / ARD Q1) is not yet plumbed into this module. That stays within the letter of the "no client-side aggregation beyond the fetched window" rule, but the target — required before windows grow past 90 days or aggregations get richer (monthly view, tag correlations) — is a `GET /api/v1/mood/trend?days=` endpoint doing SQL aggregation in the stored home timezone (`date_trunc` over `created_at AT TIME ZONE :home_tz` + `avg(mood_score) … group by day`) so raw rows stop crossing the wire at all.
+**Gap vs target:** day-bucketed averaging currently happens client-side over that fetched window — acceptable while the profile-stored home IANA timezone (`users.timezone`, ADR-014 / ADR Q1) is not yet plumbed into this module. That stays within the letter of the "no client-side aggregation beyond the fetched window" rule, but the target — required before windows grow past 90 days or aggregations get richer (monthly view, tag correlations) — is a `GET /api/v1/mood/trend?days=` endpoint doing SQL aggregation in the stored home timezone (`date_trunc` over `created_at AT TIME ZONE :home_tz` + `avg(mood_score) … group by day`) so raw rows stop crossing the wire at all.
 
 ### Data model
 

@@ -18,7 +18,7 @@ export interface WidgetProps<TSettings = unknown> {
 }
 
 /**
- * The widget contract (ARD §4.2). Adding a widget means adding one folder
+ * The widget contract (ADR §4.2). Adding a widget means adding one folder
  * under apps/web/widgets/ and one registry entry — no core changes.
  */
 export interface WidgetDefinition<TSettings = unknown> {

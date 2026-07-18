@@ -6,7 +6,7 @@
 
 ## Context
 
-Phase 2 delivers the automation engine: `AutomationModule` (ARD §4.1), the `automations` +
+Phase 2 delivers the automation engine: `AutomationModule` (ADR §4.1), the `automations` +
 `automation_runs` tables (§4.4), and the worker cron-tick → pg-boss → Web Push pipeline (§4.5,
 ADR-005). Those decisions stand; this ADR does not revisit them. What is undecided is the **widget**
 — the read/manage surface on the dashboard, sketched in `docs/design/dashboard-mock.html` as a

@@ -21,7 +21,7 @@ interface BraindumpNoteDocument extends UserOwnedDocument {
 }
 
 /**
- * Owns the `braindump_notes` collection exclusively (ARD §4.4). All access
+ * Owns the `braindump_notes` collection exclusively (ADR §4.4). All access
  * goes through the user-scoped base class, so every query carries the
  * caller's userId.
  */
@@ -38,7 +38,7 @@ export class BraindumpRepository
 
   /**
    * Best-effort index for the list query. Failure is logged, not fatal: the
-   * API must boot even when Atlas is unreachable (ARD §2 failure posture).
+   * API must boot even when Atlas is unreachable (ADR §2 failure posture).
    */
   async onModuleInit(): Promise<void> {
     try {

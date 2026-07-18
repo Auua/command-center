@@ -1,6 +1,6 @@
 -- 0001_widget_layouts.sql
--- Widget layout persistence for the dashboard shell (ARD §4.2, §4.4).
--- RLS on with auth.uid() = user_id policies (ARD §5.1, NFR-6): the API
+-- Widget layout persistence for the dashboard shell (ADR §4.2, §4.4).
+-- RLS on with auth.uid() = user_id policies (ADR §5.1, NFR-6): the API
 -- connects with the RLS-respecting anon role + the user's JWT, never
 -- service_role.
 

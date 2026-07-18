@@ -6,11 +6,11 @@
 
 ## Context
 
-The README lists Home Assistant (HA) integration under Future Extensions. **ARD §5.3 explicitly says: "automations execute only `notify` actions in v1 — no arbitrary webhooks/code — so a compromised automation record can annoy, not exfiltrate. Revisit before adding webhook actions or Home Assistant control."** This ADR is that revisit. Nothing is implemented.
+The README lists Home Assistant (HA) integration under Future Extensions. **ADR §5.3 explicitly says: "automations execute only `notify` actions in v1 — no arbitrary webhooks/code — so a compromised automation record can annoy, not exfiltrate. Revisit before adding webhook actions or Home Assistant control."** This ADR is that revisit. Nothing is implemented.
 
 This is not a widget with a database table; it is an **integration**, and it breaks assumptions the rest of the system is built on:
 
-- **Reachability.** HA runs on the user's LAN (a Pi, a NUC, a container at `homeassistant.local:8123`). Our API runs on Render (§3). **A cloud backend cannot reach a device behind a home NAT.** Every other integration in this system talks _outward_ to a public API; this one has to talk _inward_ to a private network. The ARD has faced this exactly once before — AnkiConnect (§4.5): "AnkiConnect is a plugin on the _desktop_ Anki app — a cloud backend can't reach it. Design: the browser talks to AnkiConnect on `localhost:8765` directly." That precedent is the most important input to this ADR. (ADR-026's 2026-07-16 rewrite retires the Anki _instance_ of the pattern — Anki sync now runs in CI against AnkiWeb — but the pattern itself, browser-direct to a service the cloud can't reach, stands, and this ADR now carries it alone.)
+- **Reachability.** HA runs on the user's LAN (a Pi, a NUC, a container at `homeassistant.local:8123`). Our API runs on Vercel (§3). **A cloud backend cannot reach a device behind a home NAT.** Every other integration in this system talks _outward_ to a public API; this one has to talk _inward_ to a private network. The ADR has faced this exactly once before — AnkiConnect (§4.5): "AnkiConnect is a plugin on the _desktop_ Anki app — a cloud backend can't reach it. Design: the browser talks to AnkiConnect on `localhost:8765` directly." That precedent is the most important input to this ADR. (ADR-026's 2026-07-16 rewrite retires the Anki _instance_ of the pattern — Anki sync now runs in CI against AnkiWeb — but the pattern itself, browser-direct to a service the cloud can't reach, stands, and this ADR now carries it alone.)
 - **Credential custody.** HA authenticates with a **long-lived access token** — a bearer token, typically 10-year expiry, that grants the _full_ HA API: read every sensor, call every service, unlock every lock. There is no scoped/read-only token in HA. Whatever holds that token holds the house.
 - **Threat model expansion.** Everything Command Center can do today is confined to data. HA _control_ means a compromised automation, a stored-XSS in a widget, or a leaked token can **act on the physical home** — turn off the freezer, unlock a door, disable the alarm. That is a category change, not an increment, and §5.3 anticipated it.
 - **Automation overlap.** HA has a mature, local, offline-capable automation engine. Command Center has `AutomationModule` (ADR-015) with cron + event triggers and notify actions. Building "if motion then light" in Command Center would be a strictly worse HA.
@@ -47,7 +47,7 @@ The honest cost: `localStorage` is readable by any XSS on our origin. Our CSP is
 1. **An entity allowlist.** Control is opt-in per entity, chosen in widget settings from HA's entity list; a bug or an injected string can only act on entities the user explicitly enabled. No "call any service" surface, ever.
 2. **A denylist of categories that stay uncontrollable regardless**: locks, alarm panels, garage doors, covers. Command Center will not unlock the user's front door; that action belongs to the HA app, under HA's own auth.
 3. **Confirmation and undo posture** for physically consequential actions — and an explicit acceptance that a compromised _automation_ (§5.3) could now actuate hardware, which means **HA actions must never be exposed as an `AutomationModule` action type** (see below).
-4. **Re-review of §5.3's "a compromised automation can annoy, not exfiltrate"** — that sentence stops being true the moment control ships, and the ARD text must change with it.
+4. **Re-review of §5.3's "a compromised automation can annoy, not exfiltrate"** — that sentence stops being true the moment control ships, and the ADR text must change with it.
 
 Read-only means the token is _still_ full-control (HA has no read-only tokens — the token can do everything even if our UI doesn't), so this is a UI-scope decision, not a capability boundary. Stated plainly so nobody mistakes it for defence in depth. The real defences are: token stays client-side, CSP is tight, and the automation engine cannot touch HA at all (next section).
 
@@ -97,7 +97,7 @@ One folder `apps/web/widgets/home-assistant/`, one registry entry (§4.2):
 - **The widget only works at home** — a real, permanent limitation of this design, and the correct trade for a _desk dashboard_. If off-network access ever becomes a requirement, that is a different architecture (server-side proxy + Nabu Casa) and a different threat model, and it must be a new ADR.
 - **CSP gets a named `connect-src` exception** for the HA host — a small, reviewable widening of §5.2. Never a wildcard.
 - We are committed to **HA never becoming an `AutomationModule` action type**, and to Command Center never reimplementing HA's trigger engine. House automations belong in HA — where they run locally, offline, and faster.
-- Control remains **unshipped and explicitly gated**: it requires its own ADR, an entity allowlist, a hard denylist (locks/alarms/garage), and an edit to ARD §5.3's threat text. Nobody can add a toggle "while they're in there".
+- Control remains **unshipped and explicitly gated**: it requires its own ADR, an entity allowlist, a hard denylist (locks/alarms/garage), and an edit to ADR §5.3's threat text. Nobody can add a toggle "while they're in there".
 - The token-not-in-`settingsSchema` trap is documented; an implementer who ignores it silently ships the house key to Postgres.
 
 ## Alternatives considered

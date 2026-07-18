@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Mood check-in — a 1 (rough) to 5 (great) score with optional tags and note
- * (ARD §4.4: relational, lives in Postgres `mood_checkins`, owned by
+ * (ADR §4.4: relational, lives in Postgres `mood_checkins`, owned by
  * MoodModule). Check-ins are immutable: changing your mind means logging a
  * new one (trends average per day), undoing means deleting.
  */
@@ -38,7 +38,7 @@ const MoodTagsSchema = z
 
 /**
  * Write-path schema rejects unknown top-level fields here in the contract
- * (ARD §5.2 reject-unknown-fields), matching the tasks convention.
+ * (ADR §5.2 reject-unknown-fields), matching the tasks convention.
  */
 export const CreateMoodCheckinRequestSchema = z
   .object({

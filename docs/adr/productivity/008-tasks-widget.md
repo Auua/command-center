@@ -9,7 +9,7 @@
 Tasks is the first Postgres-backed domain widget (Phase 1 "daily core") and the reference
 implementation other CRUD widgets will copy. It must realize the design mock's "Today's tasks"
 card (checkbox rows, priority pills, due labels, quick-add hint), conform to the widget SDK
-contract (ARD §4.2), respect the data-ownership split (§4.3–4.4: `tasks` lives in Supabase
+contract (ADR §4.2), respect the data-ownership split (§4.3–4.4: `tasks` lives in Supabase
 Postgres, owned by `TasksModule`), route all traffic through the NestJS API (ADR-004), and feed
 the Phase 2 automation engine via the `task.completed` event (§4.5). It also sets the bar for
 NFR-11 (WCAG 2.1 AA) and NFR-12 (i18n) in an interactive widget — the clock and braindump widgets
@@ -63,7 +63,7 @@ chars, checked), `priority int` (1 highest–3, `null` = unprioritized), `tags t
 belongs to CalendarModule), `completed_at timestamptz` (null = open; doubles as the completion
 flag — no separate boolean to drift), `created_at`/`updated_at` with trigger. Tags are a `text[]`
 column, not a join table: tags are only ever read with their task, PostgREST offers no
-multi-table transactions, and `mood_checkins` set the precedent (the ARD ERD was updated to
+multi-table transactions, and `mood_checkins` set the precedent (the ADR ERD was updated to
 match). RLS is on with `auth.uid() = user_id` policies for all four verbs; the API uses the
 RLS-respecting role, never `service_role` (§5.1). Index: `(user_id, completed_at)` for the list
 query.

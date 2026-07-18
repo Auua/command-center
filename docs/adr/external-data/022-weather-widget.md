@@ -23,7 +23,7 @@ has not had to make before, and each one is a privacy or accessibility fork:
 
 Also in play: NFR-8 (Open-Meteo's free tier is non-commercial, ≤ 10 000 calls/day — free, but not
 free to abuse), NFR-2 (a third-party call must not sit inside our p95), NFR-12 (units and formats are
-locale-bearing: °C and m/s in Finland), and ARD §2's failure posture (a dead upstream degrades to
+locale-bearing: °C and m/s in Finland), and ADR §2's failure posture (a dead upstream degrades to
 cached content, not to a dead card).
 
 ## Decision

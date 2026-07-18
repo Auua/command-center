@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Braindump note — quick, unstructured capture (ARD §4.3: document-shaped,
+ * Braindump note — quick, unstructured capture (ADR §4.3: document-shaped,
  * lives in MongoDB `braindump_notes`, owned by BraindumpModule). The wire
  * shape is intentionally minimal; the stored document may grow fields over
  * time without breaking this contract.

@@ -14,12 +14,12 @@ export function dbNameFromUri(uri: string): string | undefined {
 }
 
 /**
- * Single MongoClient for the process (ARD §4.3 — Mongo is only ever reached
- * from the backend; ARD §5.1 — the connection string is a dedicated app user
+ * Single MongoClient for the process (ADR §4.3 — Mongo is only ever reached
+ * from the backend; ADR §5.1 — the connection string is a dedicated app user
  * scoped to this database).
  *
  * The client connects lazily on first operation, so the API still boots when
- * Atlas is unreachable and only Mongo-backed widgets degrade (ARD §2 failure
+ * Atlas is unreachable and only Mongo-backed widgets degrade (ADR §2 failure
  * posture). Unlike Supabase there is no per-user client: user scoping is
  * enforced in code via UserScopedRepository.
  */

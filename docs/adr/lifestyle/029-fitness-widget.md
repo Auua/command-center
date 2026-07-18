@@ -6,11 +6,11 @@
 
 ## Context
 
-The README lists "fitness & health widgets" under Future Extensions; the ARD names them in G4. Nothing is implemented — this is a planning ADR, and the honest scoping decision is the whole content.
+The README lists "fitness & health widgets" under Future Extensions; the ADR names them in G4. Nothing is implemented — this is a planning ADR, and the honest scoping decision is the whole content.
 
 The gravitational pull of this widget is **device integration**: Garmin, Apple Health, Strava, Withings. It is the first thing anyone imagines when they hear "fitness widget", and it is uniformly a bad fit for this system's constraints:
 
-- **Apple Health has no server API at all.** HealthKit is readable only by a native iOS app on-device — no OAuth endpoint a NestJS backend can call. Integrating it means shipping a native app, an explicit ARD non-goal (§1.3).
+- **Apple Health has no server API at all.** HealthKit is readable only by a native iOS app on-device — no OAuth endpoint a NestJS backend can call. Integrating it means shipping a native app, an explicit ADR non-goal (§1.3).
 - **Garmin's Health API is a partner program** (application, approval, terms) delivering push-to-your-endpoint with ping/backfill semantics — a public webhook receiver, replay handling, per-user token custody in the worker.
 - **Strava/Fitbit/Withings** are ordinary OAuth 2.0, but each brings refresh-token custody, rate limits, webhook subscriptions, and a silently-stale re-auth failure mode — the exact bundle ADR-018 rejected for calendar sync ("OAuth token custody, webhook/poll infra in the worker, and conflict policy dwarf the widget itself").
 
@@ -156,7 +156,7 @@ Health data is a **highest-value asset (§5.3, same tier as journal + mood)** �
 ## Alternatives considered
 
 - **Garmin / Strava / Fitbit OAuth integration in v1.** Rejected: token custody + webhook/poll infra + stale-auth UX + dedupe-against-manual is a bigger project than the widget, against G2 and NFR-8 — the identical calculus ADR-018 applied to calendar sync. Deferred _with_ the schema seam, not abandoned.
-- **Apple Health integration.** Rejected as **not possible** within the ARD's constraints, not merely expensive: HealthKit has no server API; reading it requires a native iOS app, an explicit non-goal (§1.3). Saying "later" here would be dishonest.
+- **Apple Health integration.** Rejected as **not possible** within the ADR's constraints, not merely expensive: HealthKit has no server API; reading it requires a native iOS app, an explicit non-goal (§1.3). Saying "later" here would be dishonest.
 - **Wide metrics table (one column per metric: `weight`, `resting_hr`, …).** Rejected: every new metric is a migration and every row is mostly NULL; the narrow series costs one index and buys extensibility.
 - **Store the value in whatever unit the user typed, with a `unit` column.** Rejected: every aggregation and chart then has to convert (or silently doesn't), and mixed-unit series are the classic health-app bug. Canonical storage, presentation-layer conversion.
 - **Multiple weigh-ins per day preserved (the ADR-009 event model).** Rejected here, deliberately: intra-day body-weight variance is water, not signal, and averaging it would make the trend noisier, not truer. Mood's multiple-per-day rule is right _for mood_; it does not generalize.

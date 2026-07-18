@@ -3,7 +3,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import type { AuthenticatedUser } from '../../auth/auth.types';
 
 /**
- * Per-user rate limiting (ARD §5.2). The auth guard runs first (AuthModule is
+ * Per-user rate limiting (ADR §5.2). The auth guard runs first (AuthModule is
  * imported before this guard is registered), so authenticated requests are
  * tracked by user id; public routes (/health) fall back to the client IP.
  */

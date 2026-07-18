@@ -1,12 +1,12 @@
 -- 0002_tasks.sql
--- Tasks: todos with priority, tags, deadline (ARD §4.4, owner: TasksModule).
+-- Tasks: todos with priority, tags, deadline (ADR §4.4, owner: TasksModule).
 -- Same posture as 0001: RLS on with auth.uid() = user_id policies; the API
 -- uses the RLS-respecting anon role + the user's JWT, never service_role.
 --
 -- Tags live in a text[] column rather than the task_tags join table the
 -- original ERD sketched: PostgREST offers no multi-table transactions, tags
 -- are only ever read with their task, and mood_checkins already set the
--- text[] precedent. The ARD ERD has been updated to match.
+-- text[] precedent. The ADR ERD has been updated to match.
 
 create table if not exists public.tasks (
   id uuid primary key default gen_random_uuid(),

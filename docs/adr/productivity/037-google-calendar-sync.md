@@ -167,7 +167,7 @@ as everywhere.
 - A second OAuth-shaped integration now exists alongside ADR-024's PAT and ADR-026's Actions
   secrets; if a third arrives (ADR-029's fitness deferral names the same seam), extracting a
   shared encrypted-credential store is warranted — noted, not built.
-- ARD edits owed on approval: §2 context diagram (+Google Calendar API), §4.4 (new tables +
+- ADR edits owed on approval: §2 context diagram (+Google Calendar API), §4.4 (new tables +
   `calendar_events` columns), §5.3 (asset tier), §7 row, Phase 4 scope line. ADR-018's deferral
   paragraph is amended in place to point here.
 

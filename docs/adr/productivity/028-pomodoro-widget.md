@@ -6,7 +6,7 @@
 
 ## Context
 
-The README lists a Pomodoro timer under "Future Extensions"; the ARD names it in G4. Nothing is implemented — this is a planning ADR.
+The README lists a Pomodoro timer under "Future Extensions"; the ADR names it in G4. Nothing is implemented — this is a planning ADR.
 
 A Pomodoro timer looks trivial and is not. Every widget so far has been "render server state, write server state"; this is the first widget whose primary artifact is **a running clock in a browser tab**, and the browser is actively hostile to that:
 
