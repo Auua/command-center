@@ -60,7 +60,7 @@ not one per API — the sweep produced more candidates than it kept.
 | 032 | Content sourcing & licensing (learning widgets) | claude-reviewed | ✓ 2026-07-18        |
 | 033 | Public holidays in the calendar                 | claude-reviewed | ✓ 2026-07-16        |
 | 034 | FX from central-bank reference rates            | claude-reviewed | rejected 2026-07-16 |
-| 035 | Transit departures widget (HSL/Digitransit)     | claude-reviewed |                     |
+| 035 | Transit departures widget (HSL/Digitransit)     | claude-reviewed | parked 2026-07-18   |
 
 Three of the four **change ADRs that are already in this queue** — worth reading in that order:
 
@@ -81,7 +81,9 @@ Three of the four **change ADRs that are already in this queue** — worth readi
   Twelve Data (one mixed FX + equities widget, per ADR-021), and the finance half went moot when
   ADR-030 was parked.
 - **ADR-035** is the only _new_ widget, and the most speculative item here; it is also the only one that may
-  poll a provider on read, under three stated conditions.
+  poll a provider on read, under three stated conditions. _Resolved 2026-07-18: **parked** — the phone
+  covers the moment of need; provisional answers recorded in the ADR (home + work stop pair, walk-adjusted
+  primary number, on-card attribution line kept)._
 
 ## Batch 5 — tasks & calendar upgrades (product-owner ask, 2026-07-16)
 
@@ -286,4 +288,16 @@ Further supersessions to confirm in the walkthrough:
   Frankfurter). The user-visible cost — EUR/JPY becomes a daily reference rate, not an intraday tick — is
   the single thing in this batch most likely to be wrong for the user, so it should be confirmed first.
 - **ADR-035** is the only genuinely new widget here and the most speculative; it says so itself. If "my
-  phone already does that" is the answer, dropping it costs nothing else in the batch.
+  phone already does that" is the answer, dropping it costs nothing else in the batch. _Resolved
+  2026-07-18: that was the answer — **parked**, not rejected; the design stays valid and reopens only on
+  the product owner's ask (the ADR-030/031 treatment)._
+
+**2026-07-18 — ADR-035 parked; the review queue is complete.** The product owner answered the widget's
+own third question honestly: a phone map app covers the moment of need. Parked with provisional answers
+annotated in place (home + work stop pair within the cap of 3; walk-adjusted "leave in X min" as the
+primary number when `walkMinutes > 0`; the on-card "© Digitransit · data retrieved HH:MM" line confirmed
+kept — unlike ADR-032's withdrawn EDRDG footer, the retrieval timestamp is required staleness UI, so the
+obligation and the honest UI stay the same line even under the private-deployment posture). A stale-pass
+also realigned the ADR to later acceptances (ADR-013's curriculum left the Postgres public-cache list;
+ADR-032's footer is no longer citable card furniture). With this, **every ADR 019–038 is decided** —
+nothing in this queue is pending review.
