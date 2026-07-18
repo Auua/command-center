@@ -228,6 +228,14 @@ learning-center v1 slice):
   `tools/lesson-ingest`; Mongo `lesson_content` retired unbuilt, **Mongo's learning tenancy is
   zero**. ADR-019 inherits the store decision at its walkthrough. Learning batch remaining:
   014, 019.
+- 2026-07-18 walkthrough: **ADR-014 accepted** — absorbs its owed amendments: `wotd.acknowledged`
+  replaces `wotd.studied` (acknowledge-only learning sources), `habit.marked` joins the map, and
+  ADR-027's `recomputeDay` lands as a scoped `EVENT_TO_RECOMPUTE` retraction path (v1: exactly
+  `habit.unmarked`; delete the day, recompute lengths, no-backfill untouched). The day-boundary
+  conflict is resolved: **streaks credit the home-tz/03:00 day for every source** — the UTC
+  learning day governs content pacing only (for a Finnish home tz the boundaries nearly coincide).
+  Owed ARD §4.4 edit applied: `streak_days` in the ER diagram, `UNIQUE(user_id, widget_id)` +
+  `updated_at` on `streaks`, Q1 row updated. Learning batch remaining: 019.
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 
