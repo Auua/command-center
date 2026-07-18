@@ -219,6 +219,15 @@ learning-center v1 slice):
   module's data and is rejected. Bracket furigana repo-wide. ARD updated in the same commit (module
   diagram, §4.3 Mongo list, Atlas ownership row, 012 summary row); ADR-024's layout gains
   `pool/grammar/`. Learning batch remaining: 013, 014, 019, 032.
+- 2026-07-18 walkthrough: **ADR-032 accepted** (stale-pass to the repo-store reality; the
+  always-visible EDRDG card footer **withdrawn** — deployment and repo are private, no
+  distribution; about-panel attribution stands with the footer as the public-exposure tripwire;
+  JLPT seeds from tanos.co.uk, "≈ N4" copy; R5 closed in ARD §8) and **ADR-013 accepted** —
+  day-pinning flips to the **UTC learning day** (one rule across learning kinds) and lesson
+  content moves to **authored `pool/tech/<track>/` files** with Shiki token shards emitted by
+  `tools/lesson-ingest`; Mongo `lesson_content` retired unbuilt, **Mongo's learning tenancy is
+  zero**. ADR-019 inherits the store decision at its walkthrough. Learning batch remaining:
+  014, 019.
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 

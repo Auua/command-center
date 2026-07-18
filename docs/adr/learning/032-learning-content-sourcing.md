@@ -107,7 +107,8 @@ This **narrows ADR-011's worker "content-pool refresh" job**: there is no recurr
 
 ADR-012's `"license": { "name": "…" }` placeholder is replaced. Every content item — a pool entry in
 the `pool/japanese/` shards (ADR-024), a `pool/grammar/` file's front-matter (ADR-012 as accepted), a
-`lesson_content` document (ADR-013/019) — carries:
+`pool/tech/` lesson file's front-matter (ADR-013 as accepted; ADR-019's lessons follow the same rule
+at its walkthrough) — carries:
 
 ```ts
 license: {
@@ -232,7 +233,7 @@ must not forget:
   want the ingest to keep them in separate collections to make a future "publish the curriculum" clean, or
   is the per-document licence block enough?
   -> _PO-review:_ mooted by construction — ADR-012/024 as accepted already separate them structurally
-  (ingested pool shards vs. authored grammar files vs. `lesson_content`); BY-SA and `proprietary-own`
+  (ingested pool shards vs. authored grammar and lesson files); BY-SA and `proprietary-own`
   content never share an item. The per-item licence block is the record.
   (2) Which community JLPT list do we seed levels from, and is
   "≈ N4" acceptable UI copy or should levels be hidden entirely until curated?

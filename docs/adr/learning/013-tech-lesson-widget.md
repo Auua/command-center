@@ -1,10 +1,12 @@
 # ADR-013: Tech "X of the day" micro-lesson widget
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-07-13 (edited 2026-07-17: the Anki path is re-pointed from the
   superseded AnkiConnect queue-and-flush to ADR-024/026's card-file save + learning-repo
-  Action sync)
-- **Review:** claude-reviewed — pending product-owner approval
+  Action sync; amended at acceptance 2026-07-18: lesson content moves from Mongo
+  `lesson_content` to authored `pool/tech/` files in the learning repo, and day-pinning
+  flips from home timezone to the UTC learning day — both product-owner decisions)
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -14,7 +16,9 @@ snippet, and a takeaway — see the "TypeScript of the day" card in `docs/design
 Forces at play:
 
 - The ARD fixes the shape of every widget: SDK conformance (§4.2), data via REST `/api/v1` only,
-  `lesson_content` in MongoDB owned by `LearningModule` (§4.3), streaks in Postgres (§4.3, §4.4)
+  lesson content in the learning repo owned by `LearningModule` (ADR-024 as accepted — the repo is
+  the store for learning data; the Mongo `lesson_content` collection this ADR first drafted is
+  retired unbuilt), streaks in Postgres (§4.3, §4.4)
   with per-kind progress in the learning repo (ADR-024, 2026-07-17 decision), and the Anki path via
   the learning repo's GitHub Action (ADR-024/026).
 - The mock hand-rolls highlighting with `<span class="k">` etc. — fine for a static mock, but real
@@ -48,16 +52,23 @@ multi-track carousel widget would need bespoke instance state the SDK doesn't mo
 `LearningModule` owns the feature end to end: content ingest, daily selection, progress, streaks,
 events.
 
-- **Highlighting at ingest, not at render.** An ingest script (curated/seeded curriculum files,
-  reviewed in-repo per R5 — no scraping) validates each lesson against the shared zod contract,
-  then runs Shiki `codeToTokens` with a light and a dark theme and stores the token arrays alongside
-  the raw source. Rationale: content is written by us and changes rarely; render cost drops to zero
-  (NFR-2), the API stays presentation-light but theme-agnostic (tokens carry both colors), and the
-  client never executes a highlighter. Ingest rejects unknown fields and unsupported languages.
+- **Highlighting at ingest, not at render.** Lessons are **authored files in the learning repo**
+  (`pool/tech/<track>/<seq>-<slug>.md` — see Data model), the same authoring surface as ADR-012's
+  grammar points: writing a lesson is a reviewed commit, editable on github.com (ADR-032: authored
+  content, `proprietary-own` — no open dataset exists, so there is nothing to ingest from outside).
+  A `tools/lesson-ingest` step (sibling of ADR-024's `tools/jmdict-ingest`) validates each lesson
+  against the shared zod contract, runs Shiki `codeToTokens` with a light and a dark theme, and
+  emits a manifest + token shards that the user commits alongside the sources. Rationale: content
+  is written by us and changes rarely; render cost drops to zero (NFR-2), the API stays
+  presentation-light but theme-agnostic (tokens carry both colors), and the client never executes
+  a highlighter. Ingest fails closed: unknown fields, unsupported languages, a missing `license`
+  block (ADR-032), or a palette below AA reject the lesson and the previous shards stand.
 - **Daily deterministic selection = sequential curriculum with day-pinning.** Lessons are ordered
   (`seq`) per track+difficulty. Today's lesson is the lowest-`seq` lesson the user has not
-  completed, **frozen on first request of the calendar day in the user's profile-stored home
-  timezone (ADR-014 / ARD Q1)** by writing the lane's
+  completed, **frozen on first request of the UTC calendar day** (the learning day — the same
+  fixed boundary ADR-011/012 use; no client-supplied date; supersedes this ADR's drafted
+  home-timezone pinning — _PO-review 2026-07-18: one day rule across all learning kinds_)
+  by writing the lane's
   `assignedSeq` + `assignedDate` to `progress/tech.json` (ADR-024's per-kind progress file).
   Repeat fetches return the pinned lesson;
   an unfinished lesson carries over to the next day rather than being skipped. Sequential beats
@@ -79,24 +90,44 @@ events.
   repo's Action upserts it into the Tech deck keyed on the deterministic card id. No new
   infrastructure, high value for a learning widget — deferring it saves almost nothing.
   (ADR-026's two-deck design already specs the Tech mapping; it activates with this
-  widget's content track, pending the ADR-032 sourcing investigation.)
+  widget's content track. The ADR-032 sourcing investigation resolved at its acceptance:
+  tech content is authored — there is no dataset to wait on.)
 
 ### Data model
 
-MongoDB `lesson_content` (owner: `LearningModule`) — **system content, no `userId`** (a documented
-exception to the userId-on-every-document rule of §4.4: this is shared read-only curriculum, served
-only through the API; user state lives in Postgres):
+Learning repo `pool/tech/` (owner: `LearningModule` via ADR-024's read path) — _PO-review
+2026-07-18: the Mongo `lesson_content` collection this ADR drafted is retired unbuilt; with
+grammar already in the repo (ADR-012), this takes Mongo's learning tenancy to zero._ Two layers,
+both committed:
 
+- **Authored source** — `pool/tech/<track>/<seq>-<slug>.md`, YAML front-matter + body:
+
+````markdown
+---
+track: typescript # typescript | sql | java | react
+difficulty: intro # intro | intermediate | advanced — the curriculum lane
+seq: 12 # unique (track, difficulty, seq), enforced by the ingest validator
+title: Mapped types
+tags: [types, generics]
+license: { spdx: proprietary-own, source: command-center } # ADR-032: required, typed
+---
+
+<intro — short explanation>
+
+```ts
+<code — raw source; language from the fence>
 ```
-{
-  _id, track, difficulty, seq,            // unique index (track, difficulty, seq)
-  title, intro,                            // plain strings (validated, length-capped)
-  code: { language, source,                // raw text — for copy & re-highlighting
-          tokens: [[{ text, cLight, cDark, emphasis? }]] },
-  takeaway, tags: [string],
-  source: { attribution?, license? }       // R5: provenance recorded per lesson
-}
-```
+
+<takeaway>
+````
+
+- **Ingest-emitted shards** — `tools/lesson-ingest` validates the sources (zod contract,
+  unknown fields, unsupported languages, duplicate `seq`, missing `license`, sub-AA palette →
+  fail closed), runs Shiki `codeToTokens` with the light and dark themes, and emits the lesson
+  manifest + per-track JSON shards carrying
+  `tokens: [[{ text, cLight, cDark, emphasis? }]]` alongside the raw source (retained for copy
+  and re-highlighting). The user runs the tool and commits the output — same workflow, same
+  SHA-pinned consistency rules as the word pool (ADR-024).
 
 Per-user progress rides ADR-024's per-kind file, `progress/tech.json` (2026-07-17 decision:
 per-kind progress lives in the learning repo), keyed by lane:
@@ -111,7 +142,7 @@ scale (a lost race re-serves the same lesson; it never corrupts).
 REST under `/api/v1/learning` (OpenAPI-decorated; typed client generated into
 `packages/contracts`):
 
-- `GET /lessons/today?track=&difficulty=` → `{ lesson, progress: { seq, total, streak }, previousTitle, stale: boolean }`. Performs the day-pinning described above; `stale: true` when serving fallback content.
+- `GET /lessons/today?track=&difficulty=` → `{ lesson, progress: { seq, total, streak }, previousTitle, stale: boolean }`. Performs the day-pinning described above, reading lessons from ADR-024's SHA-pinned in-memory repo cache; `stale: true` when GitHub is unreachable and the cache serves the last good content (024's serve-stale posture).
 - `POST /lessons/:id/complete` → idempotent (completing an already-completed lesson is a no-op 200); returns updated progress + streak so the client can reconcile.
 - Anki: no lesson-specific contract — the quick action saves a card file via ADR-024's `POST /api/v1/learning/cards/tech`, and ADR-026's Action does the rest.
 
@@ -134,10 +165,10 @@ REST under `/api/v1/learning` (OpenAPI-decorated; typed client generated into
 
 - **Loading:** skeleton mirroring the card layout (kicker, title, code block, footer) inside the
   widget's own suspense boundary.
-- **Error:** per the §2 failure table, Mongo/API trouble degrades to content, not a dead card — the
-  API serves the last-assigned or seeded lesson with `stale: true`, and the widget shows an
-  unobtrusive "offline copy" note. Only if that also fails does the SDK error boundary render the
-  fallback card with retry.
+- **Error:** per the §2 failure table, GitHub/API trouble degrades to content, not a dead card —
+  the API serves the last-assigned lesson from its repo cache with `stale: true`, and the widget
+  shows an unobtrusive "offline copy" note. Only if that also fails does the SDK error boundary
+  render the fallback card with retry.
 - **Mark learned:** optimistic — button flips to done and the streak pill increments via TanStack
   Query `onMutate`; on failure the state rolls back and an inline `role="alert"` message says so
   (house pattern: a silent rollback is a lie to screen-reader users). Idempotent endpoint makes
@@ -155,15 +186,27 @@ REST under `/api/v1/learning` (OpenAPI-decorated; typed client generated into
 - Easier: adding a fifth track is content + one enum value — no new widget code. Streaks,
   automations, and Anki all reuse existing rails, validating the module/event architecture.
 - Easier: zero-runtime highlighting keeps NFR-2 comfortable and the client bundle free of grammars.
+- Easier: writing a lesson is a reviewed commit, editable on github.com — the same authoring
+  surface as grammar (ADR-012), and with this acceptance **Mongo's learning tenancy is zero**:
+  every piece of learning data (pool, grammar, lessons, cards, progress, sync state) lives in the
+  one repo the user owns.
 - Harder: token arrays are denormalized — changing themes/palettes means re-running ingest over all
   lessons (cheap and scripted, but a real step; raw `source` is retained precisely for this).
+- Harder: `tools/lesson-ingest` is a second ingest tool to maintain alongside `jmdict-ingest` —
+  the cost of moving Shiki out of runtime while keeping the repo the store.
 - Harder: curriculum authoring becomes a real content pipeline (ordering, review, licensing notes
-  per R5) — accepted, since content quality is the product here.
-- Committed to: sequential progression (no random daily surprise), per-track widget instances, and
-  the per-lane shape of `progress/tech.json` (ADR-024).
+  per R5/ADR-032) — accepted, since content quality is the product here.
+- Committed to: sequential progression (no random daily surprise), per-track widget instances,
+  the UTC learning day shared with ADR-011/012, and the per-lane shape of `progress/tech.json`
+  (ADR-024).
 
 ## Alternatives considered
 
+- **Keep `lesson_content` in Mongo (the drafted store)** — rejected at acceptance (2026-07-18):
+  after ADR-012/024, tech lessons would have been the only learning data left in Mongo — a split
+  store for no benefit at single-user scale, and a worse authoring surface than files in the repo.
+  The token shards are ingest-emitted artifacts exactly like the word pool's, so the repo handles
+  them the same way.
 - **One multi-track widget with internal tabs/carousel** — rejected: duplicates instance state the
   SDK already provides, gives one shared error boundary and one grid slot for unrelated tracks, and
   muddies per-track streak keys.
