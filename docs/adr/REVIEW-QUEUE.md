@@ -18,7 +18,7 @@ and don't violate the architecture, **not** that they're the decisions the produ
 
 | ADR | Title                          | Review state    | Approved                 |
 | --- | ------------------------------ | --------------- | ------------------------ |
-| 019 | System-design micro-lesson     | claude-reviewed |                          |
+| 019 | System-design micro-lesson     | claude-reviewed | ✓ 2026-07-18             |
 | 020 | RSS feed (headlines, link out) | claude-reviewed | ✓ 2026-07-16 (rewritten) |
 | 021 | Stock & FX watchlist           | claude-reviewed | ✓ 2026-07-16             |
 | 022 | Weather forecast               | claude-reviewed | ✓ 2026-07-16             |
@@ -236,6 +236,16 @@ learning-center v1 slice):
   learning day governs content pacing only (for a Finnish home tz the boundaries nearly coincide).
   Owed ARD §4.4 edit applied: `streak_days` in the ER diagram, `UNIQUE(user_id, widget_id)` +
   `updated_at` on `streaks`, Q1 row updated. Learning batch remaining: 019.
+- 2026-07-18 walkthrough: **ADR-019 accepted** — inherits ADR-013's repo store (authored
+  `pool/system-design/` files; `tools/lesson-ingest` grows the dagre step and emits the diagram
+  IR; the drafted Mongo union left with `lesson_content`) and the UTC learning day. PO decisions:
+  **flowchart-subset IR only in v1** (sequence diagrams when a lesson needs them); **Anki diagrams
+  ship as media in v1** (content-hashed committed PNG + the Action's `sync_media` step — ADR-026
+  amended); **no free-text self-check — saved cards gain optional personal notes instead**, stored
+  in the repo card file and mapped to a new `Notes` field on both note types (ADR-024's card
+  contract + ADR-026's models amended, pre-implementation so no versioning cost). **The learning
+  batch is fully walked through: 011–014, 019, 024–026, 032 decided; only 035 (external-data)
+  remains in the queue.**
 
 Deliberate supersessions to confirm during the walkthrough (they change already-written ADRs):
 

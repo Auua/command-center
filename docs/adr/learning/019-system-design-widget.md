@@ -1,8 +1,11 @@
 # ADR-019: System-design micro-lesson widget
 
-- **Status:** proposed
-- **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Status:** accepted
+- **Date:** 2026-07-14 (amended at acceptance 2026-07-18: lessons follow ADR-013 into the
+  learning repo — `pool/system-design/` authored files, `tools/lesson-ingest` runs dagre and
+  emits the IR; day-pinning flips to the UTC learning day; Anki cards ship the diagram as
+  media in v1; saved cards gain optional personal notes, stored in the repo card file)
+- **Review:** claude-reviewed, PO-reviewed
 
 ## Context
 
@@ -18,8 +21,8 @@ does not work is the diagram: a system-design lesson without a picture is a wall
 - **Content shape diverges.** A code lesson is `{ intro, code, takeaway }`. A system-design lesson is
   `{ scenario, diagram, tradeoffs[], takeaway }` — no snippet, but a topology and an explicit
   tradeoff table (that's the pedagogy: every system-design answer is "it depends, here is on what").
-  Adding it as a track would make `lesson_content` a union with half-empty fields and force the
-  tech-lesson component to branch on content kind — which is exactly the multi-shape widget ADR-013
+  Adding it as a track would force the tech-lesson component to branch on content kind and the shared
+  contract to grow optional-everything fields — which is exactly the multi-shape widget ADR-013
   rejected when it turned down the multi-track carousel.
 - **Diagram rendering is a security decision.** §5.2 bans injecting stored/remote markup
   (`dangerouslySetInnerHTML`), and ADR-013 reaffirmed it for lesson content. Mermaid renders by
@@ -57,20 +60,27 @@ the same `LearningModule` backend, **not** a new track of `tech-lesson`.
 `LearningModule` (§4.1) gains a system-design content kind and a second controller surface; no new
 module, no cross-module import.
 
-- **Layout at ingest, not at render.** Lessons are authored in-repo as a small mermaid-flavoured
-  flowchart subset (`A[Client] --> B(Load balancer)`); the ingest script parses it, runs **dagre**
-  (pure JS — deliberately no headless-browser/mermaid-CLI step, so ingest stays runnable in CI) and
-  stores the resulting coordinate IR alongside the source. Same rationale as ADR-013's Shiki tokens:
-  content is ours and changes rarely, so render cost is zero (NFR-2), the client executes no renderer,
-  and nothing untrusted ever becomes markup.
+- **Layout at ingest, not at render.** Lessons are **authored files in the learning repo** —
+  `pool/system-design/<seq>-<slug>.md` (front-matter: area, depth, seq, title, tags, and ADR-032's
+  required typed `license` block, `proprietary-own`; body: scenario, diagram source, tradeoffs,
+  self-check, takeaway), following ADR-013's `pool/tech/` at its acceptance. The diagram is a small
+  mermaid-flavoured flowchart subset (`A[Client] --> B(Load balancer)`); `tools/lesson-ingest`
+  (ADR-013's tool, grown a diagram step) parses it, runs **dagre** (pure JS — deliberately no
+  headless-browser/mermaid-CLI step, so ingest stays runnable anywhere) and emits the coordinate IR
+  into the committed shards alongside the source. Same rationale as ADR-013's Shiki tokens: content
+  is ours and changes rarely, so render cost is zero (NFR-2), the client executes no renderer, and
+  nothing untrusted ever becomes markup. _(PO-review 2026-07-18: v1 supports the flowchart subset
+  only — a sequence-diagram IR is added when a lesson actually needs one, not speculatively.)_
 - **`altText` is a required field.** Ingest rejects a diagram without a human-authored one-sentence
   alt text; it also derives a structured node/edge outline for the hidden equivalent (below). A
   picture without a text equivalent cannot enter the collection — the validator enforces NFR-11 at
   the pipeline, not at review time.
 - **Selection reuses ADR-013 verbatim:** lowest unseen `seq` in the chosen area/depth lane, frozen on
-  the first request of the user's local calendar day (home IANA tz, ADR-014 / ARD Q1) into the
+  the first request of the **UTC calendar day** (the learning day, ADR-011/012/013 as accepted —
+  supersedes this draft's home-timezone pinning) into the
   lane's entry in `progress/system-design.json` (ADR-024's per-kind progress file). Same
-  day-pinning, same carry-over of an unfinished lesson.
+  day-pinning, same carry-over of an unfinished lesson. Streaks credit the home-tz day per ADR-014 —
+  pacing and crediting are deliberately different clocks.
 - **Completion emits `lesson.completed { userId, track: 'system-design', lessonId }`** on the event
   bus; ADR-014's StreaksService credits `streaks.widget_id = 'system-design'`. No inline streak write.
 - **"Add to Anki" is a repo write (ADR-024/026):** the quick action saves a card file (with
@@ -79,37 +89,45 @@ module, no cross-module import.
   exact id rather than a content hash. There is no Anki queue endpoint (ADR-011's
   `/api/v1/japanese/anki/queue` and the first ADR-026 draft's `/api/v1/anki/queue` are both
   superseded). A system-design lesson lands in the **Tech** deck (ADR-026): front = the self-check
-  question, back = takeaway + the tradeoff lines as text. Diagrams are **not** shipped to Anki in v1
-  (media rides Anki's separate media sync, `sync_media`; text cards are the 80 % value) — recorded
-  as an open question below.
+  question, back = takeaway + the tradeoff lines as text, **plus the diagram as an image**
+  (_PO-review 2026-07-18: diagrams **ship as media in v1**_): `tools/lesson-ingest` renders the
+  laid-out IR to a committed image file, `media/sd-<lessonId>-<contentHash>.png` — the content
+  hash in the filename is the cache-buster, so a re-laid-out diagram is a new file and a clean
+  re-upload — and the learning repo's Action gains the **media-sync step** (`sync_media`, same
+  pinned `anki` library and R2 posture as the note sync; a note-synced-but-media-failed run is a
+  red run, fixed by rerunning). The card back references the image by filename.
+- **Saved cards can carry personal notes** (_PO-review 2026-07-18, replacing the drafted free-text
+  self-check question — see Open questions_): the quick action offers an optional notes input;
+  ADR-024's shared card contract (`POST /cards/:kind`) gains an optional `notes` field, stored in
+  the card file and mapped by every kind formatter onto a **Notes** field on ADR-026's note types
+  (an additive change on the versioned models — non-destructive, like recall cards). Notes are
+  durable, editable in the repo like any card content, and apply to **all card kinds**, not just
+  system-design.
 
 ### Data model
 
-MongoDB `lesson_content` (owner: `LearningModule`), extended to a **discriminated union on `kind`** —
-the same "one collection, discriminated docs" call ADR-012 originally made for grammar inside
-`jp_content` (grammar has since moved to authored repo files — ADR-012 as accepted — but the
-discriminated-union reasoning still holds for `lesson_content`), rather than a new collection:
+Learning repo `pool/system-design/` (owner: `LearningModule` via ADR-024's read path) — _amended
+at acceptance: the drafted Mongo `lesson_content` discriminated union followed ADR-013's store out
+of the architecture; with `lesson_content` retired unbuilt there is no collection to discriminate,
+just a sibling pool directory served through the same SHA-pinned cache._ Two committed layers,
+mirroring ADR-013:
 
-```
-{ _id, kind: "system-design", area, depth, seq,      // unique index (kind, area, depth, seq)
-  title, scenario,                                    // plain strings, length-capped
-  diagram: { source,                                  // authored flowchart text (re-layout source)
-             altText,                                 // REQUIRED, human-written
-             nodes: [{ id, label, shape, x, y, w, h }],
-             edges: [{ from, to, label?, points: [[x,y]], dashed? }],
-             outline: [{ from, to, label? }] },       // derived; feeds the hidden text equivalent
-  tradeoffs: [{ choice, pro, con }],                  // 2–4 rows; the actual lesson
-  selfCheck: { question, answer },
-  takeaway, tags: [string],
-  source: { attribution?, license? } }                // R5 provenance, per lesson
-```
+- **Authored source** — `pool/system-design/<seq>-<slug>.md`: front-matter (`area`, `depth`, `seq`
+  — unique per lane, enforced by the ingest validator — `title`, `tags`, required `license` block)
+  and a body carrying `scenario`, the flowchart-subset `diagram.source`, the **required
+  human-written `altText`**, 2–4 `tradeoffs` rows (`choice` / `pro` / `con` — the actual lesson),
+  `selfCheck` (`question` / `answer`), and `takeaway`.
+- **Ingest-emitted shards** — `tools/lesson-ingest` validates fail-closed (a diagram without
+  `altText`, an unparseable flowchart, a sub-AA palette, a missing `license` block, a duplicate
+  `seq` all reject the lesson and the previous shards stand), runs dagre, and emits per-lesson
+  `diagram.nodes` (`id, label, shape, x, y, w, h`), `diagram.edges` (`from, to, label?, points,
+dashed?`), and the derived `diagram.outline` (`from, to, label?` — feeds the hidden text
+  equivalent), plus the rendered `media/sd-<lessonId>-<contentHash>.png` for Anki (above).
 
-System content carries **no `userId`** — the documented §4.4 exception ADR-013 already took for
-shared read-only curriculum. User state rides ADR-024's per-kind progress file —
-`progress/system-design.json`, the same per-lane shape as ADR-013's `progress/tech.json`, with
-lanes keyed `area:depth`. Reusing the shape (rather than inventing a parallel one) is what keeps
-progress and the future "learning overview" uniform; streaks stay in Postgres, credited via
-events (ADR-014).
+User state rides ADR-024's per-kind progress file — `progress/system-design.json`, the same
+per-lane shape as ADR-013's `progress/tech.json`, with lanes keyed `area:depth`. Reusing the shape
+(rather than inventing a parallel one) is what keeps progress and the future "learning overview"
+uniform; streaks stay in Postgres, credited via events (ADR-014).
 
 ### API contract
 
@@ -124,9 +142,9 @@ Under `/api/v1/learning`, zod schemas in `packages/contracts` (ADR-004/007), rej
   and ADR-026's Action does the rest. This widget adds no Anki surface of its own.
 
 Error semantics match the house rules: request-shape violations are 400 (ZodError via the global
-filter); a stored doc that fails the contract is a 500 (corrupt content), never a client ZodError;
-missing/foreign ids are uniform 404s. Content-source trouble degrades to `stale: true` with the last
-pinned lesson rather than an error (ARD §2 failure posture).
+filter); a stored shard that fails the contract is a 500 (corrupt content), never a client ZodError;
+missing/foreign ids are uniform 404s. GitHub trouble degrades to `stale: true` with the last
+pinned lesson from ADR-024's cache rather than an error (ARD §2 failure posture).
 
 ### Accessibility
 
@@ -155,8 +173,9 @@ pinned lesson rather than an error (ARD §2 failure posture).
 - **Empty / lane complete:** when every lesson in the area+depth lane is done, the card shows
   "Scaling · intro — all 24 done" pointing at the settings panel, signalled explicitly by the API
   (`lesson: null`), never a 404 or an empty skeleton (ADR-013's rule).
-- **Error:** Mongo/API trouble serves the last pinned lesson with `stale: true` and an unobtrusive
-  "offline copy" note; only a hard failure falls through to the SDK error-boundary fallback card.
+- **Error:** GitHub/API trouble serves the last pinned lesson from the repo cache with `stale: true`
+  and an unobtrusive "offline copy" note; only a hard failure falls through to the SDK
+  error-boundary fallback card.
 - **Mark learned:** optimistic — the button flips and the streak pill increments in `onMutate`; a
   failure rolls back **and** shows an inline `role="alert"` (a silent rollback is a lie to
   screen-reader users — house pattern from ADR-013).
@@ -174,15 +193,30 @@ pinned lesson rather than an error (ARD §2 failure posture).
 - **Harder:** we now own a diagram authoring pipeline (flowchart subset → dagre → IR) and its
   regression risk — a layout-engine upgrade can move every diagram. Retaining `diagram.source` means
   re-layout is a scripted re-ingest, not a rewrite.
-- **Harder:** the laid-out IR is denormalized. Editing a lesson's topology means re-running ingest for
-  that document; hand-editing coordinates in Mongo is explicitly not a workflow.
-- **Committed to:** required `altText` (no picture without words), the shared `lesson_content`
-  collection with a `kind` discriminator, and per-area widget instances.
+- **Harder:** the laid-out IR is denormalized. Editing a lesson's topology means re-running ingest
+  for that lesson; hand-editing coordinates in the shards is explicitly not a workflow.
+- **Harder:** the Action owns the media-sync step — a second protocol surface on the pinned `anki`
+  library (R2's drift posture covers it: a failed media upload is a red run within a day), and a
+  re-laid-out diagram is a re-rendered, re-uploaded image (the content-hash filename makes that
+  clean).
+- **Committed to:** required `altText` (no picture without words), lessons as authored
+  `pool/system-design/` files served through ADR-024's cache, per-area widget instances, and
+  optional personal notes on saved cards (repo-stored, all card kinds).
 - **Open questions for the product owner:** (1) is the dagre-laid-out mermaid subset expressive enough, or do the
-  first ten lessons need sequence diagrams too (a second IR shape)? (2) Should "Add to Anki" ship the
-  diagram as media (Anki's media sync, `sync_media` — ADR-026), or is a text-only card enough? (3) Does the
+  first ten lessons need sequence diagrams too (a second IR shape)?
+  -> _PO-review (2026-07-18):_ flowchart subset only in v1 — the curriculum is authored to what
+  the IR supports; a sequence-diagram IR is added when a lesson needs it, not speculatively.
+  (2) Should "Add to Anki" ship the
+  diagram as media (Anki's media sync, `sync_media` — ADR-026), or is a text-only card enough?
+  -> _PO-review (2026-07-18):_ **media ships in v1** — ingest renders the IR to a committed
+  content-hashed PNG and the Action gains the media-sync step; the card back shows the topology
+  from day one (mechanics in Backend above).
+  (3) Does the
   self-check want a free-text "explain it back" field — valuable pedagogically, but it is journal-shaped
-  private content and would drag a Mongo write into an otherwise read-only widget.
+  private content and would drag a write into an otherwise read-only widget.
+  -> _PO-review (2026-07-18):_ no free-text field on the self-check; instead **saved cards accept
+  optional personal notes, stored in the repo card file** and mapped to a Notes field on the
+  note types — durable, editable on github.com, and applicable to every card kind.
 
 ## Alternatives considered
 
@@ -203,8 +237,10 @@ pinned lesson rather than an error (ARD §2 failure posture).
   costs one ingest step and keeps all three.
 - **Author diagrams as ASCII art in a `<pre>`** — genuinely injection-proof and zero-pipeline. Rejected:
   it's illegible at phone widths, unreadable to screen readers as a graph, and unstylable.
-- **Its own Mongo collection (`system_design_content`)** — rejected for the same reason ADR-012's
-  draft kept grammar in `jp_content`: a needless split of one owner's content, doubling indexes and ingest wiring
-  for documents that share a lifecycle. `kind` discriminates; the unique index carries the rest.
+- **Mongo storage at all (the drafted `lesson_content` union, or its own `system_design_content`
+  collection)** — the draft argued only about _which_ Mongo shape; both left with ADR-013's
+  acceptance. Tech and system-design lessons share the repo pool, the ingest tool, and the
+  SHA-pinned read path — the "one owner, one lifecycle" argument that favoured the union now
+  favours one pool with sibling directories.
 - **Random/shuffled daily topic** — rejected for the same pedagogic reason as ADR-013: caching before
   consistency, load balancing before sharding. Sequence is the curriculum.

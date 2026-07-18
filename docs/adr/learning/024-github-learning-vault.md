@@ -169,12 +169,15 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
   the wrong word).
 - `POST /wotd/skip` `{ itemId }` → the same shape with the replacement word — same 409
   guard; adds the pick to `skipped`, pins the next eligible pick (one commit).
-- `POST /cards/:kind` `{ itemId, date? }` → `{ cardId, path, htmlUrl, alreadyExisted }` —
+- `POST /cards/:kind` `{ itemId, date?, notes? }` → `{ cardId, path, htmlUrl, alreadyExisted }` —
   **one request contract for every card source; the path carries the kind**
   (`japanese-wotd` in v1; `grammar`, `tech`, `system-design` land with their widgets). A
   server-side formatter per kind resolves `itemId` against that kind's content source and
   derives the card id, deck, and `fields` — the client never sends card content, and a new
-  source is a formatter registration, not a contract change. Writes the card file with
+  source is a formatter registration, not a contract change. `notes` (optional, ADR-019's
+  acceptance 2026-07-18) is the one user-authored exception: a personal note stored in the
+  card file and mapped to the note types' `Notes` field (ADR-026) — durable and editable in
+  the repo like everything else. Writes the card file with
   `anki: true`; the commit is what triggers Anki sync (ADR-026).
 - `GET /anki-status` → composed from `sync/state.json` + a commits count (ADR-026).
 
