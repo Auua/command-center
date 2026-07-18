@@ -141,7 +141,11 @@ new model and never a destructive migration of the user's existing notes:
 | `Meaning`                             | `Code` (pre-formatted, in `<pre>`) |
 | `Example`, `ExampleEn`                | `Language`                         |
 | `Source`                              | `SourceUrl`                        |
+| `Notes` — optional personal note      | `Notes` — optional personal note   |
 | `CardId`                              | `CardId`                           |
+
+(`Notes` added at ADR-019's acceptance, 2026-07-18, before any model shipped: the card
+contract's optional `notes` — ADR-024 — renders on the card back when present.)
 
 Identity is double-anchored, both anchors ours to set (the library, unlike AnkiConnect,
 exposes both), and **deterministic from the content source** — `jp-<JMdict ent_seq>`, not a
@@ -294,8 +298,13 @@ authenticated as the account owner, at personal-use volume. The previous draft's
   batch). ARD edits owed on approval: §4.5's Anki paragraph, the container diagram and
   failure-mode row, the AnkiConnect CORS row, R2, Phase 3's "queue-and-flush", and §4.3's
   `anki_snapshots` row (deleted, not moved).
-- **Media** (images/audio, e.g. ADR-019's diagrams) stays out of v1; when wanted it is one
-  more call in the same run (`col.sync_media`), not a new architecture.
+- **Media** (images/audio): amended at ADR-019's acceptance (2026-07-18) — system-design
+  diagrams **ship as media in v1**. As anticipated, it is one more call in the same run
+  (`col.sync_media`), not a new architecture: the image is a committed, content-hashed file
+  in the learning repo (`media/sd-<lessonId>-<contentHash>.png`, rendered by
+  `tools/lesson-ingest`), the card back references it by filename, and a
+  note-synced-but-media-failed run is a red run like any other. The hash-named file makes a
+  re-laid-out diagram a clean re-upload, never a cache fight.
 - **Open questions — resolved at the 2026-07-17 walkthrough:** (1) recall cards **off by
   default** — recognition only; enabling later is a non-destructive template addition on
   the versioned note type. (2) Deck names **literally `Japanese` and `Tech`** (top-level,
