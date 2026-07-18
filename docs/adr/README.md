@@ -45,3 +45,4 @@ summary rows in [`docs/ADR.md` §7](../ADR.md) only.
 | 036 | [Recurring tasks (and their projection onto the calendar)](productivity/036-recurring-tasks.md)                                    | productivity  | accepted |
 | 037 | [Google Calendar sync (per-calendar read-only and read-write)](productivity/037-google-calendar-sync.md)                           | productivity  | accepted |
 | 038 | [Nutrition widget (food log, personal food library, calorie tracking)](lifestyle/038-nutrition-widget.md)                          | lifestyle     | accepted |
+| 039 | [Automation delivery — inline tick behind an external pinger (MVP)](productivity/039-automation-delivery-pinger.md)                | productivity  | proposed |
