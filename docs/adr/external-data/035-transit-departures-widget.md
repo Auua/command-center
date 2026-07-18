@@ -2,7 +2,7 @@
 
 - **Status:** proposed
 - **Date:** 2026-07-14
-- **Review:** claude-reviewed — pending product-owner approval
+- **Review:** claude-reviewed — PO-reviewed 2026-07-18, **parked** (deliberately not accepted or rejected)
 
 ## Context
 
@@ -13,6 +13,13 @@ Every other widget answers a question that is true all day — what are my tasks
 how did I feel this week. A departures board answers "should I put my shoes on **now**", and on a personal
 dashboard in Helsinki that is plausibly the single most-looked-at number of the morning. It sits in the same
 quadrant as the weather card (ADR-022): ambient, glanceable, home-shaped, not something the user authors.
+
+_PO-review (2026-07-18):_ **parked.** The widget's own third open question answered honestly: a phone map
+app covers the moment of need well enough today. This ADR is deliberately left proposed rather than
+rejected — the provider choice, the three-condition polling exception, and the no-"leave now"-push rule
+all stay valid if the morning-glance value ever proves real. Provisional answers to the open questions
+were recorded below so a future pass doesn't start cold; the widget reopens only on the product owner's
+ask.
 
 Forces, and they cut against the established patterns in interesting ways:
 
@@ -89,8 +96,9 @@ cache-aside shape is right — but with a much shorter TTL and one extra guard.
 ### Data model
 
 Postgres `transit_departures` — **shared, not user-scoped**: the fourth instance of the documented
-public-cached-data exception (ADR-013's curriculum, ADR-021's `market_quotes`, ADR-022's `weather_cache`,
-ADR-033's `public_holidays`). No RLS needed; the client never reads it, only `TransitModule` does.
+public-cached-data exception (ADR-021's `market_quotes`, ADR-022's `weather_cache`, ADR-033's
+`public_holidays`; ADR-013's curriculum was once the fourth but moved to the learning repo at its
+acceptance). No RLS needed; the client never reads it, only `TransitModule` does.
 
 ```sql
 create table transit_departures (
@@ -174,8 +182,11 @@ departures with `stale: true` and its `fetchedAt`, and the UI is required to sho
 - **Stale / upstream down:** last departures stay with "as of 08:37 · couldn't refresh"; countdowns degrade to
   absolute times (above).
 - **Attribution:** a persistent card footer — **"© Digitransit · data retrieved 08:41"** — satisfying CC BY 4.0
-  and being genuinely useful at the same time. Same slot as ADR-021's "not investment advice" line and
-  ADR-032's JMdict line; this is now an established piece of card furniture.
+  and being genuinely useful at the same time. Same slot as ADR-021's "not investment advice" line. (ADR-032's
+  JMdict footer, once the other precedent, was withdrawn at its acceptance on private-deployment grounds — but
+  this line survives the same review: the retrieval timestamp is required staleness UI anyway, so obligation
+  and utility remain the same line of text. -> _PO-review:_ confirmed at the 2026-07-18 parking — the on-card
+  line stays in the design.)
 - **Privacy:** the provider is called server-to-server and never sees the user's browser, IP, or session
   (ADR-022's argument, reused); the cache holds no user id; the stop id lives in the user's own widget settings.
 
@@ -199,11 +210,15 @@ departures with `stale: true` and its `fetchedAt`, and the UI is required to sho
   (we store no OSM-derived geometry — only stop ids, names and times, which are the CC BY 4.0 half). If the
   widget ever renders a map or a route geometry, **ODbL attaches** and that is a new decision.
 - **Open questions for the product owner:** (1) Is one home stop enough, or do you want a home/work pair (the cap is 3)?
-  (2) `walkMinutes` — should the card show "leave in 2 min" (walk-adjusted) as the primary number, which is
-  the genuinely useful framing, or the raw departure time? (3) Is a departures board actually something you
+  -> _PO-review (provisional, 2026-07-18):_ a **home + work pair** — both commute directions covered; the
+  cap stays 3. (2) `walkMinutes` — should the card show "leave in 2 min" (walk-adjusted) as the primary number, which is
+  the genuinely useful framing, or the raw departure time? -> _PO-review (provisional, 2026-07-18):_
+  **walk-adjusted "leave in X min"** is the primary number when `walkMinutes > 0` (with the default 0 it
+  equals the raw countdown); the stale degrade to absolute times is unchanged. (3) Is a departures board actually something you
   want on the dashboard, or is it something your phone's map app already does better at the moment you need it?
   That is a real question and a "no" here is a perfectly good answer — this is the most speculative ADR in the
-  batch.
+  batch. -> _PO-review (2026-07-18):_ the honest "no for now" — **the whole widget is parked**; the phone
+  covers the moment of need. This question is the one that reopens the ADR.
 
 ## Alternatives considered
 
