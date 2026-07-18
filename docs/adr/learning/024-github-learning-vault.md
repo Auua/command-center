@@ -88,9 +88,11 @@ is a reviewed commit, per ADR-032's stance. The manifest's attribution block car
 source × release attribution rows (licence, credit line, URL), rendered in the widget's
 about panel (ADR-032 as accepted: no persistent card footer while the deployment is
 private; the line ships in the API so a public deployment can flip it on).
-**Tech lesson content is deferred** — no open-licensed
-dataset exists; sourcing (APIs, datasets, scraping with ToS/licence assessment) is an open
-investigation recorded in ADR-032.
+**Tech lesson content is authored** — the sourcing
+investigation closed with ADR-032 (no open-licensed dataset exists) and ADR-013's acceptance
+(2026-07-18) put the lessons in this repo too: authored `pool/tech/<track>/` files with Shiki
+token shards emitted by `tools/lesson-ingest`, the same author-validate-commit workflow as the
+word pool.
 
 ### API access, caching, and the read path
 
