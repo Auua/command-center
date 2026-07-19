@@ -81,6 +81,24 @@ export default tseslint.config(
     },
   },
 
+  // 3.5. Plain-JS files (the hand-rolled service worker, one-off scripts):
+  // annotation-based TS requirements can't be met without TS syntax.
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+    },
+  },
+
+  // 3.6. The service worker runs in a worker scope, not a window.
+  {
+    files: ['**/public/sw.js'],
+    languageOptions: {
+      globals: globals.serviceworker,
+    },
+  },
+
   // 4. Type-aware parsing for TS files: projectService resolves each file
   // against its own package's tsconfig (a single shared `project` path can't
   // cover a monorepo). Scoped to TS so plain-JS config files need no tsconfig.
