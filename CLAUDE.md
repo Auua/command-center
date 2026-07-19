@@ -14,6 +14,8 @@ Phase 0 (skeleton) is done and Phase 1 is underway: pnpm + Turborepo monorepo wi
 
 Data split so far: braindump is MongoDB-backed (`braindump_notes` collection); widget layouts, tasks, and mood check-ins are Supabase Postgres (`supabase/migrations/0001`–`0003`, applied manually via the SQL editor). Each API domain module lives under `apps/api/src/<module>`, each widget under `apps/web/widgets/<name>` and is registered in `apps/web/widgets/registry.ts`.
 
+Phase 2 frontend foundations landed: `WidgetCard` renders manifest-declared `quickActions` as header buttons wired to a quick-action context (`useQuickAction` / `useQuickActionDispatch` in `@command-center/ui`), and user-facing copy routes through the minimal typed i18n catalog `apps/web/lib/i18n` (`t()` + `messages.en.ts`, NFR-12/D6).
+
 ## Commands (run from repo root)
 
 - `pnpm install` — install workspace deps
