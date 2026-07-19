@@ -18,6 +18,9 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 
 export const E2E_TOKEN_PREFIX = 'e2e-token:';
 
+/** Tick-route shared secret the e2e app boots with (≥ 32 chars, env contract). */
+export const E2E_TICK_SECRET = 'e2e-tick-secret-0123456789abcdef0123456789abcdef';
+
 /** Bearer token the fake verifier will accept for the given user id. */
 export function tokenFor(userId: string): string {
   return `${E2E_TOKEN_PREFIX}${userId}`;
@@ -48,6 +51,13 @@ export async function createE2eApp(): Promise<E2eContext> {
   process.env.SUPABASE_PUBLISHABLE_KEY = 'e2e-placeholder-anon-key';
   process.env.MONGODB_CONNECT = mongo.getUri();
   process.env.CORS_ORIGIN = 'http://localhost:3000';
+  // Phase 2 (ADR-039) — placeholders only: e2e never reaches Supabase with
+  // the service-role key and never sends a real push.
+  process.env.SUPABASE_SECRET_KEY = 'e2e-placeholder-secret-key';
+  process.env.TICK_SECRET = E2E_TICK_SECRET;
+  process.env.VAPID_PUBLIC_KEY = 'e2e-placeholder-vapid-public';
+  process.env.VAPID_PRIVATE_KEY = 'e2e-placeholder-vapid-private';
+  process.env.VAPID_SUBJECT = 'mailto:e2e@example.com';
 
   // Load after env setup so nothing captures a half-configured process.env.
   // Deferred require() rather than import(): under module=nodenext, tsc keeps
