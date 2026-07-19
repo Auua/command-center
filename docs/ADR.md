@@ -334,7 +334,7 @@ sequenceDiagram
         B->>A: GET /api/v1/japanese/wotd
         B->>A: GET /api/v1/mood/today
     end
-    Note over B: each widget hydrates independently;<br/>one failing endpoint = one fallback card
+    Note over B: each widget hydrates independently —<br/>one failing endpoint = one fallback card
 ```
 
 **Automation fires (time-based reminder):**
