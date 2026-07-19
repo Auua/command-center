@@ -25,4 +25,9 @@ export const DEFAULT_LAYOUT: WidgetLayoutItem[] = [
     gridPos: { x: 4, y: 0, w: 2, h: 2 },
     settings: {},
   },
+  {
+    widgetId: 'reminders',
+    gridPos: { x: 2, y: 2, w: 4, h: 2 },
+    settings: {},
+  },
 ];
