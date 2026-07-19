@@ -5,6 +5,7 @@ import type { ComponentType, CSSProperties, ReactElement } from 'react';
 import type { WidgetLayoutItem } from '@command-center/contracts';
 import { WidgetCard, WidgetErrorBoundary, type WidgetProps } from '@command-center/ui';
 import { fetchLayout } from '@/lib/layout-api';
+import { t } from '@/lib/i18n';
 import { DEFAULT_LAYOUT } from '@/widgets/default-layout';
 import { widgetRegistry } from '@/widgets/registry';
 
@@ -33,10 +34,7 @@ function DashboardWidget({ item }: { item: WidgetLayoutItem }): ReactElement {
   if (!definition) {
     return (
       <WidgetCard title={item.widgetId}>
-        <p className="cc-widget-placeholder">
-          Unknown widget &ldquo;{item.widgetId}&rdquo;. It may have been removed or not registered
-          yet.
-        </p>
+        <p className="cc-widget-placeholder">{t('shell.unknownWidget', { id: item.widgetId })}</p>
       </WidgetCard>
     );
   }
@@ -52,7 +50,12 @@ function DashboardWidget({ item }: { item: WidgetLayoutItem }): ReactElement {
 
   return (
     <WidgetErrorBoundary widgetTitle={definition.title}>
-      <WidgetCard title={definition.title} icon={definition.icon} accent={definition.accent}>
+      <WidgetCard
+        title={definition.title}
+        icon={definition.icon}
+        accent={definition.accent}
+        quickActions={definition.quickActions}
+      >
         <Widget settings={settings} size={{ w: item.gridPos.w, h: item.gridPos.h }} />
       </WidgetCard>
     </WidgetErrorBoundary>
@@ -68,7 +71,7 @@ export function DashboardGrid(): ReactElement {
   if (isPending) {
     return (
       <p className="cc-status" role="status">
-        Loading dashboard…
+        {t('shell.loadingDashboard')}
       </p>
     );
   }

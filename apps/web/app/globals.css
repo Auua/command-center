@@ -307,6 +307,43 @@ p {
   color: var(--cc-text-faint);
 }
 
+/* Header quick actions (ADR §4.2 widget chrome): compact accent-tinted
+   buttons pushed to the card's right edge. Global reduced-motion kill
+   switch (top of file) already disables the hover transition. */
+.cc-widget-card-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cc-widget-card-action {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--cc-border);
+  border-radius: 9px;
+  background: var(--cc-bg-inset);
+  color: var(--cc-text-muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.cc-widget-card-action:hover {
+  background: color-mix(in srgb, var(--cc-wc) 14%, var(--cc-bg-raised));
+  color: var(--cc-wc);
+}
+
 .cc-widget-card-body {
   flex: 1;
   min-height: 0;
