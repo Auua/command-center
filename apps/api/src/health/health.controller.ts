@@ -13,7 +13,7 @@ export class HealthController {
 
   @Public()
   @Get()
-  getHealth(): HealthResponse {
+  getHealth(): Promise<HealthResponse> {
     return this.healthService.getHealth();
   }
 }
