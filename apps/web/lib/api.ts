@@ -1,6 +1,19 @@
 import { getApiUrl } from '@/lib/env';
 import { createClient } from '@/lib/supabase/client';
 
+/** Non-2xx API response, with the status attached for callers that branch
+ * on it (e.g. profile 404 → "no profile yet"). Still an Error, so existing
+ * catch-all error states keep working unchanged. */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(path: string, status: number) {
+    super(`API request ${path} failed with status ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 /**
  * Authenticated fetch against the NestJS API (ADR §3.1: all domain traffic
  * goes through /api/v1 with the Supabase access token as Bearer auth).
@@ -32,7 +45,7 @@ export async function apiFetch(
   });
 
   if (!response.ok) {
-    throw new Error(`API request ${path} failed with status ${response.status}`);
+    throw new ApiError(path, response.status);
   }
 
   return response;

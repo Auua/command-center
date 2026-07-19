@@ -26,3 +26,12 @@ export function getSupabaseAnonKey(): string {
 export function getApiUrl(): string {
   return required('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL);
 }
+
+/**
+ * Web Push VAPID public key (the API holds the private half). Only read
+ * inside lib/push.ts subscription paths, which surface a missing value as a
+ * handled result — never call at module top level.
+ */
+export function getVapidPublicKey(): string {
+  return required('NEXT_PUBLIC_VAPID_PUBLIC_KEY', process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
+}

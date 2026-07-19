@@ -19,11 +19,12 @@ Secrets never live in the repo (ADR §5.2). Local dev needs two gitignored files
 
 ### `apps/web/.env.local` (Next.js)
 
-| Variable                               | Value                                            |
-| -------------------------------------- | ------------------------------------------------ |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Project URL, e.g. `https://abcd1234.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | anon / public key                                |
-| `NEXT_PUBLIC_API_URL`                  | `http://localhost:3001`                          |
+| Variable                               | Value                                                    |
+| -------------------------------------- | -------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Project URL, e.g. `https://abcd1234.supabase.co`         |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | anon / public key                                        |
+| `NEXT_PUBLIC_API_URL`                  | `http://localhost:3001`                                  |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Web Push VAPID **public** key (same pair as the API, §3) |
 
 ### `apps/api/.env` (NestJS API + worker)
 
