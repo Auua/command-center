@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: securityHeaders,
       },
+      {
+        // The classic stale-service-worker footgun: a cached sw.js pins
+        // users to an old worker. Always revalidate (Phase 2 plan §2).
+        source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
+      },
     ];
   },
 };

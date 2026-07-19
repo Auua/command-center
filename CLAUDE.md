@@ -14,7 +14,7 @@ Phase 0 (skeleton) is done and Phase 1 is underway: pnpm + Turborepo monorepo wi
 
 Data split so far: braindump is MongoDB-backed (`braindump_notes` collection); widget layouts, tasks, and mood check-ins are Supabase Postgres (`supabase/migrations/0001`–`0003`, applied manually via the SQL editor). Each API domain module lives under `apps/api/src/<module>`, each widget under `apps/web/widgets/<name>` and is registered in `apps/web/widgets/registry.ts`.
 
-Phase 2 frontend foundations landed: `WidgetCard` renders manifest-declared `quickActions` as header buttons wired to a quick-action context (`useQuickAction` / `useQuickActionDispatch` in `@command-center/ui`), and user-facing copy routes through the minimal typed i18n catalog `apps/web/lib/i18n` (`t()` + `messages.en.ts`, NFR-12/D6).
+Phase 2 frontend foundations landed: `WidgetCard` renders manifest-declared `quickActions` as header buttons wired to a quick-action context (`useQuickAction` / `useQuickActionDispatch` in `@command-center/ui`), and user-facing copy routes through the minimal typed i18n catalog `apps/web/lib/i18n` (`t()` + `messages.en.ts`, NFR-12/D6). The web app is an installable PWA: typed `app/manifest.ts`, generated icons (`apps/web/scripts/generate-icons.mjs` → `public/icons/*`, `app/apple-icon.png`), a hand-rolled push-only `public/sw.js` (no fetch handler — offline is a non-goal; served `Cache-Control: no-store`), `components/pwa-register.tsx`, and client guards in `apps/web/lib/pwa.ts` + `use-install-prompt.ts` (install prompt never auto-fired). `/sw.js` and `/manifest.webmanifest` are excluded from the auth middleware matcher.
 
 ## Commands (run from repo root)
 
