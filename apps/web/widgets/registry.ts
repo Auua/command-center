@@ -2,6 +2,7 @@ import { WidgetRegistry } from '@command-center/ui';
 import { braindumpWidgetDefinition } from './braindump';
 import { clockWidgetDefinition } from './clock';
 import { moodWidgetDefinition } from './mood';
+import { remindersWidgetDefinition } from './reminders';
 import { tasksWidgetDefinition } from './tasks';
 
 /**
@@ -13,4 +14,5 @@ export const widgetRegistry = new WidgetRegistry();
 widgetRegistry.register(braindumpWidgetDefinition);
 widgetRegistry.register(clockWidgetDefinition);
 widgetRegistry.register(moodWidgetDefinition);
+widgetRegistry.register(remindersWidgetDefinition);
 widgetRegistry.register(tasksWidgetDefinition);
