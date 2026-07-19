@@ -34,9 +34,13 @@ needs `E2E_EMAIL`/`E2E_PASSWORD` and a running API).
 ## Current state
 
 Phase 0 (monorepo, CI, auth end-to-end, dashboard shell + widget registry) is
-done and Phase 1 is underway. Widgets so far: clock, braindump, tasks, mood.
-Braindump is the first MongoDB-backed module; tasks and mood live in Supabase
-Postgres (`supabase/migrations/`). See ADR §9 for Phases 1–4.
+done, Phase 1 is underway, and the Phase 2 automations backend has landed
+(ADR-039: reminders fired by an inline scheduler tick behind an external
+pinger — no worker process, no queue; Web Push + in-app notification bell).
+Widgets so far: clock, braindump, tasks, mood. Braindump is the first
+MongoDB-backed module; everything else lives in Supabase Postgres
+(`supabase/migrations/`). One-time Phase 2 external setup:
+[docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md). See ADR §9 for Phases 1–4.
 
 Design decisions are recorded as ADRs under `docs/adr/` in domain subfolders
 (foundation / productivity / reflection / learning / external-data / lifestyle),

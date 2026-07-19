@@ -42,7 +42,16 @@ export interface E2eContext {
   close: () => Promise<void>;
 }
 
-export async function createE2eApp(): Promise<E2eContext> {
+export interface E2eOptions {
+  /**
+   * Extra provider overrides (e.g. stubbing SchedulerService so a tick with
+   * the correct secret returns 204 without reaching the placeholder
+   * Supabase). JWT verification is always stubbed.
+   */
+  overrides?: { provide: unknown; useValue: unknown }[];
+}
+
+export async function createE2eApp(options: E2eOptions = {}): Promise<E2eContext> {
   const mongo = await MongoMemoryServer.create();
 
   // Env must exist before AppModule is imported/compiled — ConfigModule
@@ -70,12 +79,15 @@ export async function createE2eApp(): Promise<E2eContext> {
     require('../src/auth/jwt-verifier.service') as typeof import('../src/auth/jwt-verifier.service');
   /* eslint-enable @typescript-eslint/no-require-imports */
 
-  const moduleRef = await Test.createTestingModule({
+  let builder = Test.createTestingModule({
     imports: [AppModule],
   })
     .overrideProvider(JwtVerifierService)
-    .useClass(FakeJwtVerifierService)
-    .compile();
+    .useClass(FakeJwtVerifierService);
+  for (const override of options.overrides ?? []) {
+    builder = builder.overrideProvider(override.provide).useValue(override.useValue);
+  }
+  const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app);
