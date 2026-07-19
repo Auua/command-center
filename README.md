@@ -39,8 +39,8 @@ Braindump is the first MongoDB-backed module; tasks and mood live in Supabase
 Postgres (`supabase/migrations/`). See ADR §9 for Phases 1–4.
 
 Design decisions are recorded as ADRs under `docs/adr/` in domain subfolders
-(productivity / reflection / learning / external-data / lifestyle), indexed in
-[docs/adr/README.md](docs/adr/README.md).
+(foundation / productivity / reflection / learning / external-data / lifestyle),
+indexed in [docs/adr/README.md](docs/adr/README.md).
 
 ## Widget roadmap
 

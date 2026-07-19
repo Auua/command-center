@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Reference
 
-`docs/ADR.md` is the authoritative architecture document — read it before making structural decisions. It defines the container layout (Next.js on Vercel + NestJS modular monolith with a separate worker process), the widget SDK contract, the Postgres/MongoDB data-ownership split, the automation/queue design (pg-boss), security model, NFR targets, delivery phasing (§9), and the foundational ADRs 001–007.
+`docs/ADR.md` is the authoritative architecture document — read it before making structural decisions. It defines the container layout (Next.js on Vercel + NestJS modular monolith with a separate worker process), the widget SDK contract, the Postgres/MongoDB data-ownership split, the automation/queue design (pg-boss), security model, NFR targets, delivery phasing (§9), and summary rows for every ADR.
 
-Per-widget and domain decisions live as ADRs 008+ in domain subfolders of `docs/adr/` (productivity / reflection / learning / external-data / lifestyle). A new load-bearing decision gets an ADR from `docs/adr/template.md` in the fitting subfolder, a row in the `docs/adr/README.md` index, and a summary row in the ADR. ADR numbering is global across folders; `docs/adr/REVIEW-QUEUE.md` tracks the acceptance walkthrough. Keep ADR/ADR prose impersonal — "the user" / "the product owner", no personal names.
+The foundational ADRs 001–007 live in `docs/adr/foundation/`; per-widget and domain decisions live as ADRs 008+ in domain subfolders of `docs/adr/` (productivity / reflection / learning / external-data / lifestyle). A new load-bearing decision gets an ADR from `docs/adr/template.md` in the fitting subfolder, a row in the `docs/adr/README.md` index, and a summary row in the ADR. ADR numbering is global across folders; `docs/adr/REVIEW-QUEUE.md` tracks the acceptance walkthrough. Keep ADR/ADR prose impersonal — "the user" / "the product owner", no personal names.
 
 ## Current State
 
