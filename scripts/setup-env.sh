@@ -19,6 +19,11 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=REPLACE_WITH_ANON_PUBLIC_KEY
 
 # NestJS API base URL (local dev)
 NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# Web Push VAPID public key — generate a LOCAL pair with
+# `npx web-push generate-vapid-keys` (docs/ENV_SETUP.md §3); the private
+# half goes in apps/api/.env.
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=REPLACE_WITH_VAPID_PUBLIC_KEY
 EOF
 
 cat > apps/api/.env <<'EOF'
