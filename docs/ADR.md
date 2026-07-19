@@ -215,6 +215,7 @@ Two databases is a deliberate (learning-driven) choice — the split is by data 
 
 ```mermaid
 erDiagram
+    users ||--o| user_profiles : has
     users ||--o{ tasks : owns
     users ||--o{ mood_checkins : owns
     users ||--o{ automations : owns
@@ -222,11 +223,13 @@ erDiagram
     users ||--o{ streaks : owns
     users ||--o{ streak_days : owns
     users ||--o{ push_subscriptions : owns
+    users ||--o{ notifications : owns
     users ||--o{ calendar_events : owns
     users ||--o{ calendar_accounts : owns
     calendar_accounts ||--o{ calendar_sources : lists
     calendar_sources ||--o{ calendar_events : mirrors
     automations ||--o{ automation_runs : logs
+    automations ||--o{ notifications : sources
 
     tasks {
         uuid id PK
@@ -249,11 +252,17 @@ erDiagram
         text note
         timestamptz created_at
     }
+    user_profiles {
+        uuid user_id PK "FK auth.users"
+        text timezone "home IANA tz (Q1); schedule evaluation input"
+    }
     automations {
         uuid id PK
         uuid user_id FK
-        text kind "time | recurring | event"
-        text cron_expr "nullable"
+        text name "1..120 chars (ADR-015)"
+        text kind "recurring | event ('time' reserved)"
+        jsonb schedule "structured descriptor; edit-UI source (ADR-015)"
+        text cron_expr "compiled server-side from schedule; engine input"
         text event_key "e.g. task.completed"
         jsonb action "notify payload"
         bool enabled
@@ -261,8 +270,34 @@ erDiagram
     automation_runs {
         uuid id PK
         uuid automation_id FK
+        uuid user_id "denormalized for RLS + today query"
+        timestamptz slot "UTC occurrence; UNIQUE(automation_id, slot) = claim key (ADR-039)"
         timestamptz fired_at
-        text status "sent | failed | skipped"
+        text status "pending | sent | failed | skipped"
+        text error
+    }
+    push_subscriptions {
+        uuid id PK
+        uuid user_id FK
+        text endpoint "capability URL; UNIQUE(user_id, endpoint); allowlisted hosts"
+        text p256dh
+        text auth
+    }
+    notifications {
+        uuid id PK
+        uuid user_id FK
+        text title
+        text body "nullable; lock-screen-safe plain text"
+        text source "automation today; future sources need not be"
+        uuid automation_id "FK; on delete set null"
+        timestamptz created_at
+        timestamptz read_at "null = unread"
+    }
+    scheduler_state {
+        text name PK "automation-tick"
+        timestamptz cursor_at "tick high-water mark (ADR-039)"
+        timestamptz last_tick_at "health staleness read"
+        jsonb details
     }
     streaks {
         uuid id PK
@@ -337,26 +372,36 @@ sequenceDiagram
     Note over B: each widget hydrates independently —<br/>one failing endpoint = one fallback card
 ```
 
-**Automation fires (time-based reminder):**
+**Automation fires (time-based reminder, ADR-039 — external pinger → inline tick, no queue):**
 
 ```mermaid
 sequenceDiagram
-    participant S as Worker (cron tick, 1/min)
+    participant C as cron-job.org (1/min)
+    participant A as NestJS API (inline tick)
     participant P as Postgres
-    participant Q as pg-boss queue
     participant Push as Web Push service
     participant U as User device
-    S->>P: SELECT automations due this minute<br/>(cron_expr match, enabled, tz-aware)
-    S->>Q: enqueue notify jobs (idempotency key = automation_id + slot)
-    Q->>S: job: dispatch
-    S->>P: load push_subscriptions
-    S->>Push: POST (VAPID-signed payload)
+    C->>A: POST /internal/tick (x-tick-secret)
+    A->>P: read scheduler_state.cursor_at
+    A->>P: load enabled recurring automations + timezones
+    Note over A: ScheduleEvaluator expands slots in<br/>(cursor, now] under a 60-min catch-up cap
+    A->>P: INSERT automation_runs 'pending'<br/>ON CONFLICT (automation_id, slot) DO NOTHING
+    Note over A,P: no row returned = an overlapping tick<br/>owns the slot (claim before send)
+    A->>P: INSERT notifications row (bell = delivery of record)
+    A->>P: load push_subscriptions
+    A->>Push: POST (VAPID-signed payload)
     Push-->>U: notification
-    S->>P: INSERT automation_runs (status)
-    Note over S,P: expired subscriptions (410) pruned on send
+    A->>P: UPDATE run to sent or failed (410 endpoints pruned)
+    A->>P: advance cursor_at, stamp last_tick_at
+    A-->>C: 204 No Content
 ```
 
-**Smart reminder ("after finishing a task"):** `TasksModule` marks task complete → emits `task.completed` → `AutomationModule` matches event-kind automations → enqueues notify job. Same tail as above.
+Slots older than the catch-up cap are recorded `skipped` instead of firing stale; `pending` rows
+older than 5 minutes (a crashed invocation) are re-processed on the next tick. The same
+`ScheduleEvaluator` serves `GET /automations/today`, so the widget preview and the engine can
+never disagree (ADR-015).
+
+**Smart reminder ("after finishing a task"):** `TasksModule` marks task complete → emits `task.completed` → `AutomationModule` matches event-kind automations → dispatches inline through the same claim → bell → push tail, with slot = the event timestamp (ADR-039 — no tick hop, delivery is immediate).
 
 **Anki integration (ADR-024/026):** the backend never talks to Anki, and neither does the browser. "Add to Anki" writes a card file (`anki: true` front-matter, deterministic id) into the learning-center repo; the repo's GitHub Action runs the official `anki` library against AnkiWeb — sync down, upsert notes keyed on the card id (guid `cc:<id>`), sync up (**never full-upload** — a CI runner must never overwrite mobile review history), then commit results and deck stats to `sync/state.json`, which the API reads for the status surface. AnkiWeb credentials live only in the learning repo's Actions secrets, never on our hosts.
 
@@ -369,8 +414,9 @@ sequenceDiagram
 - **AuthN:** Supabase Auth (email + TOTP 2FA; OAuth optional later). Frontend holds the session via `@supabase/ssr` cookies (httpOnly). Every API call carries the Supabase JWT.
 - **AuthZ in the API:** NestJS global guard verifies the JWT against Supabase's JWKS (asymmetric, no shared secret in the API), extracts `user_id`, and injects it into request context. **Every repository query is user-scoped** — `user_id` comes from the token, never from the request body.
 - **Postgres RLS:** enabled on all tables with `user_id = auth.uid()` policies. The API connects with a role that respects RLS (not `service_role`) wherever practical, so RLS is a second net under application checks — and the only net for the client's direct realtime subscriptions.
+- **Service-role carve-out (ADR-039, Phase 2):** the automation tick and inline event dispatch carry no user JWT, so exactly one repository — the scheduler's — uses the Supabase secret (service-role) key, the system's only RLS-bypassing credential in the API process. Containment: server-only env var (never `NEXT_PUBLIC_*`), consumed by that single repository, never logged, rotatable from the Supabase dashboard. Every user-facing endpoint stays on the anon-key + user-JWT client under RLS.
 - **Mongo:** no client access, dedicated DB user scoped to this app's database only, `userId` filter enforced in the repository base class.
-- **Single-user posture:** even though v1 has one user, nothing assumes it — no "default user" fallbacks, no unauthenticated endpoints besides `/health`.
+- **Single-user posture:** even though v1 has one user, nothing assumes it — no "default user" fallbacks, no unauthenticated endpoints besides `/health` and the secret-guarded, input-less `POST /internal/tick` (ADR-039).
 
 ### 5.2 Application security
 
@@ -399,21 +445,21 @@ sequenceDiagram
 
 Targets calibrated for a personal, single-user system — meaningful but not enterprise theater.
 
-| #      | Category        | Requirement                                                                                                                | Target                                                                                            |
-| ------ | --------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| NFR-1  | Performance     | Dashboard first contentful paint (warm)                                                                                    | < 1.5 s p75                                                                                       |
-| NFR-2  | Performance     | API reads                                                                                                                  | < 200 ms p95 per endpoint                                                                         |
-| NFR-3  | Reliability     | Automation delivery                                                                                                        | fired within 60 s of schedule; at-least-once with idempotent dedupe (no double-notify per slot)   |
-| NFR-4  | Availability    | Core dashboard                                                                                                             | ~99 % monthly (managed-tier reality); a failed widget never takes down the shell                  |
-| NFR-5  | Durability      | Journal/mood data loss                                                                                                     | RPO ≤ 24 h (provider daily backups), RTO ≤ 1 day; quarterly restore test of both DBs              |
-| NFR-6  | Security        | All traffic TLS; RLS on every Postgres table; 2FA on owner account and all provider dashboards                             | continuous                                                                                        |
-| NFR-7  | Privacy         | No third-party analytics/trackers; data exportable (JSON dump endpoint per module)                                         | v1                                                                                                |
-| NFR-8  | Cost            | Total monthly infra                                                                                                        | ≤ €20/mo (free/hobby tiers: Vercel Hobby, Supabase Free, Atlas M0, small backend instance)        |
-| NFR-9  | Maintainability | Fresh clone → running local stack                                                                                          | ≤ 15 min (`pnpm i && pnpm dev` + documented env setup); CI: typecheck, lint, test, build < 10 min |
-| NFR-10 | Observability   | Structured JSON logs; Sentry (FE+BE); `/health` per process; uptime ping (e.g., UptimeRobot) on API + worker heartbeat row | v1                                                                                                |
-| NFR-11 | Accessibility   | Dashboard + widgets keyboard-navigable; WCAG 2.1 AA color contrast; respects `prefers-reduced-motion`                      | v1                                                                                                |
-| NFR-12 | i18n            | UI copy externalized day one (EN first; FI/JA possible later); Japanese content rendered with proper furigana support      | v1 structure, later content                                                                       |
-| NFR-13 | Portability     | No hard Vercel lock-in: Next.js standalone build + API Dockerfile both runnable anywhere                                   | continuous                                                                                        |
+| #      | Category        | Requirement                                                                                                                | Target                                                                                                                                                                                                                                                                                                            |
+| ------ | --------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFR-1  | Performance     | Dashboard first contentful paint (warm)                                                                                    | < 1.5 s p75                                                                                                                                                                                                                                                                                                       |
+| NFR-2  | Performance     | API reads                                                                                                                  | < 200 ms p95 per endpoint                                                                                                                                                                                                                                                                                         |
+| NFR-3  | Reliability     | Automation delivery (relaxed to best-effort by PO decision 2026-07-18, ADR-039)                                            | best effort: typically within ~1–5 min of schedule; at-least-once with idempotent dedupe (no double-notify per slot); every fire recorded in the notification center regardless of push outcome — the bell row is the delivery of record; slots missed beyond the 60-min catch-up cap recorded `skipped`, visibly |
+| NFR-4  | Availability    | Core dashboard                                                                                                             | ~99 % monthly (managed-tier reality); a failed widget never takes down the shell                                                                                                                                                                                                                                  |
+| NFR-5  | Durability      | Journal/mood data loss                                                                                                     | RPO ≤ 24 h (provider daily backups), RTO ≤ 1 day; quarterly restore test of both DBs                                                                                                                                                                                                                              |
+| NFR-6  | Security        | All traffic TLS; RLS on every Postgres table; 2FA on owner account and all provider dashboards                             | continuous                                                                                                                                                                                                                                                                                                        |
+| NFR-7  | Privacy         | No third-party analytics/trackers; data exportable (JSON dump endpoint per module)                                         | v1                                                                                                                                                                                                                                                                                                                |
+| NFR-8  | Cost            | Total monthly infra                                                                                                        | ≤ €20/mo (free/hobby tiers: Vercel Hobby, Supabase Free, Atlas M0, small backend instance)                                                                                                                                                                                                                        |
+| NFR-9  | Maintainability | Fresh clone → running local stack                                                                                          | ≤ 15 min (`pnpm i && pnpm dev` + documented env setup); CI: typecheck, lint, test, build < 10 min                                                                                                                                                                                                                 |
+| NFR-10 | Observability   | Structured JSON logs; Sentry (FE+BE); `/health` per process; uptime ping (e.g., UptimeRobot) on API + worker heartbeat row | v1                                                                                                                                                                                                                                                                                                                |
+| NFR-11 | Accessibility   | Dashboard + widgets keyboard-navigable; WCAG 2.1 AA color contrast; respects `prefers-reduced-motion`                      | v1                                                                                                                                                                                                                                                                                                                |
+| NFR-12 | i18n            | UI copy externalized day one (EN first; FI/JA possible later); Japanese content rendered with proper furigana support      | v1 structure, later content                                                                                                                                                                                                                                                                                       |
+| NFR-13 | Portability     | No hard Vercel lock-in: Next.js standalone build + API Dockerfile both runnable anywhere                                   | continuous                                                                                                                                                                                                                                                                                                        |
 
 ---
 
@@ -427,8 +473,8 @@ Full ADRs live in `docs/adr/`, grouped into domain subfolders (foundation, produ
 | **002** | NestJS **modular monolith** now; extraction path later                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | One deploy target fits G2 (low ops) and NFR-8 (cost); module boundary + event-bus rules keep extraction cheap if a module ever needs isolation                                                                                                                                                                                                                                                       | Microservices day one (ops burden with zero scale need)                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | **003** | Dual DB with strict ownership split (§4.3)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Honors stack goals (G3); shape-based split is defensible; one-owner rule + no cross-DB joins contains the blast radius                                                                                                                                                                                                                                                                               | Postgres-only with JSONB (simpler — kept as documented fallback); Mongo-only (loses RLS/realtime/auth)                                                                                                                                                                                                                                                                                                                                                                    |
 | **004** | All domain traffic through NestJS API; Supabase client used directly only for auth + realtime                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Single authorization point; avoids duplicated ACL logic in RLS _and_ API for writes                                                                                                                                                                                                                                                                                                                  | Full "Supabase as backend" (would gut the NestJS learning goal and scatter logic into edge functions)                                                                                                                                                                                                                                                                                                                                                                     |
-| **005** | Jobs/scheduling via **pg-boss** on the existing Supabase Postgres + a worker process                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Zero extra infrastructure (no Redis); transactional enqueue with domain writes; fits NFR-8                                                                                                                                                                                                                                                                                                           | BullMQ + Redis (more standard but +1 service to run/pay for); Supabase cron + edge functions (splits automation logic out of NestJS)                                                                                                                                                                                                                                                                                                                                      |
-| **006** | Hosting: everything on Vercel (web + api + worker entrypoint) + managed data tiers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | One platform and one deploy pipeline; nothing needs a persistent process yet — revisit when the Phase-2 pg-boss worker lands, since a long-running queue consumer doesn't fit Vercel functions (Vercel cron or a separate host are the candidates)                                                                                                                                                   | Render/Railway/Fly.io (a second PaaS before anything needs a persistent process); a VPS (ops burden)                                                                                                                                                                                                                                                                                                                                                                      |
+| **005** | Jobs/scheduling via **pg-boss** on the existing Supabase Postgres + a worker process — **deferred, not implemented, by ADR-039** (the Phase-2 MVP ships queue-less on the inline tick; the pg-boss/worker design is the recorded upgrade path if best-effort delivery ever annoys)                                                                                                                                                                                                                                                                                                 | Zero extra infrastructure (no Redis); transactional enqueue with domain writes; fits NFR-8                                                                                                                                                                                                                                                                                                           | BullMQ + Redis (more standard but +1 service to run/pay for); Supabase cron + edge functions (splits automation logic out of NestJS)                                                                                                                                                                                                                                                                                                                                      |
+| **006** | Hosting: everything on Vercel (web + api + worker entrypoint) + managed data tiers                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | One platform and one deploy pipeline; the Phase-2 revisit was resolved by ADR-039 — the automation tick runs inline in the API behind an external pinger, so nothing needs a persistent process and nothing moves off Vercel                                                                                                                                                                         | Render/Railway/Fly.io (a second PaaS before anything needs a persistent process); a VPS (ops burden)                                                                                                                                                                                                                                                                                                                                                                      |
 | **007** | REST + OpenAPI-generated typed client (not GraphQL/tRPC)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | NestJS-native, learning-relevant, tooling-mature; contracts package closes the type gap that would otherwise argue for tRPC                                                                                                                                                                                                                                                                          | tRPC (couples FE to Nest internals, weaker fit with NestJS idioms); GraphQL (overkill for one consumer)                                                                                                                                                                                                                                                                                                                                                                   |
 | **008** | Tasks widget: Postgres `tasks`, quick-add parsed client-side, undo instead of confirm                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Reference CRUD widget; structured payloads only cross the wire; `task.completed` event feeds automations/streaks                                                                                                                                                                                                                                                                                     | Join-table tags (overkill for personal scale); confirmation dialogs (friction; undo with keyboard/SR path instead)                                                                                                                                                                                                                                                                                                                                                        |
 | **009** | Mood widget: immutable check-in events, multiple per day; trend = per-day average                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Matches `created_at`-keyed schema; undo-not-edit keeps writes append-only; toggle buttons over radiogroup (press commits immediately)                                                                                                                                                                                                                                                                | One-per-day upsert row (loses intra-day signal); hover-only trend tooltip (inaccessible — `role="img"` + hidden table instead)                                                                                                                                                                                                                                                                                                                                            |
@@ -497,7 +543,7 @@ row, §4.4 the `calendar_accounts`/`calendar_sources` tables and `calendar_event
 
 1. **Phase 0 — Skeleton:** monorepo scaffold, CI, auth end-to-end, empty dashboard shell with widget registry, one trivial widget (clock). _Proves the whole pipe._
 2. **Phase 1 — Daily core:** Tasks, Braindump, Mood check-in + trends. First Postgres + first Mongo widget → validates ADR-003 early.
-3. **Phase 2 — Automations:** trigger engine, worker, web push, notification center. _Highest architectural risk — do before more widgets._
+3. **Phase 2 — Automations:** trigger engine (inline tick behind an external pinger, ADR-039 — no worker, no queue), web push, notification center. _Highest architectural risk — do before more widgets._
 4. **Phase 3 — Learning:** Japanese WOTD/grammar, tech "X of the day", streaks, Anki sync via the learning repo's GitHub Action (ADR-024/026).
 5. **Phase 4 — Reflection & polish:** Journal, Appreciation, Calendar views, Google Calendar sync (per-calendar read-only/read-write, ADR-037), layout customization UI, data export.
 
