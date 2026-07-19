@@ -1,19 +1,29 @@
 # Architecture Decision Records
 
-One folder per product domain; the ADR **number is the record's identity** and is global across
+One folder per product domain (plus `foundation/` for the pre-widget architecture decisions);
+the ADR **number is the record's identity** and is global across
 folders — files sort chronologically within a domain. New ADRs: copy [template.md](template.md)
 into the fitting domain folder, take the next free number, add a row here and a summary row in
 `docs/ADR.md` §7. Review state for unapproved ADRs is tracked in
 [REVIEW-QUEUE.md](REVIEW-QUEUE.md).
 
 **ADRs 001–007** (foundation: monorepo, NestJS modular monolith, dual-DB ownership split,
-API-only data access, pg-boss jobs, hosting, REST + OpenAPI) predate this folder and live as
-summary rows in [`docs/ADR.md` §7](../ADR.md) only.
+API-only data access, pg-boss jobs, hosting, REST + OpenAPI) predate this folder; they were
+decided with the Architecture Reference (2026-07-11) and written out as full ADRs in
+[`foundation/`](foundation/) on 2026-07-19. Their summary rows remain in
+[`docs/ADR.md` §7](../ADR.md).
 
 ## Index
 
 | ADR | Title                                                                                                                              | Domain        | Status   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------- |
+| 001 | [Monorepo (pnpm + Turborepo)](foundation/001-monorepo.md)                                                                          | foundation    | accepted |
+| 002 | [NestJS modular monolith (extraction path, not microservices)](foundation/002-modular-monolith.md)                                 | foundation    | accepted |
+| 003 | [Dual database with strict ownership split (Postgres + Mongo)](foundation/003-dual-database-split.md)                              | foundation    | accepted |
+| 004 | [All domain traffic through the NestJS API](foundation/004-api-only-data-access.md)                                                | foundation    | accepted |
+| 005 | [Jobs and scheduling via pg-boss + a worker process](foundation/005-pg-boss-jobs.md)                                               | foundation    | accepted |
+| 006 | [Hosting — everything on Vercel + managed data tiers](foundation/006-hosting.md)                                                   | foundation    | accepted |
+| 007 | [REST + OpenAPI-generated typed client](foundation/007-rest-openapi.md)                                                            | foundation    | accepted |
 | 008 | [Tasks (todo) widget](productivity/008-tasks-widget.md)                                                                            | productivity  | accepted |
 | 009 | [Mood check-in + 7-day trend widget](reflection/009-mood-widget.md)                                                                | reflection    | accepted |
 | 010 | [Braindump widget](productivity/010-braindump-widget.md)                                                                           | productivity  | accepted |
