@@ -4,11 +4,15 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
+import { AutomationModule } from './automation/automation.module';
 import { BraindumpModule } from './braindump/braindump.module';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { validateEnv } from './config/env';
 import { HealthModule } from './health/health.module';
 import { MoodModule } from './mood/mood.module';
+import { NotificationModule } from './notification/notification.module';
+import { ProfileModule } from './profile/profile.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 import { TasksModule } from './tasks/tasks.module';
 import { WidgetRegistryModule } from './widget-registry/widget-registry.module';
 
@@ -41,9 +45,13 @@ import { WidgetRegistryModule } from './widget-registry/widget-registry.module';
     // TasksModule emits task.completed; AutomationModule listens in Phase 2.
     EventEmitterModule.forRoot(),
     AuthModule,
+    AutomationModule,
     BraindumpModule,
     HealthModule,
     MoodModule,
+    NotificationModule,
+    ProfileModule,
+    SchedulerModule,
     TasksModule,
     WidgetRegistryModule,
   ],
