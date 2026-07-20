@@ -35,7 +35,7 @@ Every commit must pass lint, typecheck, tests, and build. The Husky pre-commit h
 
 Prepare each commit so it lands complete:
 
-1. **Bump versions** — bump `version` (semver) in the `package.json` of every workspace package the commit touches. Internal deps use `workspace:*`, so no cross-package version references need editing.
+1. **Bump versions** — bump `version` (semver) in the `package.json` of every workspace package the commit touches, **and bump the repo-root `package.json` version in the same commit whenever any workspace package bumps** (the root version is the release marker for the whole monorepo). Internal deps use `workspace:*`, so no cross-package version references need editing.
 2. **Update dependencies where affected** — if the commit adds/changes a package's exports or peer requirements, update the `package.json` of consuming workspace packages accordingly and re-run `pnpm install` so the lockfile is committed in sync.
 3. **Update docs where the change is used** — keep `CLAUDE.md` (Current State, Commands), `README.md`, `docs/ENV_SETUP.md`, and any affected ADRs in step with the change; new load-bearing decisions get an ADR per the Architecture Reference section above.
 
