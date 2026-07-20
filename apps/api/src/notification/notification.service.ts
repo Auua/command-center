@@ -32,7 +32,12 @@ export class NotificationService {
     user: AuthenticatedUser,
     request: MarkNotificationsReadRequest,
   ): Promise<MarkNotificationsReadResponse> {
-    await this.notificationRepository.markReadForUser(user, request.all ? 'all' : request.ids!);
+    // The contract requires `all` or `ids`; if neither survives, an empty
+    // list is a harmless no-op rather than an asserted crash.
+    await this.notificationRepository.markReadForUser(
+      user,
+      request.all ? 'all' : (request.ids ?? []),
+    );
     const unreadCount = await this.notificationRepository.countUnreadForUser(user);
     return { unreadCount };
   }
