@@ -11,7 +11,10 @@ export const config = {
      * Match all request paths except:
      * - _next/static, _next/image (build assets)
      * - favicon.ico and common static image files
+     * - sw.js and manifest.webmanifest (PWA plumbing: the browser fetches
+     *   these outside the page lifecycle — an auth redirect would break
+     *   service-worker updates and installability)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

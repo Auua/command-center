@@ -9,7 +9,13 @@ export interface WidgetSize {
 
 export interface QuickAction {
   id: string;
+  /** Accessible name of the action button (always announced to AT). */
   label: string;
+  /**
+   * Optional compact glyph (e.g. a "+" SVG) rendered instead of the label
+   * text inside the header button; the label becomes the aria-label.
+   */
+  icon?: ReactNode;
 }
 
 export interface WidgetProps<TSettings = unknown> {
