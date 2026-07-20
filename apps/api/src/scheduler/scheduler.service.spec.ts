@@ -88,7 +88,7 @@ describe('SchedulerService.tick', () => {
       repository as unknown as SchedulerRepository,
       dispatch as unknown as DispatchService,
     );
-    service.now = () => NOW;
+    service.now = (): Date => NOW;
   });
 
   it('initializes the cursor to now − 1 min on the very first run', async () => {
@@ -182,8 +182,8 @@ describe('SchedulerService.tick', () => {
 
     // Only the last 24 h (minus the live hour) is recorded skipped: 23 slots.
     expect(repository.skipped).toHaveLength(23);
-    expect(repository.skipped[0]!.slot).toBe('2026-07-18T13:00:00.000Z');
-    expect(repository.skipped[22]!.slot).toBe('2026-07-19T11:00:00.000Z');
+    expect(repository.skipped[0]?.slot).toBe('2026-07-18T13:00:00.000Z');
+    expect(repository.skipped[22]?.slot).toBe('2026-07-19T11:00:00.000Z');
   });
 
   it('re-processes stale pending runs through the same dispatch tail', async () => {

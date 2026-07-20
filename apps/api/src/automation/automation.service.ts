@@ -48,23 +48,33 @@ export class AutomationService {
   }
 
   createAutomation(user: AuthenticatedUser, request: CreateAutomationRequest): Promise<Automation> {
+    // The contract's superRefine guarantees these fields per kind, but the TS
+    // type can't carry that — narrow explicitly instead of asserting.
     if (request.kind === 'recurring') {
+      const { schedule } = request;
+      if (!schedule) {
+        throw new BadRequestException('A recurring automation requires a schedule');
+      }
       return this.automationRepository.createForUser(user, {
         name: request.name,
         kind: 'recurring',
-        schedule: request.schedule!,
-        cron_expr: compileSchedule(request.schedule!),
+        schedule,
+        cron_expr: compileSchedule(schedule),
         event_key: null,
         action: request.action,
         enabled: request.enabled,
       });
+    }
+    const { eventKey } = request;
+    if (!eventKey) {
+      throw new BadRequestException('An event automation requires an eventKey');
     }
     return this.automationRepository.createForUser(user, {
       name: request.name,
       kind: 'event',
       schedule: null,
       cron_expr: null,
-      event_key: request.eventKey!,
+      event_key: eventKey,
       action: request.action,
       enabled: request.enabled,
     });
@@ -148,8 +158,16 @@ export class AutomationService {
       end: dayEnd.toJSDate(),
     };
 
-    const recurring = automations.filter((automation) => automation.kind === 'recurring');
-    const events = automations.filter((automation) => automation.kind === 'event');
+    // DB CHECKs guarantee schedule/eventKey per kind; the type guards carry
+    // that into the type system (rows violating it are skipped, not asserted).
+    const recurring = automations.filter(
+      (automation): automation is Automation & { schedule: NonNullable<Automation['schedule']> } =>
+        automation.kind === 'recurring' && automation.schedule !== null,
+    );
+    const events = automations.filter(
+      (automation): automation is Automation & { eventKey: NonNullable<Automation['eventKey']> } =>
+        automation.kind === 'event' && automation.eventKey !== null,
+    );
 
     const runs = await this.automationRepository.listRunsInWindow(user, window.start, window.end);
     const runBySlot = new Map<string, TodayRun>();
@@ -164,7 +182,7 @@ export class AutomationService {
     for (const automation of recurring) {
       // schedule → cron via the same compiler that wrote cron_expr; the
       // service being the only cron writer makes them interchangeable.
-      const cronExpr = compileSchedule(automation.schedule!);
+      const cronExpr = compileSchedule(automation.schedule);
       for (const occurrence of expandOccurrences(cronExpr, timezone, window)) {
         const slotIso = occurrence.toISOString();
         const run = runBySlot.get(`${automation.id}|${slotIso}`);
@@ -192,7 +210,7 @@ export class AutomationService {
       return {
         automationId: automation.id,
         name: automation.name,
-        eventKey: automation.eventKey!,
+        eventKey: automation.eventKey,
         enabled: automation.enabled,
         ...(mapped ? { lastRun: mapped } : {}),
       };
