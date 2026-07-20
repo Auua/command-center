@@ -109,7 +109,7 @@ describe('AutomationService', () => {
       profileService as unknown as ProfileService,
     );
     // A fixed summer instant: 2026-07-19 (Sunday) 10:30 Helsinki (EEST).
-    service.now = () => new Date('2026-07-19T07:30:00.000Z');
+    service.now = (): Date => new Date('2026-07-19T07:30:00.000Z');
   });
 
   describe('create/update — the single cron_expr write path', () => {
@@ -147,43 +147,45 @@ describe('AutomationService', () => {
     });
 
     it('recompiles cron_expr when a schedule update arrives', async () => {
-      repository.items = [automation()];
+      const existing = automation();
+      repository.items = [existing];
 
-      await service.updateAutomation(ANNA, repository.items[0]!.id, {
+      await service.updateAutomation(ANNA, existing.id, {
         schedule: { type: 'weekly', time: '08:30', days: [1, 2, 3, 4, 5] },
       });
 
-      expect(repository.patches[0]!.patch).toEqual({
+      expect(repository.patches[0]?.patch).toEqual({
         schedule: { type: 'weekly', time: '08:30', days: [1, 2, 3, 4, 5] },
         cron_expr: '30 8 * * 1,2,3,4,5',
       });
     });
 
     it('passes the toggle path through without touching cron', async () => {
-      repository.items = [automation()];
+      const existing = automation();
+      repository.items = [existing];
 
-      await service.updateAutomation(ANNA, repository.items[0]!.id, { enabled: false });
+      await service.updateAutomation(ANNA, existing.id, { enabled: false });
 
-      expect(repository.patches[0]!.patch).toEqual({ enabled: false });
+      expect(repository.patches[0]?.patch).toEqual({ enabled: false });
     });
 
     it('400s a schedule on an event automation (kind is immutable)', async () => {
-      repository.items = [
-        automation({ kind: 'event', schedule: null, eventKey: 'task.completed' }),
-      ];
+      const existing = automation({ kind: 'event', schedule: null, eventKey: 'task.completed' });
+      repository.items = [existing];
 
       await expect(
-        service.updateAutomation(ANNA, repository.items[0]!.id, {
+        service.updateAutomation(ANNA, existing.id, {
           schedule: { type: 'daily', time: '09:00' },
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('400s an eventKey on a recurring automation', async () => {
-      repository.items = [automation()];
+      const existing = automation();
+      repository.items = [existing];
 
       await expect(
-        service.updateAutomation(ANNA, repository.items[0]!.id, { eventKey: 'task.completed' }),
+        service.updateAutomation(ANNA, existing.id, { eventKey: 'task.completed' }),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
@@ -234,26 +236,26 @@ describe('AutomationService', () => {
     });
 
     it('joins run outcomes by UTC slot and never surfaces pending', async () => {
-      repository.items = [automation()];
+      const existing = automation();
+      repository.items = [existing];
       // 12:00 Helsinki = 09:00 UTC.
-      repository.windowRuns = [
-        {
-          automationId: repository.items[0]!.id,
-          slot: '2026-07-19T09:00:00.000Z',
-          status: 'sent',
-          firedAt: '2026-07-19T09:00:04.000Z',
-        },
-      ];
+      const run = {
+        automationId: existing.id,
+        slot: '2026-07-19T09:00:00.000Z',
+        status: 'sent',
+        firedAt: '2026-07-19T09:00:04.000Z',
+      };
+      repository.windowRuns = [run];
 
       const today = await service.getToday(ANNA);
-      expect(today.slots[0]!.run).toEqual({
+      expect(today.slots[0]?.run).toEqual({
         status: 'sent',
         firedAt: '2026-07-19T09:00:04.000Z',
       });
 
-      repository.windowRuns[0]!.status = 'pending';
+      run.status = 'pending';
       const withPending = await service.getToday(ANNA);
-      expect(withPending.slots[0]!.run).toBeUndefined();
+      expect(withPending.slots[0]?.run).toBeUndefined();
     });
 
     it('lists event automations with their latest run', async () => {

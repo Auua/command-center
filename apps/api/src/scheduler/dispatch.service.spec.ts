@@ -113,7 +113,7 @@ describe('DispatchService', () => {
       repository as unknown as SchedulerRepository,
       webPush as unknown as WebPushService,
     );
-    service.now = () => NOW;
+    service.now = (): Date => NOW;
   });
 
   it('writes the bell row, pushes to every subscription, and marks sent', async () => {
@@ -129,7 +129,7 @@ describe('DispatchService', () => {
       { runId: 'run-1', status: 'sent', firedAt: NOW, error: null },
     ]);
     // Payload carries what the service worker needs for tag dedupe + deep link.
-    const payload = JSON.parse(webPush.sends[0]!.payload) as Record<string, unknown>;
+    const payload = JSON.parse(webPush.sends[0]?.payload ?? '{}') as Record<string, unknown>;
     expect(payload).toMatchObject({
       title: 'Hydration break',
       body: 'Drink water',
@@ -180,7 +180,12 @@ describe('DispatchService', () => {
   });
 
   it('skips (no bell, no push) when the automation was disabled before fire', async () => {
-    repository.automation!.enabled = false;
+    repository.automation = {
+      id: 'auto-1',
+      userId: 'user-1',
+      enabled: false,
+      action: { title: 'Hydration break', body: 'Drink water' },
+    };
     repository.subscriptions = [subscription('a')];
 
     await service.dispatchRun(RUN);
@@ -211,7 +216,7 @@ describe('DispatchService', () => {
 
     expect(webPush.sends).toHaveLength(0);
     expect(repository.statusUpdates[0]).toMatchObject({ status: 'failed' });
-    expect(repository.statusUpdates[0]!.error).toMatch(/bell write failed/);
+    expect(repository.statusUpdates[0]?.error).toMatch(/bell write failed/);
   });
 
   describe('dispatchEventAutomations', () => {
