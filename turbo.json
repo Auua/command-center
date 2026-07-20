@@ -9,12 +9,23 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "@command-center/api#build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "lint", "typecheck"],
       "outputs": ["dist/**"],
-      "env": ["PORT", "CORS_ORIGIN", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "MONGODB_CONNECT"]
+      "env": [
+        "PORT",
+        "CORS_ORIGIN",
+        "SUPABASE_URL",
+        "SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY",
+        "MONGODB_CONNECT",
+        "TICK_SECRET",
+        "VAPID_PUBLIC_KEY",
+        "VAPID_PRIVATE_KEY",
+        "VAPID_SUBJECT"
+      ]
     },
     "@command-center/contracts#build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "lint", "typecheck"],
       "outputs": ["dist/**"],
       "env": ["CORS_ORIGIN", "SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "MONGODB_CONNECT"]
     },
