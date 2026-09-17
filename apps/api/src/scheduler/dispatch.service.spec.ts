@@ -16,6 +16,7 @@ const RUN: PendingRun = {
   automationId: 'auto-1',
   userId: 'user-1',
   slot: SLOT,
+  notificationId: null,
 };
 
 function subscription(id: string): SchedulerSubscription {
@@ -44,6 +45,12 @@ class FakeSchedulerRepository {
   }[] = [];
   pruned: string[] = [];
   claimCalls: { automationId: string; slot: Date }[] = [];
+  runNotifications: { runId: string; notificationId: string }[] = [];
+
+  setRunNotification(runId: string, notificationId: string): Promise<void> {
+    this.runNotifications.push({ runId, notificationId });
+    return Promise.resolve();
+  }
 
   getAutomationForDispatch(): Promise<DispatchAutomation | null> {
     return Promise.resolve(this.automation);
@@ -137,6 +144,20 @@ describe('DispatchService', () => {
       slot: SLOT.toISOString(),
     });
     expect(typeof payload['notificationId']).toBe('string');
+  });
+
+  it('stamps the bell row on the run, and a retry with it set writes no second row', async () => {
+    await service.dispatchRun(RUN);
+    expect(repository.runNotifications).toEqual([
+      { runId: 'run-1', notificationId: 'notification-1' },
+    ]);
+
+    // Stale-pending re-process after a crash between bell insert and status write.
+    await service.dispatchRun({ ...RUN, notificationId: 'notification-1' });
+
+    expect(repository.notifications).toHaveLength(1);
+    expect(repository.runNotifications).toHaveLength(1);
+    expect(repository.statusUpdates).toHaveLength(2);
   });
 
   it('marks sent with zero subscriptions — the bell row IS the delivery', async () => {

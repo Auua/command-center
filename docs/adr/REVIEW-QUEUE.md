@@ -370,3 +370,19 @@ identity is the vault path, so renaming a note in Obsidian resets its day pin an
 Anki card; (4) the indexer lives in the vault as a Python script next to `check_vault.py`, not in
 the monorepo. Amendments to six accepted ADRs and the runbook are listed under the ADR's
 Consequences and are owed on acceptance, not before.
+
+## Batch 8 — Phase 2 acceptance (2026-09-17)
+
+ADR-039 was drafted 2026-07-18 and implemented in PRs #21/#22 the next day, then sat in draft
+until the 2026-09-17 project review. Merging the implementation is the product owner's acceptance.
+
+| ADR | Title                                                       | Review state    | Approved     |
+| --- | ----------------------------------------------------------- | --------------- | ------------ |
+| 039 | Automation delivery — inline tick behind an external pinger | claude-reviewed | ✓ 2026-09-17 |
+
+Accepted with four amendments recorded in the ADR: the scheduler env group is optional as a
+whole (the API boots and serves without it), event dispatch is awaited inside the request, bell
+writes are retry-safe via `automation_runs.notification_id` (migration 0008), and event contracts
+moved to `packages/contracts`. ADR-005 carries a deferral note. The manual checklist (real push
+receipt, iOS installed-PWA push, lock-screen copy, catch-up acceptance test) runs after the
+one-time setup in `docs/PHASE2_SETUP.md`.

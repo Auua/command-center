@@ -70,6 +70,11 @@ migration step.
 
 ## 3. Phase 2 secrets — how to generate
 
+The five Phase 2 variables (`SUPABASE_SECRET_KEY`, `TICK_SECRET`, `VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`) are **optional as a group**: leave all five
+unset and the API boots with the scheduler disabled (`/health` → `"tick":"unconfigured"`,
+ticks answer 401, no pushes). Setting some but not all is a boot error.
+
 - `TICK_SECRET`: `openssl rand -hex 32` (256-bit hex). The same value goes in
   the cron-job.org job's `x-tick-secret` header (see `docs/PHASE2_SETUP.md`).
 - VAPID keypair: `npx web-push generate-vapid-keys` — copy `Public Key` →

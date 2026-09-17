@@ -2,7 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import type { EventEmitter2 } from '@nestjs/event-emitter';
 import type { Task } from '@command-center/contracts';
 import type { AuthenticatedUser } from '../auth/auth.types';
-import { TASK_COMPLETED_EVENT } from './task-completed.event';
+import { TASK_COMPLETED_EVENT } from '@command-center/contracts';
 import type { TasksRepository } from './tasks.repository';
 import { TasksService } from './tasks.service';
 
@@ -26,7 +26,7 @@ describe('TasksService', () => {
   let repository: jest.Mocked<
     Pick<TasksRepository, 'listForUser' | 'createForUser' | 'updateForUser' | 'deleteForUser'>
   >;
-  let eventEmitter: { emit: jest.Mock };
+  let eventEmitter: { emitAsync: jest.Mock };
   let service: TasksService;
 
   beforeEach(() => {
@@ -36,7 +36,7 @@ describe('TasksService', () => {
       updateForUser: jest.fn(),
       deleteForUser: jest.fn(),
     };
-    eventEmitter = { emit: jest.fn() };
+    eventEmitter = { emitAsync: jest.fn().mockResolvedValue([]) };
     service = new TasksService(
       repository as unknown as TasksRepository,
       eventEmitter as unknown as EventEmitter2,
@@ -72,7 +72,7 @@ describe('TasksService', () => {
     expect(repository.updateForUser).toHaveBeenCalledWith(user, TASK.id, {
       completed_at: null,
     });
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
   });
 
   it('emits task.completed when a task is completed', async () => {
@@ -83,7 +83,7 @@ describe('TasksService', () => {
 
     await service.updateTask(user, TASK.id, { completed: true });
 
-    expect(eventEmitter.emit).toHaveBeenCalledWith(TASK_COMPLETED_EVENT, {
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(TASK_COMPLETED_EVENT, {
       userId: user.id,
       taskId: TASK.id,
       title: TASK.title,
@@ -99,7 +99,7 @@ describe('TasksService', () => {
     expect(repository.updateForUser).toHaveBeenCalledWith(user, TASK.id, {
       title: 'renamed',
     });
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
   });
 
   it('404s updates and deletes of missing/foreign tasks alike', async () => {
@@ -110,6 +110,6 @@ describe('TasksService', () => {
       NotFoundException,
     );
     await expect(service.deleteTask(user, 'nope')).rejects.toBeInstanceOf(NotFoundException);
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
   });
 });

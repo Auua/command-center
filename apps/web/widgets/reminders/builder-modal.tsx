@@ -15,11 +15,13 @@ import {
 import {
   AutomationActionSchema,
   EVENT_KEYS,
+  EVERY_MINUTES_OPTIONS,
   type Automation,
   type AutomationAction,
   type AutomationRunStatus,
   type CreateAutomationRequest,
   type EventKey,
+  type EveryMinutes,
   type Schedule,
   type UpdateAutomationRequest,
 } from '@command-center/contracts';
@@ -56,12 +58,17 @@ interface BuilderModalProps {
   onClose: () => void;
 }
 
+type WhenKind = 'time' | 'interval' | 'event';
+
+const WHEN_KINDS: readonly WhenKind[] = ['time', 'interval', 'event'];
+
 interface BuilderFormState {
   name: string;
-  whenKind: 'time' | 'event';
+  whenKind: WhenKind;
   time: string;
   dayChoice: DayChoice;
   customDays: number[];
+  everyMinutes: EveryMinutes;
   eventKey: EventKey;
   title: string;
   body: string;
@@ -75,6 +82,7 @@ function initialFormState(automation?: Automation): BuilderFormState {
       time: '12:00',
       dayChoice: 'every-day',
       customDays: [],
+      everyMinutes: 60,
       eventKey: EVENT_KEYS[0],
       title: '',
       body: '',
@@ -85,14 +93,31 @@ function initialFormState(automation?: Automation): BuilderFormState {
     : null;
   return {
     name: automation.name,
-    whenKind: automation.kind === 'event' ? 'event' : 'time',
+    whenKind:
+      automation.kind === 'event'
+        ? 'event'
+        : automation.schedule?.type === 'interval'
+          ? 'interval'
+          : 'time',
     time: timedForm?.time ?? '12:00',
     dayChoice: timedForm?.dayChoice ?? 'every-day',
     customDays: timedForm?.customDays ?? [],
+    everyMinutes: automation.schedule?.type === 'interval' ? automation.schedule.everyMinutes : 60,
     eventKey: automation.eventKey ?? EVENT_KEYS[0],
     title: automation.action.title,
     body: automation.action.body ?? '',
   };
+}
+
+function whenKindLabel(kind: WhenKind): string {
+  switch (kind) {
+    case 'time':
+      return t('builder.when.time');
+    case 'interval':
+      return t('builder.when.interval');
+    case 'event':
+      return t('builder.when.event');
+  }
 }
 
 function eventKeyLabel(key: EventKey): string {
@@ -206,9 +231,6 @@ function BuilderForm({
     [form],
   );
 
-  const intervalSchedule: Schedule | null =
-    automation?.schedule?.type === 'interval' ? automation.schedule : null;
-
   const patch = <K extends keyof BuilderFormState>(key: K, value: BuilderFormState[K]): void => {
     setForm((current) => ({ ...current, [key]: value }));
   };
@@ -262,11 +284,14 @@ function BuilderForm({
       return { ok: true, update: { name, eventKey: form.eventKey, action } };
     }
 
-    // Timed. Interval schedules are read-only in the v1 builder: PATCH
-    // without a schedule leaves them untouched.
-    if (intervalSchedule) {
-      return { ok: true, update: { name, action } };
+    if (form.whenKind === 'interval') {
+      const schedule: Schedule = { type: 'interval', everyMinutes: form.everyMinutes };
+      if (mode === 'create') {
+        return { ok: true, create: { name, kind: 'recurring', schedule, action, enabled: true } };
+      }
+      return { ok: true, update: { name, schedule, action } };
     }
+
     const scheduleResult = scheduleFromForm({
       time: form.time,
       dayChoice: form.dayChoice,
@@ -395,94 +420,102 @@ function BuilderForm({
             />
           </label>
 
-          <fieldset className="cc-field cc-segmented" disabled={mode === 'edit'}>
-            {/* kind is immutable after creation (contract rule). */}
+          <fieldset className="cc-field cc-segmented">
+            {/* kind is immutable after creation (contract rule): in edit mode a
+                recurring reminder can switch between time and interval, never
+                to/from event. */}
             <legend className="cc-field-label">{t('builder.when.legend')}</legend>
-            <label>
-              <input
-                type="radio"
-                name="cc-builder-when"
-                checked={form.whenKind === 'time'}
-                onChange={() => patch('whenKind', 'time')}
-              />
-              <span>{t('builder.when.time')}</span>
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="cc-builder-when"
-                checked={form.whenKind === 'event'}
-                onChange={() => patch('whenKind', 'event')}
-              />
-              <span>{t('builder.when.event')}</span>
-            </label>
+            {WHEN_KINDS.map((kind) => (
+              <label key={kind}>
+                <input
+                  type="radio"
+                  name="cc-builder-when"
+                  checked={form.whenKind === kind}
+                  disabled={
+                    mode === 'edit' && (kind === 'event') !== (automation?.kind === 'event')
+                  }
+                  onChange={() => patch('whenKind', kind)}
+                />
+                <span>{whenKindLabel(kind)}</span>
+              </label>
+            ))}
           </fieldset>
 
           {form.whenKind === 'time' ? (
-            intervalSchedule ? (
-              <p className="cc-widget-placeholder">
-                {t('builder.interval.note', { summary: describeSchedule(intervalSchedule) })}
-              </p>
-            ) : (
-              <>
-                <label className="cc-field">
-                  <span className="cc-field-label">{t('builder.time')}</span>
-                  <input
-                    type="time"
-                    required
-                    value={form.time}
-                    onChange={(event) => patch('time', event.target.value)}
-                  />
-                </label>
-                <fieldset className="cc-field cc-segmented">
-                  <legend className="cc-field-label">{t('builder.days.legend')}</legend>
-                  {(
-                    [
-                      ['every-day', t('builder.days.everyDay')],
-                      ['weekdays', t('builder.days.weekdays')],
-                      ['weekends', t('builder.days.weekends')],
-                      ['custom', t('builder.days.custom')],
-                    ] as const
-                  ).map(([choice, label]) => (
-                    <label key={choice}>
-                      <input
-                        type="radio"
-                        name="cc-builder-days"
-                        checked={form.dayChoice === choice}
-                        onChange={() => patch('dayChoice', choice)}
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
+            <>
+              <label className="cc-field">
+                <span className="cc-field-label">{t('builder.time')}</span>
+                <input
+                  type="time"
+                  required
+                  value={form.time}
+                  onChange={(event) => patch('time', event.target.value)}
+                />
+              </label>
+              <fieldset className="cc-field cc-segmented">
+                <legend className="cc-field-label">{t('builder.days.legend')}</legend>
+                {(
+                  [
+                    ['every-day', t('builder.days.everyDay')],
+                    ['weekdays', t('builder.days.weekdays')],
+                    ['weekends', t('builder.days.weekends')],
+                    ['custom', t('builder.days.custom')],
+                  ] as const
+                ).map(([choice, label]) => (
+                  <label key={choice}>
+                    <input
+                      type="radio"
+                      name="cc-builder-days"
+                      checked={form.dayChoice === choice}
+                      onChange={() => patch('dayChoice', choice)}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </fieldset>
+              {form.dayChoice === 'custom' && (
+                <fieldset className="cc-field cc-day-chips">
+                  <legend className="cc-visually-hidden">{t('builder.days.custom')}</legend>
+                  {weekdayNames.map((dayName, index) => {
+                    const day = index + 1;
+                    const checked = form.customDays.includes(day);
+                    return (
+                      <label key={day} className="cc-day-chip">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            patch(
+                              'customDays',
+                              checked
+                                ? form.customDays.filter((value) => value !== day)
+                                : [...form.customDays, day],
+                            )
+                          }
+                        />
+                        <span>{dayName}</span>
+                      </label>
+                    );
+                  })}
                 </fieldset>
-                {form.dayChoice === 'custom' && (
-                  <fieldset className="cc-field cc-day-chips">
-                    <legend className="cc-visually-hidden">{t('builder.days.custom')}</legend>
-                    {weekdayNames.map((dayName, index) => {
-                      const day = index + 1;
-                      const checked = form.customDays.includes(day);
-                      return (
-                        <label key={day} className="cc-day-chip">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              patch(
-                                'customDays',
-                                checked
-                                  ? form.customDays.filter((value) => value !== day)
-                                  : [...form.customDays, day],
-                              )
-                            }
-                          />
-                          <span>{dayName}</span>
-                        </label>
-                      );
-                    })}
-                  </fieldset>
-                )}
-              </>
-            )
+              )}
+            </>
+          ) : form.whenKind === 'interval' ? (
+            <label className="cc-field">
+              <span className="cc-field-label">{t('builder.interval')}</span>
+              <select
+                value={form.everyMinutes}
+                onChange={(event) =>
+                  patch('everyMinutes', Number(event.target.value) as EveryMinutes)
+                }
+              >
+                {EVERY_MINUTES_OPTIONS.map((minutes) => (
+                  <option key={minutes} value={minutes}>
+                    {describeSchedule({ type: 'interval', everyMinutes: minutes })}
+                  </option>
+                ))}
+              </select>
+            </label>
           ) : (
             <label className="cc-field">
               <span className="cc-field-label">{t('builder.eventLabel')}</span>

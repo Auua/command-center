@@ -192,6 +192,7 @@ describe('SchedulerService.tick', () => {
       automationId: 'auto-hourly',
       userId: 'user-1',
       slot: new Date('2026-07-19T11:00:00.000Z'),
+      notificationId: null,
     };
     repository.stalePending = [stale];
 

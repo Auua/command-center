@@ -1,8 +1,15 @@
 # ADR-005: Jobs and scheduling via pg-boss on Supabase Postgres + a worker process
 
-- **Status:** Accepted
+- **Status:** Accepted — **deferred, not implemented** (ADR-039, accepted 2026-09-17)
 - **Date:** 2026-07-11
-- **Review:** accepted as an ADR §7 summary row (2026-07-11); expanded to a full ADR 2026-07-19
+- **Review:** accepted as an ADR §7 summary row (2026-07-11); expanded to a full ADR 2026-07-19;
+  deferral recorded 2026-09-17
+
+> **Deferral note (2026-09-17).** The Phase 2 automations MVP shipped queue-less on ADR-039's
+> inline tick behind an external pinger: no pg-boss, no `DATABASE_URL`, and the worker entrypoint
+> stays the Phase 0 heartbeat stub. This ADR remains the recorded upgrade path — a queue and a
+> persistent consumer are adopted when a job actually needs them (a long-running sync, a
+> per-minute SLO the product owner wants back), not before.
 
 ## Context
 

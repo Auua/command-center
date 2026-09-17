@@ -20,6 +20,15 @@ export class HealthService {
   async getHealth(): Promise<HealthResponse> {
     let tick: TickStatus = 'unknown';
     let lastTickAt: string | null = null;
+    if (!this.schedulerRepository.configured) {
+      return {
+        status: 'ok',
+        service: 'api',
+        time: new Date().toISOString(),
+        tick: 'unconfigured',
+        lastTickAt,
+      };
+    }
     try {
       const state = await this.schedulerRepository.getState(SCHEDULER_NAME);
       if (!state?.lastTickAt) {

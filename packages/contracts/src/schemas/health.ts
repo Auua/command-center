@@ -8,9 +8,10 @@ import { z } from 'zod';
  * - ok      — last tick within the staleness threshold (5 min)
  * - stale   — scheduler_state exists but the last tick is old (pinger down?)
  * - never   — no tick has ever run (fresh deploy)
- * - unknown — scheduler state unreadable (DB unreachable / not configured)
+ * - unknown — scheduler state unreadable (DB unreachable)
+ * - unconfigured — the ADR-039 env group is unset; ticks are rejected
  */
-export const TickStatusSchema = z.enum(['ok', 'stale', 'never', 'unknown']);
+export const TickStatusSchema = z.enum(['ok', 'stale', 'never', 'unknown', 'unconfigured']);
 export type TickStatus = z.infer<typeof TickStatusSchema>;
 
 export const HealthResponseSchema = z.object({

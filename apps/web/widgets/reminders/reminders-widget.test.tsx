@@ -36,19 +36,20 @@ const JOURNAL_ID = '22222222-2222-4222-8222-222222222222';
 const EVENT_ID = '33333333-3333-4333-8333-333333333333';
 
 const TODAY: TodayResponse = {
+  // API order: sorted by UTC instant server-side; the widget renders as given.
   slots: [
-    {
-      automationId: JOURNAL_ID,
-      name: 'Journal',
-      at: '2026-07-19T21:30:00+03:00',
-      enabled: true,
-    },
     {
       automationId: HYDRATION_ID,
       name: 'Hydration break',
       at: '2026-07-19T12:00:00+03:00',
       enabled: true,
       run: { status: 'sent', firedAt: '2026-07-19T09:00:04Z' },
+    },
+    {
+      automationId: JOURNAL_ID,
+      name: 'Journal',
+      at: '2026-07-19T21:30:00+03:00',
+      enabled: true,
     },
   ],
   events: [
@@ -99,7 +100,7 @@ describe('RemindersWidget', () => {
     expect(document.querySelectorAll('.cc-rem-ghost')).toHaveLength(5);
   });
 
-  it('renders timed slots sorted by time, then event automations after a divider', async () => {
+  it('renders timed slots in API order, then event automations after a divider', async () => {
     renderWidget();
 
     const rows = await screen.findAllByRole('listitem');
