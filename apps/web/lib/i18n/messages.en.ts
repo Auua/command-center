@@ -37,8 +37,7 @@ export const messages = {
   'builder.error.time': 'Pick a time.',
   'builder.error.title': 'Notification title must be 1–80 characters of plain text.',
   'builder.eventLabel': 'Event',
-  'builder.interval.note':
-    'This reminder runs on a fixed interval ({summary}); its schedule can’t be edited here yet.',
+  'builder.interval': 'Repeat every',
   'builder.loading': 'Loading reminder…',
   'builder.lockScreenWarning':
     'Notification text is visible on your lock screen — keep it non-sensitive.',
@@ -53,6 +52,7 @@ export const messages = {
   'builder.titleEdit': 'Edit reminder',
   'builder.titleNew': 'New reminder',
   'builder.when.event': 'After an event',
+  'builder.when.interval': 'On an interval',
   'builder.when.legend': 'When',
   'builder.when.time': 'At a time',
 

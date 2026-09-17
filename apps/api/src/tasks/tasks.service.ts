@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import type {
-  CreateTaskRequest,
-  Task,
-  TaskListResponse,
-  UpdateTaskRequest,
+import {
+  TASK_COMPLETED_EVENT,
+  type CreateTaskRequest,
+  type Task,
+  type TaskCompletedEvent,
+  type TaskListResponse,
+  type UpdateTaskRequest,
 } from '@command-center/contracts';
 import type { AuthenticatedUser } from '../auth/auth.types';
-import { TASK_COMPLETED_EVENT, type TaskCompletedEvent } from './task-completed.event';
 import { TasksRepository, type TaskPatch } from './tasks.repository';
 
 /**
@@ -17,7 +18,11 @@ import { TasksRepository, type TaskPatch } from './tasks.repository';
  *
  * Completion time is set here from the clock, never taken from the client,
  * and completing a task emits `task.completed` on the in-process event bus
- * (ADR §4.1 — AutomationModule's smart reminders hook in there in Phase 2).
+ * (ADR §4.1 — AutomationModule's smart reminders hook in there). The emit is
+ * awaited (`emitAsync`) so listener work finishes inside the request: on a
+ * serverless host, work after the response is not guaranteed to run
+ * (ADR-039). Listeners catch their own errors, so awaiting never fails the
+ * request.
  */
 @Injectable()
 export class TasksService {
@@ -54,7 +59,7 @@ export class TasksService {
         title: task.title,
         completedAt: task.completedAt,
       };
-      this.eventEmitter.emit(TASK_COMPLETED_EVENT, event);
+      await this.eventEmitter.emitAsync(TASK_COMPLETED_EVENT, event);
     }
     return task;
   }

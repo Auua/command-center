@@ -58,9 +58,8 @@ function sameDays(days: number[], expected: readonly number[]): boolean {
 }
 
 /**
- * Inverse mapping for edit-mode prefill. Returns null for `interval`
- * schedules — the v1 builder has no interval UI (ADR-015 fields), so the
- * modal shows them read-only and leaves the schedule untouched on save.
+ * Inverse mapping for the timed (daily/weekly) prefill. Returns null for
+ * `interval` schedules — those prefill the builder's own interval select.
  */
 export function formFromSchedule(schedule: Schedule): TimedScheduleForm | null {
   switch (schedule.type) {

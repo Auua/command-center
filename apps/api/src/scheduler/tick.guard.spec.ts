@@ -40,6 +40,15 @@ describe('TickSecretGuard', () => {
     expect(() => guard.canActivate(contextWithHeaders(headers))).toThrow(UnauthorizedException);
   });
 
+  it('rejects every tick when TICK_SECRET is not configured', () => {
+    const unconfigured = new TickSecretGuard({
+      get: () => undefined,
+    } as unknown as ConfigService<Env, true>);
+    expect(() => unconfigured.canActivate(contextWithHeaders({ 'x-tick-secret': SECRET }))).toThrow(
+      UnauthorizedException,
+    );
+  });
+
   it('never leaks the expected secret in the thrown error', () => {
     try {
       guard.canActivate(contextWithHeaders({ 'x-tick-secret': 'wrong' }));

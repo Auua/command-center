@@ -27,11 +27,14 @@ export interface PushTarget {
 export class WebPushService {
   private readonly logger = new Logger(WebPushService.name);
   private configured = false;
+  private warnedUnconfigured = false;
 
   constructor(private readonly configService: ConfigService<Env, true>) {}
 
   async send(target: PushTarget, payload: string): Promise<PushSendOutcome> {
-    this.ensureConfigured();
+    if (!this.ensureConfigured()) {
+      return 'failed';
+    }
     try {
       await webPush.sendNotification(
         {
@@ -62,16 +65,26 @@ export class WebPushService {
     }
   }
 
-  private ensureConfigured(): void {
+  /** False (with one warning) when the optional ADR-039 VAPID keys are unset. */
+  private ensureConfigured(): boolean {
     if (this.configured) {
-      return;
+      return true;
     }
-    webPush.setVapidDetails(
-      this.configService.get('VAPID_SUBJECT', { infer: true }),
-      this.configService.get('VAPID_PUBLIC_KEY', { infer: true }),
-      this.configService.get('VAPID_PRIVATE_KEY', { infer: true }),
-    );
+    const subject = this.configService.get('VAPID_SUBJECT', { infer: true });
+    const publicKey = this.configService.get('VAPID_PUBLIC_KEY', { infer: true });
+    const privateKey = this.configService.get('VAPID_PRIVATE_KEY', { infer: true });
+    if (!subject || !publicKey || !privateKey) {
+      if (!this.warnedUnconfigured) {
+        this.warnedUnconfigured = true;
+        this.logger.warn(
+          'Push send skipped: VAPID keys are not configured (ADR-039 env group unset)',
+        );
+      }
+      return false;
+    }
+    webPush.setVapidDetails(subject, publicKey, privateKey);
     this.configured = true;
+    return true;
   }
 
   /** Loggable endpoint reference — hash prefix, never the capability URL. */

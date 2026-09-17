@@ -125,12 +125,18 @@ line. Widget chrome stays English.
 ADR-024's `progress/<kind>.json` is **not created**. The API's per-user state is the note's
 front-matter, so what the app records is what Obsidian's `Kertaus` views show:
 
-| Action (ADR-011/012)       | Front-matter write                                                              | Event                                        |
-| -------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- |
-| acknowledge ("learned it") | `status: new → learning`, `reviewed: <UTC date>`, `confidence: max(2, current)` | `wotd.acknowledged` — the only streak source |
-| skip ("already knew it")   | `status: known`, `reviewed: <UTC date>`                                         | none                                         |
-| grammar "mark studied"     | as acknowledge                                                                  | `grammar.studied`                            |
-| grammar "next point"       | `reviewed: <UTC date>` only                                                     | none                                         |
+| Action (ADR-011/012)       | Front-matter write                                                                  | Event                                        |
+| -------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------- |
+| acknowledge ("learned it") | `status: new → learning`, `reviewed: <home-tz date>`, `confidence: max(2, current)` | `wotd.acknowledged` — the only streak source |
+| skip ("already knew it")   | `status: known`, `reviewed: <home-tz date>`                                         | none                                         |
+| grammar "mark studied"     | as acknowledge                                                                      | `grammar.studied`                            |
+| grammar "next point"       | `reviewed: <home-tz date>` only                                                     | none                                         |
+
+**Which date.** `reviewed` is a human calendar date read in Obsidian, so it carries the
+**home-timezone date** from the user profile (`user_profiles.timezone`, Phase 2 / ADR-039) —
+not the UTC learning day. The day pin stays on the UTC day; this is ADR-014's existing split
+(pace on UTC, record on home time) applied to the vault. `LearningModule` consumes
+`ProfileService`'s exported timezone lookup, the seam `AutomationModule` already uses.
 
 A `confidence` already above the floor is never lowered by the app; `shaky`/`known` set by hand
 in Obsidian are respected (a `known` word is never served). Un-doing anything is editing the
@@ -236,6 +242,12 @@ ADR-024's endpoints stand with these changes:
 - `GET /anki-status` unchanged in shape; `decks` reflects the `Japani` deck.
 - A new read, `GET /learning/vault-status` → `{ indexedAt, indexSha, counts, errors[] }`, so
   the widget's about panel can say "index 2 h old · 3 notes skipped" and link to the Action run.
+- Learning-side failures — a stale or missing index, an expired PAT (ADR-024's token-invalid
+  state), an Anki sync run gone red (ADR-026) — are surfaced through the notification bell as
+  rows with `source: "learning"` (Phase 2's `notifications` table reserves `source` for
+  non-automation producers), at most one open row per condition, written when the condition is
+  first observed on a read. The about panel keeps the detail; the bell is how the user learns
+  something needs a hand.
   No write endpoints beyond the above; the vault stays the user's to shape.
 
 ## Consequences

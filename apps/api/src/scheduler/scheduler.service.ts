@@ -91,6 +91,7 @@ export class SchedulerService {
             automationId: automation.id,
             userId: automation.userId,
             slot,
+            notificationId: null,
           }),
         );
       }

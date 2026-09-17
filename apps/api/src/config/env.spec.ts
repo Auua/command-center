@@ -1,4 +1,4 @@
-import { validateEnv } from './env';
+import { isSchedulerConfigured, validateEnv } from './env';
 
 const VALID_ENV = {
   SUPABASE_URL: 'https://example.supabase.co',
@@ -49,12 +49,39 @@ describe('validateEnv', () => {
   });
 
   it.each(['SUPABASE_SECRET_KEY', 'VAPID_PUBLIC_KEY', 'VAPID_PRIVATE_KEY'] as const)(
-    'rejects a missing %s (Phase 2 fail-fast)',
+    'rejects a partial Phase 2 group with %s missing (all-or-nothing)',
     (key) => {
       const { [key]: _omitted, ...without } = VALID_ENV;
       expect(() => validateEnv(without)).toThrow(new RegExp(key));
+      expect(() => validateEnv(without)).toThrow(/all-or-nothing/);
     },
   );
+
+  it('accepts the Phase 2 group entirely unset (scheduler unconfigured)', () => {
+    const {
+      SUPABASE_SECRET_KEY: _a,
+      TICK_SECRET: _b,
+      VAPID_PUBLIC_KEY: _c,
+      VAPID_PRIVATE_KEY: _d,
+      VAPID_SUBJECT: _e,
+      ...base
+    } = VALID_ENV;
+    const env = validateEnv(base);
+    expect(isSchedulerConfigured(env)).toBe(false);
+    expect(isSchedulerConfigured(validateEnv(VALID_ENV))).toBe(true);
+  });
+
+  it('treats empty strings in the Phase 2 group as unset', () => {
+    const env = validateEnv({
+      ...VALID_ENV,
+      SUPABASE_SECRET_KEY: '',
+      TICK_SECRET: '',
+      VAPID_PUBLIC_KEY: '',
+      VAPID_PRIVATE_KEY: '',
+      VAPID_SUBJECT: '',
+    });
+    expect(isSchedulerConfigured(env)).toBe(false);
+  });
 
   it('rejects a short TICK_SECRET', () => {
     expect(() => validateEnv({ ...VALID_ENV, TICK_SECRET: 'short' })).toThrow(/TICK_SECRET/);

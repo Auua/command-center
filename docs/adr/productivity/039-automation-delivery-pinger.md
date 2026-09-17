@@ -1,8 +1,30 @@
 # ADR-039: Automation delivery — inline tick behind an external pinger (MVP)
 
-- **Status:** proposed
-- **Date:** 2026-07-18
-- **Review:** claude-reviewed
+- **Status:** accepted (2026-09-17)
+- **Date:** 2026-07-18 (accepted 2026-09-17 with the implementation, PRs #21/#22, plus the
+  amendments below)
+- **Review:** claude-reviewed, PO-reviewed — accepted 2026-09-17
+
+### Amendments at acceptance (2026-09-17)
+
+- **The scheduler env group is optional as a whole.** `SUPABASE_SECRET_KEY`, `TICK_SECRET`,
+  `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` are set together or not at all;
+  a partial group still fails boot. With none set the API serves every user-facing route, the
+  tick answers 401, `/health` reports `tick: "unconfigured"`, push sends are skipped with one
+  logged warning, and event dispatch logs and skips. This lets the code merge and deploy before
+  the one-time external setup, instead of the deploy failing to boot until the env is filled in.
+- **Event dispatch is awaited inside the request.** `TasksModule` emits `task.completed` with
+  `emitAsync` and awaits it, so the claim → bell → push tail completes before the task-completion
+  response is sent. On a serverless host, work after the response is not guaranteed to run; the
+  stale-pending sweep still covers a crash, but "faster, not slower" is now true by construction
+  rather than by luck. Listeners catch their own errors; a broken reminder never fails the task
+  request.
+- **Retry-safe bell writes.** `automation_runs.notification_id` (migration 0008) is stamped
+  right after the bell insert; a stale-pending re-process of a run that already carries one
+  reuses it instead of writing a second bell row for the same slot. Push was already deduped by
+  the OS-level tag; the bell now is too.
+- **Event contracts live in `packages/contracts`** (`schemas/events.ts`), so the automation
+  listener no longer imports from the tasks module (§4.1).
 
 ## Context
 

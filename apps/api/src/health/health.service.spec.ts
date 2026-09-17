@@ -7,6 +7,7 @@ import { HealthService } from './health.service';
 class FakeSchedulerRepository {
   state: SchedulerState | null = null;
   fail = false;
+  configured = true;
 
   getState(): Promise<SchedulerState | null> {
     if (this.fail) {
@@ -36,6 +37,13 @@ describe('HealthService', () => {
     expect(result.status).toBe('ok');
     expect(result.service).toBe('api');
     expect(Number.isNaN(Date.parse(result.time))).toBe(false);
+  });
+
+  it('reports tick "unconfigured" when the ADR-039 env group is unset', async () => {
+    schedulerRepository.configured = false;
+    const result = await service.getHealth();
+    expect(result.tick).toBe('unconfigured');
+    expect(() => HealthResponseSchema.parse(result)).not.toThrow();
   });
 
   it('reports tick "never" before the first tick', async () => {

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Env } from '../config/env';
+import { isSchedulerConfigured, type Env } from '../config/env';
 
 const STATE_TABLE = 'scheduler_state';
 const AUTOMATIONS_TABLE = 'automations';
@@ -34,6 +34,8 @@ export interface PendingRun {
   automationId: string;
   userId: string;
   slot: Date;
+  /** Bell row already written for this run (retry safety) — null until then. */
+  notificationId: string | null;
 }
 
 export interface SchedulerSubscription {
@@ -50,24 +52,44 @@ export interface SchedulerSubscription {
  * which bypasses RLS. Containment rules: consumed only by SchedulerModule's
  * tick/dispatch pipeline, never by a user-facing endpoint; the key is never
  * logged; every query still filters explicitly by the ids it operates on.
+ *
+ * With the ADR-039 env group unset (`configured === false`) the client is
+ * never created and every method throws — the tick guard already answers
+ * 401 in that state, and event dispatch logs and skips.
  */
 @Injectable()
 export class SchedulerRepository {
   private readonly logger = new Logger(SchedulerRepository.name);
-  private readonly client: SupabaseClient;
+  private readonly serviceClient: SupabaseClient | null;
+  /** False when the optional ADR-039 env group is unset. */
+  readonly configured: boolean;
 
   constructor(configService: ConfigService<Env, true>) {
-    this.client = createClient(
-      configService.get('SUPABASE_URL', { infer: true }),
-      configService.get('SUPABASE_SECRET_KEY', { infer: true }),
-      {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
-        },
-      },
-    );
+    const secretKey = configService.get('SUPABASE_SECRET_KEY', { infer: true });
+    this.configured = isSchedulerConfigured({
+      SUPABASE_SECRET_KEY: secretKey,
+      TICK_SECRET: configService.get('TICK_SECRET', { infer: true }),
+      VAPID_PUBLIC_KEY: configService.get('VAPID_PUBLIC_KEY', { infer: true }),
+      VAPID_PRIVATE_KEY: configService.get('VAPID_PRIVATE_KEY', { infer: true }),
+      VAPID_SUBJECT: configService.get('VAPID_SUBJECT', { infer: true }),
+    });
+    this.serviceClient =
+      this.configured && secretKey
+        ? createClient(configService.get('SUPABASE_URL', { infer: true }), secretKey, {
+            auth: {
+              persistSession: false,
+              autoRefreshToken: false,
+              detectSessionInUrl: false,
+            },
+          })
+        : null;
+  }
+
+  private get client(): SupabaseClient {
+    if (!this.serviceClient) {
+      throw new Error('Scheduler is not configured (ADR-039 env group unset)');
+    }
+    return this.serviceClient;
   }
 
   async getState(name: string): Promise<SchedulerState | null> {
@@ -231,7 +253,7 @@ export class SchedulerRepository {
   async listStalePendingRuns(olderThan: Date): Promise<PendingRun[]> {
     const { data, error } = await this.client
       .from(RUNS_TABLE)
-      .select('id, automation_id, user_id, slot')
+      .select('id, automation_id, user_id, slot, notification_id')
       .eq('status', 'pending')
       .lt('created_at', olderThan.toISOString());
 
@@ -239,13 +261,32 @@ export class SchedulerRepository {
       throw this.wrap('list stale pending runs', error.message);
     }
     return (
-      (data ?? []) as { id: string; automation_id: string; user_id: string; slot: string }[]
+      (data ?? []) as {
+        id: string;
+        automation_id: string;
+        user_id: string;
+        slot: string;
+        notification_id: string | null;
+      }[]
     ).map((row) => ({
       runId: row.id,
       automationId: row.automation_id,
       userId: row.user_id,
       slot: new Date(row.slot),
+      notificationId: row.notification_id ?? null,
     }));
+  }
+
+  /** Stamps the bell row on its run so a stale-pending retry reuses it. */
+  async setRunNotification(runId: string, notificationId: string): Promise<void> {
+    const { error } = await this.client
+      .from(RUNS_TABLE)
+      .update({ notification_id: notificationId })
+      .eq('id', runId);
+
+    if (error) {
+      throw this.wrap('record run notification', error.message);
+    }
   }
 
   /** Current automation state for the dispatch tail's enabled re-check. */
