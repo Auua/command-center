@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { TASK_COMPLETED_EVENT, type TaskCompletedEvent } from '../tasks/task-completed.event';
+import { TASK_COMPLETED_EVENT, type TaskCompletedEvent } from '@command-center/contracts';
 import { DispatchService } from '../scheduler/dispatch.service';
 
 /**
@@ -9,8 +9,11 @@ import { DispatchService } from '../scheduler/dispatch.service';
  * dispatches inline through the shared claim → bell → push tail with
  * slot = the event timestamp (ADR-039 — "faster, not slower", no tick hop).
  *
- * Listener errors are logged, never rethrown: a broken reminder must not
- * disturb the task-completion request that emitted the event.
+ * TasksService emits with `emitAsync` and awaits it, so this handler runs to
+ * completion inside the task-completion request — on a serverless host,
+ * work after the response is not guaranteed to run (ADR-039 amendment,
+ * 2026-09-17). Listener errors are logged, never rethrown: a broken reminder
+ * must not fail the task-completion request that emitted the event.
  */
 @Injectable()
 export class TaskCompletedListener {

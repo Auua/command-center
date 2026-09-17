@@ -1,5 +1,6 @@
 export * from './schemas/automations';
 export * from './schemas/braindump';
+export * from './schemas/events';
 export * from './schemas/layout';
 export * from './schemas/health';
 export * from './schemas/mood';

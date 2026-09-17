@@ -128,7 +128,7 @@ describe('formFromSchedule', () => {
     ).toEqual({ time: '07:15', dayChoice: 'every-day', customDays: [] });
   });
 
-  it('returns null for interval schedules (read-only in the v1 builder)', () => {
+  it('returns null for interval schedules (they prefill the interval select)', () => {
     expect(formFromSchedule({ type: 'interval', everyMinutes: 30 })).toBeNull();
   });
 

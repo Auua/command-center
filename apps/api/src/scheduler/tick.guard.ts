@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import {
   Injectable,
+  Logger,
   UnauthorizedException,
   type CanActivate,
   type ExecutionContext,
@@ -18,16 +19,30 @@ const HEADER = 'x-tick-secret';
  * keeping the comparison timing-independent of where the strings differ).
  * Mismatch → 401 with no body (see the controller's exception filter);
  * the global throttler rate-caps guessing.
+ *
+ * With no `TICK_SECRET` configured (the optional Phase 2 env group unset)
+ * every tick is rejected the same way — there is nothing to match against —
+ * and the reason is logged once so the pinger's 401 alert is explainable.
  */
 @Injectable()
 export class TickSecretGuard implements CanActivate {
-  private readonly expectedDigest: Buffer;
+  private readonly logger = new Logger(TickSecretGuard.name);
+  private readonly expectedDigest: Buffer | null;
+  private warned = false;
 
   constructor(configService: ConfigService<Env, true>) {
-    this.expectedDigest = digest(configService.get('TICK_SECRET', { infer: true }));
+    const secret = configService.get('TICK_SECRET', { infer: true });
+    this.expectedDigest = secret ? digest(secret) : null;
   }
 
   canActivate(context: ExecutionContext): boolean {
+    if (this.expectedDigest === null) {
+      if (!this.warned) {
+        this.warned = true;
+        this.logger.warn('Tick rejected: TICK_SECRET is not configured (ADR-039 env group unset)');
+      }
+      throw new UnauthorizedException();
+    }
     const request = context.switchToHttp().getRequest<Request>();
     const header = request.headers[HEADER];
     const provided = typeof header === 'string' ? header : '';

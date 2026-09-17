@@ -14,6 +14,10 @@ import { SchedulerRepository, type PendingRun } from './scheduler.repository';
  * - otherwise → `failed` (+ error) — the bell row, when written, still
  *   exists: it is the delivery of record regardless of push outcome.
  * Dead endpoints (404/410) are pruned inline.
+ *
+ * Retry safety: the bell row's id is stamped on the run right after the
+ * insert, so a stale-pending re-process of a run that already has one reuses
+ * it instead of writing a second bell row for the same slot.
  */
 @Injectable()
 export class DispatchService {
@@ -45,24 +49,27 @@ export class DispatchService {
       return;
     }
 
-    let notificationId: string;
-    try {
-      notificationId = await this.schedulerRepository.insertNotification(
-        automation.userId,
-        automation.action.title,
-        automation.action.body,
-        automation.id,
-      );
-    } catch (error) {
-      // No bell row means nothing was delivered — never push without the
-      // record of delivery (the bell IS the delivery of record).
-      await this.schedulerRepository.updateRunStatus(
-        run.runId,
-        'failed',
-        this.now(),
-        `bell write failed: ${error instanceof Error ? error.message : 'unknown error'}`,
-      );
-      return;
+    let notificationId = run.notificationId;
+    if (notificationId === null) {
+      try {
+        notificationId = await this.schedulerRepository.insertNotification(
+          automation.userId,
+          automation.action.title,
+          automation.action.body,
+          automation.id,
+        );
+        await this.schedulerRepository.setRunNotification(run.runId, notificationId);
+      } catch (error) {
+        // No bell row means nothing was delivered — never push without the
+        // record of delivery (the bell IS the delivery of record).
+        await this.schedulerRepository.updateRunStatus(
+          run.runId,
+          'failed',
+          this.now(),
+          `bell write failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+        );
+        return;
+      }
     }
 
     const subscriptions = await this.schedulerRepository.listSubscriptions(automation.userId);
@@ -121,6 +128,7 @@ export class DispatchService {
           automationId: automation.id,
           userId,
           slot: occurredAt,
+          notificationId: null,
         });
       } catch (error) {
         // Leave the run pending — the tick's stale sweep retries it.

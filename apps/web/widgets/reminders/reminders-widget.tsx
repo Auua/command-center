@@ -138,9 +138,9 @@ export function RemindersWidget({ settings }: WidgetProps<RemindersSettings>): R
   const pushPermission = usePushPermission(hasEnabledTimed);
   const pendingId = toggleMutation.isPending ? (toggleMutation.variables?.id ?? null) : null;
 
-  const sortedSlots = data
-    ? [...data.slots].sort((a, b) => a.at.localeCompare(b.at)).slice(0, maxRows)
-    : [];
+  // The API returns slots sorted by UTC instant; re-sorting the offset-bearing
+  // ISO strings client-side would mis-order the two DST days a year.
+  const sortedSlots = data ? data.slots.slice(0, maxRows) : [];
   const events = data && showEventAutomations ? data.events : [];
   const isEmpty = data !== undefined && data.slots.length === 0 && data.events.length === 0;
 

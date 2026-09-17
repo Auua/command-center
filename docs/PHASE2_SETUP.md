@@ -1,13 +1,17 @@
 # Phase 2 setup runbook — external dependencies (one-time)
 
 Everything the automations MVP (ADR-039) needs outside this repo: database
-migrations, three secrets in Vercel, a free cron pinger, and a monitor. Done
-once by the product owner, top to bottom; each step is copy-pasteable.
+migrations, five env variables in Vercel, a free cron pinger, and a monitor.
+Done once by the product owner, top to bottom; each step is copy-pasteable.
 Estimated time: ~20 minutes.
 
-Prerequisites: the `phase2-backend` (API) and Phase-2 frontend branches are
-merged and deployed on Vercel. `<api-host>` below means the deployed API
-origin, e.g. `command-center-api.vercel.app`.
+Order matters only loosely: the five Phase 2 variables are **optional as a
+group** (ADR-039 amendment) — the merged API boots and serves without them,
+with `/health` reporting `"tick":"unconfigured"` and every tick answered 401
+until steps 2–3 are done. Set them before or after the deploy; reminders
+start firing once all five are present and the pinger (step 4) is running.
+`<api-host>` below means the deployed API origin, e.g.
+`command-center-api.vercel.app`.
 
 ## 1. Apply migrations in the Supabase SQL editor
 
@@ -29,8 +33,9 @@ Editor → paste → Run):
 2. `0005_automations.sql`
 3. `0006_notifications.sql`
 4. `0007_scheduler_state.sql`
+5. `0008_automation_runs_notification_id.sql`
 
-All four are idempotent (`if not exists` / drop-then-create policies) — safe
+All five are idempotent (`if not exists` / drop-then-create policies) — safe
 to re-run. Verify with the query above: `user_profiles`, `automations`,
 `automation_runs`, `push_subscriptions`, `notifications`, `scheduler_state`
 should all exist.

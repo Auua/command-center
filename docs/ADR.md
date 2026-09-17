@@ -275,6 +275,7 @@ erDiagram
         timestamptz fired_at
         text status "pending | sent | failed | skipped"
         text error
+        uuid notification_id "bell row for this run; stamped right after insert (retry-safe, 0008)"
     }
     push_subscriptions {
         uuid id PK
