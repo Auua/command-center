@@ -352,3 +352,21 @@ described a deployment that never happened; web and api are in fact both hosted 
 (row + diagram), NFR-13, the secrets row, ENV_SETUP §4, and ADR-031's reachability premise now say
 Vercel. The constraint ADR-006 was built on still stands and is recorded in the row: a long-running
 pg-boss consumer doesn't fit Vercel functions, so the worker's home gets decided when Phase 2 lands.
+
+## Batch 7 — learning store realignment (2026-09-17)
+
+One ADR from the 2026-09-17 project review: the `learning-center` repo turned out to be an Obsidian
+vault (built 2026-08-29 → 09-17), not the `pool/` + `progress/` + `cards/` layout ADR-024 specified
+and ADR-011/012/013/019/026/032 build on. ADR-040 makes the vault's own schema the content model.
+
+| ADR | Title                                                                | Review state | Approved |
+| --- | -------------------------------------------------------------------- | ------------ | -------- |
+| 040 | The Obsidian vault is the learning store (ADR-024 layout superseded) | new          |          |
+
+Decisions most worth the product owner's attention, in order: (1) progress is written into the
+notes' `status`/`confidence`/`reviewed` front-matter — the app edits vault files; (2) "Add to Anki"
+disappears from the WOTD/grammar widgets because every note already carries a card; (3) note
+identity is the vault path, so renaming a note in Obsidian resets its day pin and re-creates its
+Anki card; (4) the indexer lives in the vault as a Python script next to `check_vault.py`, not in
+the monorepo. Amendments to six accepted ADRs and the runbook are listed under the ADR's
+Consequences and are owed on acceptance, not before.
