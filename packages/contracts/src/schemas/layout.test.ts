@@ -24,6 +24,23 @@ describe('WidgetLayoutItemSchema', () => {
     expect(item.settings).toEqual({});
   });
 
+  it('defaults instanceKey to the empty single-instance key', () => {
+    const item = WidgetLayoutItemSchema.parse({
+      widgetId: 'tech-lesson',
+      gridPos: { x: 0, y: 0, w: 2, h: 1 },
+    });
+    expect(item.instanceKey).toBe('');
+  });
+
+  it('keeps an explicit instanceKey', () => {
+    const item = WidgetLayoutItemSchema.parse({
+      widgetId: 'tech-lesson',
+      instanceKey: 'java',
+      gridPos: { x: 0, y: 0, w: 2, h: 1 },
+    });
+    expect(item.instanceKey).toBe('java');
+  });
+
   it('rejects an empty widget id', () => {
     expect(
       WidgetLayoutItemSchema.safeParse({

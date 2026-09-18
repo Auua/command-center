@@ -11,8 +11,8 @@ const user: AuthenticatedUser = {
   token: 'jwt',
 };
 
-function item(widgetId: string): WidgetLayoutItem {
-  return { widgetId, gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} };
+function item(widgetId: string, instanceKey = ''): WidgetLayoutItem {
+  return { widgetId, instanceKey, gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} };
 }
 
 describe('LayoutService', () => {
@@ -46,6 +46,20 @@ describe('LayoutService', () => {
 
     await expect(service.putLayout(user, { items })).resolves.toEqual({ items });
     expect(repository.replaceForUser).toHaveBeenCalledWith(user, items);
+  });
+
+  it('accepts the same definition twice under different instance keys', async () => {
+    const items = [item('tech-lesson', 'java'), item('tech-lesson', 'sql')];
+
+    await expect(service.putLayout(user, { items })).resolves.toEqual({ items });
+    expect(repository.replaceForUser).toHaveBeenCalledWith(user, items);
+  });
+
+  it('rejects the same definition twice under one instance key', async () => {
+    const items = [item('tech-lesson', 'java'), item('tech-lesson', 'java')];
+
+    await expect(service.putLayout(user, { items })).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.replaceForUser).not.toHaveBeenCalled();
   });
 
   it('rejects duplicate widget ids without touching persistence', async () => {

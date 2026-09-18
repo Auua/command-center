@@ -344,9 +344,51 @@ p {
   color: var(--cc-wc);
 }
 
+.cc-widget-card-settings svg {
+  display: block;
+}
+
 .cc-widget-card-body {
   flex: 1;
   min-height: 0;
+}
+
+/* ---- Auto-generated settings panel (ADR §4.2) ---- */
+
+.cc-settings-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.cc-field-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.cc-field-check input {
+  margin: 0;
+}
+
+.cc-field input[type='number'] {
+  font: inherit;
+  color: var(--cc-text);
+  background: var(--cc-bg-inset);
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  padding: 8px 10px;
+  max-width: 8rem;
+}
+
+.cc-field-unsupported {
+  font-size: 0.86rem;
+  color: var(--cc-text-muted);
+}
+
+.cc-form-error {
+  color: var(--cc-danger);
+  font-size: 0.86rem;
+  margin: 4px 0 8px;
 }
 
 .cc-widget-error {

@@ -1,10 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardGrid } from './dashboard-grid';
 
 vi.mock('@/lib/layout-api', () => ({
   fetchLayout: vi.fn(),
+  putLayout: vi.fn(),
 }));
 vi.mock('@/lib/braindump-api', () => ({
   fetchBraindumpNotes: vi.fn(),
@@ -18,10 +20,11 @@ vi.mock('@/lib/mood-api', () => ({
 }));
 
 import { fetchBraindumpNotes } from '@/lib/braindump-api';
-import { fetchLayout } from '@/lib/layout-api';
+import { fetchLayout, putLayout } from '@/lib/layout-api';
 import { fetchMoodCheckins } from '@/lib/mood-api';
 
 const fetchLayoutMock = vi.mocked(fetchLayout);
+const putLayoutMock = vi.mocked(putLayout);
 const fetchNotesMock = vi.mocked(fetchBraindumpNotes);
 const fetchMoodMock = vi.mocked(fetchMoodCheckins);
 
@@ -56,7 +59,9 @@ describe('DashboardGrid', () => {
 
   it('renders the persisted layout when the API responds', async () => {
     fetchLayoutMock.mockResolvedValue({
-      items: [{ widgetId: 'clock', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} }],
+      items: [
+        { widgetId: 'clock', instanceKey: '', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
+      ],
     });
 
     renderGrid();
@@ -70,6 +75,7 @@ describe('DashboardGrid', () => {
       items: [
         {
           widgetId: 'not-built-yet',
+          instanceKey: '',
           gridPos: { x: 0, y: 0, w: 2, h: 1 },
           settings: {},
         },
@@ -79,6 +85,55 @@ describe('DashboardGrid', () => {
     renderGrid();
 
     expect(await screen.findByText(/unknown widget/i)).toBeInTheDocument();
+  });
+
+  it('shows a settings button only for widgets whose schema has fields', async () => {
+    fetchLayoutMock.mockResolvedValue({
+      items: [
+        { widgetId: 'clock', instanceKey: '', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
+        {
+          widgetId: 'braindump',
+          instanceKey: '',
+          gridPos: { x: 2, y: 0, w: 2, h: 2 },
+          settings: {},
+        },
+      ],
+    });
+
+    renderGrid();
+
+    const clock = await screen.findByRole('region', { name: 'Clock' });
+    expect(within(clock).getByRole('button', { name: 'Settings for Clock' })).toBeInTheDocument();
+    const braindump = screen.getByRole('region', { name: 'Braindump' });
+    expect(within(braindump).queryByRole('button', { name: /settings/i })).toBeNull();
+  });
+
+  it('saves a changed setting by writing the whole layout back', async () => {
+    const user = userEvent.setup();
+    const items = [
+      { widgetId: 'clock', instanceKey: '', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
+      {
+        widgetId: 'braindump',
+        instanceKey: '',
+        gridPos: { x: 2, y: 0, w: 2, h: 2 },
+        settings: {},
+      },
+    ];
+    fetchLayoutMock.mockResolvedValue({ items });
+    putLayoutMock.mockImplementation((next) => Promise.resolve({ items: next }));
+
+    renderGrid();
+
+    const clock = await screen.findByRole('region', { name: 'Clock' });
+    await user.click(within(clock).getByRole('button', { name: 'Settings for Clock' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Clock settings' });
+    await user.click(within(dialog).getByRole('checkbox', { name: '12-hour clock' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+
+    expect(putLayoutMock).toHaveBeenCalledWith([
+      { ...items[0], settings: { hour12: true } },
+      items[1],
+    ]);
   });
 
   it('uses the default layout when the persisted layout is empty', async () => {

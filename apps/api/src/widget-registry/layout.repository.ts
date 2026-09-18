@@ -23,9 +23,10 @@ export class LayoutRepository {
     const client = this.supabaseService.forUser(user.token);
     const { data, error } = await client
       .from(TABLE)
-      .select('widget_id, grid_pos, settings')
+      .select('widget_id, instance_key, grid_pos, settings')
       .eq('user_id', user.id)
-      .order('widget_id', { ascending: true });
+      .order('widget_id', { ascending: true })
+      .order('instance_key', { ascending: true });
 
     if (error) {
       this.logger.error(`Failed to load widget layout: ${error.message}`);
@@ -52,6 +53,7 @@ export class LayoutRepository {
     const rows = items.map((item) => ({
       user_id: user.id,
       widget_id: item.widgetId,
+      instance_key: item.instanceKey,
       grid_pos: item.gridPos,
       settings: item.settings,
     }));
@@ -70,11 +72,13 @@ export class LayoutRepository {
    */
   private toItem(row: {
     widget_id: string;
+    instance_key: string | null;
     grid_pos: unknown;
     settings: unknown;
   }): WidgetLayoutItem {
     const parsed = WidgetLayoutItemSchema.safeParse({
       widgetId: row.widget_id,
+      instanceKey: row.instance_key ?? '',
       gridPos: row.grid_pos,
       settings: row.settings ?? {},
     });

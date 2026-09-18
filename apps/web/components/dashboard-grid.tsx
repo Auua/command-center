@@ -1,15 +1,35 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import type { ComponentType, CSSProperties, ReactElement } from 'react';
-import type { WidgetLayoutItem } from '@command-center/contracts';
-import { WidgetCard, WidgetErrorBoundary, type WidgetProps } from '@command-center/ui';
-import { fetchLayout } from '@/lib/layout-api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMemo,
+  useState,
+  type ComponentType,
+  type CSSProperties,
+  type ReactElement,
+} from 'react';
+import type { LayoutResponse, WidgetLayoutItem } from '@command-center/contracts';
+import {
+  clampToDeclaredSize,
+  describeSettingsSchema,
+  WidgetCard,
+  WidgetErrorBoundary,
+  type SettingsValues,
+  type WidgetProps,
+} from '@command-center/ui';
+import { fetchLayout, putLayout } from '@/lib/layout-api';
 import { t } from '@/lib/i18n';
 import { DEFAULT_LAYOUT } from '@/widgets/default-layout';
 import { widgetRegistry } from '@/widgets/registry';
+import { WidgetSettingsDialog } from './widget-settings-dialog';
 
 const GRID_COLUMNS = 6;
+const LAYOUT_QUERY_KEY = ['layout'];
+
+/** Stable identity of a placement: definition + instance (ADR-013). */
+function placementKey(item: WidgetLayoutItem): string {
+  return `${item.widgetId}:${item.instanceKey}`;
+}
 
 /**
  * Grid placement via CSS custom properties (consumed in globals.css) so a
@@ -28,8 +48,22 @@ function gridPlacement(item: WidgetLayoutItem): CSSProperties {
   } as CSSProperties;
 }
 
-function DashboardWidget({ item }: { item: WidgetLayoutItem }): ReactElement {
+interface DashboardWidgetProps {
+  item: WidgetLayoutItem;
+  onSaveSettings: (item: WidgetLayoutItem, settings: SettingsValues) => Promise<void>;
+}
+
+function DashboardWidget({ item, onSaveSettings }: DashboardWidgetProps): ReactElement {
   const definition = widgetRegistry.get(item.widgetId);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Introspected once per definition; an empty field list means no gear.
+  const fields = useMemo(
+    () => (definition ? describeSettingsSchema(definition.settingsSchema) : []),
+    [definition],
+  );
 
   if (!definition) {
     return (
@@ -44,9 +78,25 @@ function DashboardWidget({ item }: { item: WidgetLayoutItem }): ReactElement {
   const parsed = definition.settingsSchema.safeParse(item.settings);
   const settings: unknown = parsed.success ? parsed.data : definition.defaultSettings;
 
+  // Declared sizes are the contract (ADR §4.2): snap an undeclared footprint.
+  const size = clampToDeclaredSize({ w: item.gridPos.w, h: item.gridPos.h }, definition.sizes);
+
   // The registry erases TSettings (stores WidgetDefinition<never>); widen the
   // component back to accept the validated settings value.
   const Widget = definition.component as ComponentType<WidgetProps<unknown>>;
+
+  const handleSave = async (next: SettingsValues): Promise<void> => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onSaveSettings(item, next);
+      setSettingsOpen(false);
+    } catch {
+      setSaveError(t('settings.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <WidgetErrorBoundary widgetTitle={definition.title}>
@@ -55,17 +105,41 @@ function DashboardWidget({ item }: { item: WidgetLayoutItem }): ReactElement {
         icon={definition.icon}
         accent={definition.accent}
         quickActions={definition.quickActions}
+        onOpenSettings={fields.length > 0 ? (): void => setSettingsOpen(true) : undefined}
+        settingsLabel={t('settings.open', { title: definition.title })}
       >
-        <Widget settings={settings} size={{ w: item.gridPos.w, h: item.gridPos.h }} />
+        <Widget settings={settings} size={size} />
       </WidgetCard>
+      {settingsOpen && (
+        <WidgetSettingsDialog
+          definition={definition}
+          fields={fields}
+          current={settings as SettingsValues}
+          saving={saving}
+          error={saveError}
+          onSave={(next) => void handleSave(next)}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
     </WidgetErrorBoundary>
   );
 }
 
 export function DashboardGrid(): ReactElement {
+  const queryClient = useQueryClient();
   const { data, isPending, isError } = useQuery({
-    queryKey: ['layout'],
+    queryKey: LAYOUT_QUERY_KEY,
     queryFn: fetchLayout,
+  });
+
+  // The settings panel is the first PUT /layout caller: it writes the whole
+  // list back with one item's settings replaced, and the query cache takes
+  // the server's echo so every card re-reads its validated settings.
+  const saveSettings = useMutation({
+    mutationFn: (next: WidgetLayoutItem[]) => putLayout(next),
+    onSuccess: (response: LayoutResponse) => {
+      queryClient.setQueryData(LAYOUT_QUERY_KEY, response);
+    },
   });
 
   if (isPending) {
@@ -80,11 +154,21 @@ export function DashboardGrid(): ReactElement {
   const items: WidgetLayoutItem[] =
     isError || !data || data.items.length === 0 ? DEFAULT_LAYOUT : data.items;
 
+  const handleSaveSettings = async (
+    target: WidgetLayoutItem,
+    settings: SettingsValues,
+  ): Promise<void> => {
+    const next = items.map((item) =>
+      placementKey(item) === placementKey(target) ? { ...item, settings } : item,
+    );
+    await saveSettings.mutateAsync(next);
+  };
+
   return (
     <div className="cc-grid">
-      {items.map((item, index) => (
-        <div key={`${item.widgetId}:${index}`} className="cc-grid-item" style={gridPlacement(item)}>
-          <DashboardWidget item={item} />
+      {items.map((item) => (
+        <div key={placementKey(item)} className="cc-grid-item" style={gridPlacement(item)}>
+          <DashboardWidget item={item} onSaveSettings={handleSaveSettings} />
         </div>
       ))}
     </div>
