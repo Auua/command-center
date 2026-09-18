@@ -104,6 +104,8 @@ local acknowledge is a real commit on `main`.
 
 ## 4. Deploy targets
 
+`NEXT_PUBLIC_API_URL` must be the bare API origin, **no trailing slash** (`https://command-center-api.vercel.app`). The client strips one defensively, but a rebuilt bundle is needed for that to take effect, so fix the value rather than rely on it.
+
 Set the same variables in the platform dashboards: Vercel hosts both web and
 api (+ worker entrypoint). `CORS_ORIGIN` must list the deployed web origin; add
 `https://command-center-web-*-<team>.vercel.app` to let branch preview deployments of the web

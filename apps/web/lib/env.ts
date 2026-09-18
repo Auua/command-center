@@ -22,9 +22,14 @@ export function getSupabaseAnonKey(): string {
   );
 }
 
-/** Base URL of the NestJS API, e.g. http://localhost:3001 */
+/**
+ * Base URL of the NestJS API, e.g. http://localhost:3001. Trailing slashes
+ * are stripped: a dashboard-entered `https://host/` would otherwise produce
+ * `https://host//api/v1/...`, which Vercel redirects without CORS headers —
+ * every widget then fails with what looks like a CORS error.
+ */
 export function getApiUrl(): string {
-  return required('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL);
+  return required('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL).replace(/\/+$/, '');
 }
 
 /**
