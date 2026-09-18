@@ -48,7 +48,28 @@ export interface VaultFile {
 
 /** Injection token for the fetch implementation (overridden in tests). */
 export const VAULT_FETCH = Symbol('VAULT_FETCH');
-export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
+
+/**
+ * Structural fetch types: the sliver of the WHATWG API this client uses.
+ * Declared here rather than relying on the global `Response`/`RequestInit`
+ * so the build does not depend on which lib set the toolchain resolves
+ * (Vercel's nestjs preset saw a `Response` without `json()`).
+ */
+export interface FetchInit {
+  method?: string;
+  body?: string;
+  headers?: Record<string, string>;
+}
+export interface FetchResponse {
+  ok: boolean;
+  status: number;
+  headers: { get(name: string): string | null };
+  json(): Promise<unknown>;
+}
+export type FetchLike = (input: string, init?: FetchInit) => Promise<FetchResponse>;
+
+const defaultFetch: FetchLike = (input, init) =>
+  (globalThis as unknown as { fetch: FetchLike }).fetch(input, init);
 
 const BRANCH = 'main';
 const COMMITTER = {
@@ -85,7 +106,7 @@ export class VaultClient {
     });
     this.repo = repo ?? '';
     this.token = token ?? '';
-    this.fetchImpl = fetchImpl ?? ((input, init): Promise<Response> => fetch(input, init));
+    this.fetchImpl = fetchImpl ?? defaultFetch;
   }
 
   /** github.com URL of the repo (about panel, vault-status). */
@@ -162,10 +183,10 @@ export class VaultClient {
     return newSha;
   }
 
-  private async request(route: string, init?: RequestInit, path = route): Promise<Response> {
+  private async request(route: string, init?: FetchInit, path = route): Promise<FetchResponse> {
     if (!this.configured) throw new VaultUnavailableError('learning vault is not configured');
     const url = `https://api.github.com/repos/${this.repo}/${route}`;
-    let response: Response;
+    let response: FetchResponse;
     try {
       response = await this.fetchImpl(url, {
         ...init,

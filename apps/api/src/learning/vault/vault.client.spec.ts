@@ -7,6 +7,7 @@ import {
   VaultTokenInvalidError,
   VaultUnavailableError,
   type FetchLike,
+  type FetchResponse,
 } from './vault.client';
 
 function config(values: Partial<Env>): ConfigService<Env, true> {
@@ -17,11 +18,14 @@ function jsonResponse(
   status: number,
   body: unknown,
   headers: Record<string, string> = {},
-): Response {
-  return new Response(JSON.stringify(body), {
+): FetchResponse {
+  const lower = Object.fromEntries(Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v]));
+  return {
+    ok: status >= 200 && status < 300,
     status,
-    headers: { 'content-type': 'application/json', ...headers },
-  });
+    headers: { get: (name: string): string | null => lower[name.toLowerCase()] ?? null },
+    json: (): Promise<unknown> => Promise.resolve(body),
+  };
 }
 
 const CONFIGURED = { GITHUB_LEARNING_REPO: 'auua/learning-center', GITHUB_LEARNING_TOKEN: 'ghp_x' };
@@ -66,7 +70,7 @@ describe('VaultClient', () => {
     expect(url).toBe(
       'https://api.github.com/repos/auua/learning-center/contents/.cc/index/manifest.json?ref=abc123',
     );
-    expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer ghp_x');
+    expect(init?.headers?.Authorization).toBe('Bearer ghp_x');
   });
 
   it('writes with the sha guard and the bot committer', async () => {
