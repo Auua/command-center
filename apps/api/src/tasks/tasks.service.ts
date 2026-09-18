@@ -9,6 +9,7 @@ import {
   type UpdateTaskRequest,
 } from '@command-center/contracts';
 import type { AuthenticatedUser } from '../auth/auth.types';
+import type { EventContext } from '../common/events/event-context';
 import { TasksRepository, type TaskPatch } from './tasks.repository';
 
 /**
@@ -59,7 +60,9 @@ export class TasksService {
         title: task.title,
         completedAt: task.completedAt,
       };
-      await this.eventEmitter.emitAsync(TASK_COMPLETED_EVENT, event);
+      await this.eventEmitter.emitAsync(TASK_COMPLETED_EVENT, event, {
+        user,
+      } satisfies EventContext);
     }
     return task;
   }

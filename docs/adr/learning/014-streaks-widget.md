@@ -8,6 +8,18 @@
   credit on the home-timezone day with the 03:00 grace, uniformly for every source)
 - **Review:** claude-reviewed, PO-reviewed
 
+> **Built 2026-09-18 (Phase 3C) with two deltas.** (1) The pg-boss `streak.rollover` job never
+> existed — ADR-005 was deferred by ADR-039 — so rollover is **computed on read**: `GET /streaks`
+> reports `currentLen` as 0 when `last_active_date` is older than yesterday in home time, and the
+> stored row is only ever advanced by a recorded day. Same visible semantics, no job. (2) Listener
+> writes needed a database client without a request: instead of a second service-role consumer
+> (ADR-039 keeps the scheduler as the only one), emitters pass the caller as an out-of-band
+> `EventContext` second argument to `emitAsync`, and `StreaksService` writes `streaks` /
+> `streak_days` under that JWT (migration 0011, own-row RLS). An event without context is
+> logged and skipped. v1 sources: `task.completed`, `wotd.acknowledged`, `grammar.studied`;
+> mood/journal/habit join when those modules emit. `recomputeDay` (habit un-mark) lands with
+> ADR-027's build.
+
 ## Context
 
 Phase 3 introduces streaks (ADR §9): consecutive-day counters for habits like Japanese study,

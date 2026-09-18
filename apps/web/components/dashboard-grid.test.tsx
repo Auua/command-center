@@ -17,6 +17,10 @@ vi.mock('@/lib/learning-api', () => ({
   fetchWotd: vi.fn().mockResolvedValue({ configured: false }),
   acknowledgeWotd: vi.fn(),
   skipWotd: vi.fn(),
+  fetchGrammarToday: vi.fn().mockResolvedValue({ configured: false }),
+  advanceGrammar: vi.fn(),
+  studyGrammar: vi.fn(),
+  fetchStreaks: vi.fn().mockResolvedValue({ timezone: 'UTC', streaks: [] }),
 }));
 vi.mock('@/lib/mood-api', () => ({
   fetchMoodCheckins: vi.fn(),

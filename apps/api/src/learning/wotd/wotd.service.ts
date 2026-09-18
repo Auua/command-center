@@ -9,14 +9,13 @@ import {
   type WotdItem,
   type WotdResponse,
 } from '@command-center/contracts';
-import { DateTime } from 'luxon';
 import type { AuthenticatedUser } from '../../auth/auth.types';
-import { ProfileService } from '../../profile/profile.service';
+import type { EventContext } from '../../common/events/event-context';
 import { IndexCacheService, type LoadedIndex } from '../index/index-cache.service';
 import { LearningAlertsService, STALE_INDEX_MS } from '../learning-alerts.service';
+import { ProgressService } from '../progress.service';
 import { LearningStateService } from '../state/learning-state.service';
-import { applyProgress, readProgress } from '../vault/front-matter';
-import { VaultClient, VaultConflictError } from '../vault/vault.client';
+import { VaultClient } from '../vault/vault.client';
 import {
   decidePin,
   eligibleWotd,
@@ -46,7 +45,7 @@ export class WotdService {
     private readonly vault: VaultClient,
     private readonly index: IndexCacheService,
     private readonly state: LearningStateService,
-    private readonly profile: ProfileService,
+    private readonly progress: ProgressService,
     private readonly alerts: LearningAlertsService,
     private readonly events: EventEmitter2,
   ) {}
@@ -86,11 +85,14 @@ export class WotdService {
       return this.respond(loaded, today, pin, false);
     }
 
-    const reviewed = await this.homeDate(user);
-    const current = readProgress(await this.readNote(itemId));
+    const reviewed = await this.progress.homeDate(user);
+    const current = await this.progress.readNoteProgress(itemId);
     const confidence = Math.max(2, current.confidence ?? 1);
-    await this.writeNote(itemId, { status: 'learning', confidence, reviewed }, 'acknowledge');
-    this.state.recordWrite(itemId, { status: 'learning', confidence, reviewed });
+    await this.progress.writeNote(KIND, 'acknowledge', itemId, {
+      status: 'learning',
+      confidence,
+      reviewed,
+    });
 
     const resolved: DayPin = { ...pin, resolved: true };
     await this.state.writePin(KIND, resolved);
@@ -101,7 +103,7 @@ export class WotdService {
       date: pin.date,
       acknowledgedAt: new Date().toISOString(),
     };
-    await this.events.emitAsync(WOTD_ACKNOWLEDGED_EVENT, event);
+    await this.events.emitAsync(WOTD_ACKNOWLEDGED_EVENT, event, { user } satisfies EventContext);
 
     return this.respond(loaded, today, resolved, false);
   }
@@ -113,9 +115,8 @@ export class WotdService {
       return this.respond(loaded, today, pin, false);
     }
 
-    const reviewed = await this.homeDate(user);
-    await this.writeNote(itemId, { status: 'known', reviewed }, 'skip');
-    this.state.recordWrite(itemId, { status: 'known', reviewed, confidence: null });
+    const reviewed = await this.progress.homeDate(user);
+    await this.progress.writeNote(KIND, 'skip', itemId, { status: 'known', reviewed });
 
     const replacement = pickReplacement(this.eligible(loaded, ceiling), itemId, today);
     const next: DayPin = replacement
@@ -145,35 +146,6 @@ export class WotdService {
       throw new ConflictException('itemId is not the current word of the day');
     }
     return { loaded, pin, today: utcToday() };
-  }
-
-  private async homeDate(user: AuthenticatedUser): Promise<string> {
-    const timezone = await this.profile.getTimezone(user);
-    return DateTime.now().setZone(timezone).toISODate() ?? utcToday();
-  }
-
-  private async readNote(path: string): Promise<string> {
-    return (await this.vault.getFile(path)).content;
-  }
-
-  /** Front-matter-only edit, sha-guarded, one retry on a lost race. */
-  private async writeNote(
-    path: string,
-    patch: { status: string; confidence?: number; reviewed: string },
-    action: string,
-  ): Promise<void> {
-    const attempt = async (): Promise<void> => {
-      const file = await this.vault.getFile(path);
-      const next = applyProgress(file.content, patch);
-      if (next === file.content) return;
-      await this.vault.putFile(path, next, file.sha, `cc: wotd ${action} ${path}`);
-    };
-    try {
-      await attempt();
-    } catch (error) {
-      if (!(error instanceof VaultConflictError)) throw error;
-      await attempt();
-    }
   }
 
   private async checkStaleness(user: AuthenticatedUser, loaded: LoadedIndex): Promise<void> {

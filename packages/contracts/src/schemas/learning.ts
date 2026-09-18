@@ -140,6 +140,8 @@ export const DayPinSchema = z.object({
   itemId: z.string().min(1),
   /** Acknowledged or skipped — a new pin may be drawn on the next UTC day. */
   resolved: z.boolean(),
+  /** Grammar only: whether the pin came from the sequence or the review rotation. */
+  mode: z.enum(['new', 'review']).optional(),
 });
 export type DayPin = z.infer<typeof DayPinSchema>;
 
@@ -236,3 +238,56 @@ export const VaultStatusResponseSchema = z.discriminatedUnion('configured', [
   }),
 ]);
 export type VaultStatusResponse = z.infer<typeof VaultStatusResponseSchema>;
+
+/* ----------------------------------------------------------- grammar */
+
+export const GrammarItemSchema = z.object({
+  /** Vault-relative note path. */
+  itemId: z.string().min(1),
+  /** The pattern, e.g. `～と`. */
+  ja: z.string(),
+  reading: nullableString,
+  meaning: MeaningSchema,
+  jlpt: nullableString,
+  func: z.array(z.string()),
+  attaches: z.array(z.string()),
+  formality: nullableString,
+  register: z.array(z.string()),
+  similar: z.array(z.string()),
+  source: IndexSourceSchema,
+  status: nullableString,
+  confidence: z.number().int().nullable(),
+  examples: z.array(WotdExampleSchema),
+  sourceUrl: z.string().url(),
+});
+export type GrammarItem = z.infer<typeof GrammarItemSchema>;
+
+export const GrammarProgressSchema = z.object({
+  /** Points at or below the ceiling with any progress (status ≠ new or reviewed set). */
+  seenAtLevel: z.number().int().min(0),
+  totalAtLevel: z.number().int().min(0),
+});
+
+/** GET /learning/grammar/today?ceiling=N5 and the advance/studied responses. */
+export const GrammarResponseSchema = z.discriminatedUnion('configured', [
+  z.object({ configured: z.literal(false) }),
+  z.object({
+    configured: z.literal(true),
+    state: LearningStateSchema,
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    item: GrammarItemSchema.nullable(),
+    /** `review` once the sequence under the ceiling is exhausted (ADR-012). */
+    mode: z.enum(['new', 'review']),
+    studied: z.boolean(),
+    progress: GrammarProgressSchema,
+    exhausted: z.boolean(),
+    index: IndexInfoSchema,
+  }),
+]);
+export type GrammarResponse = z.infer<typeof GrammarResponseSchema>;
+export type GrammarConfiguredResponse = Extract<GrammarResponse, { configured: true }>;
+
+/** POST /learning/grammar/advance and /learning/grammar/studied bodies. */
+export const GrammarActionRequestSchema = WotdActionRequestSchema;
+export type GrammarActionRequest = z.infer<typeof GrammarActionRequestSchema>;
+export const GrammarCeilingSchema = JlptLevelSchema.default('N5');
