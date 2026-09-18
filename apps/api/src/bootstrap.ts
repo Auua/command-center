@@ -2,6 +2,7 @@ import { RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { NextFunction, Request, Response } from 'express';
+import { buildOriginMatcher, parseCorsOrigins } from './common/cors-origins';
 import { ZodExceptionFilter } from './common/filters/zod-exception.filter';
 import type { Env } from './config/env';
 
@@ -14,18 +15,25 @@ import type { Env } from './config/env';
  */
 export function configureApp(app: NestExpressApplication): void {
   const configService = app.get<ConfigService<Env, true>>(ConfigService);
-  const corsOrigins = configService
-    .get('CORS_ORIGIN', { infer: true })
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
+  // Exact origins plus `*` globs for Vercel preview deployments (see
+  // common/cors-origins.ts). A request with no Origin header (curl, the
+  // pinger) is not a CORS request and passes through untouched.
+  const allowOrigin = buildOriginMatcher(
+    parseCorsOrigins(configService.get('CORS_ORIGIN', { infer: true })),
+  );
 
   app.setGlobalPrefix('api/v1', {
     exclude: [{ path: 'health', method: RequestMethod.GET }],
   });
 
   app.enableCors({
-    origin: corsOrigins,
+    origin: (origin, callback) => {
+      if (origin === undefined || allowOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Authorization', 'Content-Type'],
