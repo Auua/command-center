@@ -28,18 +28,18 @@ Secrets never live in the repo (ADR §5.2). Local dev needs two gitignored files
 
 ### `apps/api/.env` (NestJS API + worker)
 
-| Variable                   | Value                                                                       |
-| -------------------------- | --------------------------------------------------------------------------- |
-| `PORT`                     | `3001`                                                                      |
-| `CORS_ORIGIN`              | `http://localhost:3000` (comma-separate extra origins)                      |
-| `SUPABASE_URL`             | same Project URL                                                            |
-| `SUPABASE_PUBLISHABLE_KEY` | same anon key (API queries run under the user's JWT + RLS)                  |
-| `MONGODB_CONNECT`          | MongoDB Atlas connection string (Phase 1: braindump; later journal/content) |
-| `SUPABASE_SECRET_KEY`      | Supabase **secret / service-role** key (Phase 2 scheduler only, see below)  |
-| `TICK_SECRET`              | shared secret for `POST /api/v1/internal/tick` — `openssl rand -hex 32`     |
-| `VAPID_PUBLIC_KEY`         | Web Push VAPID public key — `npx web-push generate-vapid-keys`              |
-| `VAPID_PRIVATE_KEY`        | Web Push VAPID private key (same command, same pair)                        |
-| `VAPID_SUBJECT`            | `mailto:` your email (or an `https:` contact URL)                           |
+| Variable                   | Value                                                                                                                                     |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                     | `3001`                                                                                                                                    |
+| `CORS_ORIGIN`              | `http://localhost:3000` (comma-separated; `*` matches one host label, e.g. `https://command-center-web-*-<team>.vercel.app` for previews) |
+| `SUPABASE_URL`             | same Project URL                                                                                                                          |
+| `SUPABASE_PUBLISHABLE_KEY` | same anon key (API queries run under the user's JWT + RLS)                                                                                |
+| `MONGODB_CONNECT`          | MongoDB Atlas connection string (Phase 1: braindump; later journal/content)                                                               |
+| `SUPABASE_SECRET_KEY`      | Supabase **secret / service-role** key (Phase 2 scheduler only, see below)                                                                |
+| `TICK_SECRET`              | shared secret for `POST /api/v1/internal/tick` — `openssl rand -hex 32`                                                                   |
+| `VAPID_PUBLIC_KEY`         | Web Push VAPID public key — `npx web-push generate-vapid-keys`                                                                            |
+| `VAPID_PRIVATE_KEY`        | Web Push VAPID private key (same command, same pair)                                                                                      |
+| `VAPID_SUBJECT`            | `mailto:` your email (or an `https:` contact URL)                                                                                         |
 
 Every user-facing endpoint runs RLS-scoped under the caller's JWT (ADR §5.1).
 The one exception is the ADR-039 carve-out: `SUPABASE_SECRET_KEY` is the
@@ -89,7 +89,9 @@ ticks answer 401, no pushes). Setting some but not all is a boot error.
 ## 4. Deploy targets
 
 Set the same variables in the platform dashboards: Vercel hosts both web and
-api (+ worker entrypoint). `CORS_ORIGIN` must list the deployed web origin.
+api (+ worker entrypoint). `CORS_ORIGIN` must list the deployed web origin; add
+`https://command-center-web-*-<team>.vercel.app` to let branch preview deployments of the web
+project call the production API (the `*` covers exactly one DNS label, never a dot or slash).
 Phase 2's one-time external setup (migrations 0004–0007, Vercel env,
 cron-job.org pinger, UptimeRobot) is a step-by-step runbook in
 `docs/PHASE2_SETUP.md`.
