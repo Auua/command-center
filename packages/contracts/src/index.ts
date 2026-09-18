@@ -7,3 +7,4 @@ export * from './schemas/mood';
 export * from './schemas/notifications';
 export * from './schemas/profile';
 export * from './schemas/tasks';
+export * from './schemas/learning';
