@@ -1,4 +1,4 @@
-import { isSchedulerConfigured, validateEnv } from './env';
+import { isLearningConfigured, isSchedulerConfigured, validateEnv } from './env';
 
 const VALID_ENV = {
   SUPABASE_URL: 'https://example.supabase.co',
@@ -81,6 +81,34 @@ describe('validateEnv', () => {
       VAPID_SUBJECT: '',
     });
     expect(isSchedulerConfigured(env)).toBe(false);
+  });
+
+  it('accepts the learning vault pair unset, set, or blank — never half set', () => {
+    expect(isLearningConfigured(validateEnv(VALID_ENV))).toBe(false);
+    expect(
+      isLearningConfigured(
+        validateEnv({
+          ...VALID_ENV,
+          GITHUB_LEARNING_REPO: 'auua/learning-center',
+          GITHUB_LEARNING_TOKEN: 'github_pat_x',
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isLearningConfigured(
+        validateEnv({ ...VALID_ENV, GITHUB_LEARNING_REPO: '', GITHUB_LEARNING_TOKEN: '' }),
+      ),
+    ).toBe(false);
+    expect(() =>
+      validateEnv({ ...VALID_ENV, GITHUB_LEARNING_REPO: 'auua/learning-center' }),
+    ).toThrow(/GITHUB_LEARNING_TOKEN/);
+    expect(() =>
+      validateEnv({
+        ...VALID_ENV,
+        GITHUB_LEARNING_REPO: 'not-a-repo',
+        GITHUB_LEARNING_TOKEN: 'x',
+      }),
+    ).toThrow(/owner\/name/);
   });
 
   it('rejects a short TICK_SECRET', () => {

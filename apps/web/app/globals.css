@@ -1655,3 +1655,149 @@ p {
   font-size: 0.76rem;
   color: var(--cc-text-faint);
 }
+
+/* ---- Word of the day (ADR-011/040) ---- */
+
+.cc-wotd-root {
+  height: 100%;
+}
+
+.cc-wotd {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.cc-wotd-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cc-wotd-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cc-wc, var(--cc-accent));
+  background: color-mix(in srgb, var(--cc-wc, var(--cc-accent)) 14%, var(--cc-bg-raised));
+}
+
+.cc-wotd-chip-muted {
+  color: var(--cc-text-muted);
+  background: var(--cc-bg-inset);
+  font-weight: 600;
+}
+
+.cc-wotd-word {
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.cc-wotd-word rt {
+  font-size: 0.42em;
+  font-weight: 500;
+  color: var(--cc-text-muted);
+}
+
+.cc-wotd-romaji {
+  font-size: 0.86rem;
+  color: var(--cc-text-muted);
+  margin: -2px 0 0;
+}
+
+.cc-wotd-meaning {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.cc-wotd-example {
+  border-left: 3px solid color-mix(in srgb, var(--cc-wc, var(--cc-accent)) 45%, transparent);
+  padding-left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.92rem;
+}
+
+.cc-wotd-example p {
+  margin: 0;
+}
+
+.cc-wotd-example-fi,
+.cc-wotd-example-none,
+.cc-wotd-hint {
+  color: var(--cc-text-muted);
+  font-size: 0.84rem;
+}
+
+.cc-wotd-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cc-wotd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cc-wotd-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--cc-wc, var(--cc-accent));
+  margin: 0;
+}
+
+.cc-wotd-source {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--cc-text-muted);
+}
+
+.cc-wotd-error {
+  color: var(--cc-danger);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.cc-wotd-state {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.cc-wotd-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cc-wotd-ghost {
+  display: block;
+  height: 14px;
+  width: 70%;
+  border-radius: 6px;
+  background: var(--cc-bg-inset);
+}
+
+.cc-wotd-ghost-word {
+  height: 34px;
+  width: 45%;
+}
+
+.cc-wotd-ghost-short {
+  width: 40%;
+}

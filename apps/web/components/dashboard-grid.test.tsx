@@ -13,6 +13,11 @@ vi.mock('@/lib/braindump-api', () => ({
   createBraindumpNote: vi.fn(),
   deleteBraindumpNote: vi.fn(),
 }));
+vi.mock('@/lib/learning-api', () => ({
+  fetchWotd: vi.fn().mockResolvedValue({ configured: false }),
+  acknowledgeWotd: vi.fn(),
+  skipWotd: vi.fn(),
+}));
 vi.mock('@/lib/mood-api', () => ({
   fetchMoodCheckins: vi.fn(),
   createMoodCheckin: vi.fn(),

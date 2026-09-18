@@ -17,3 +17,20 @@ export const TaskCompletedEventSchema = z.object({
   completedAt: z.string().datetime(),
 });
 export type TaskCompletedEvent = z.infer<typeof TaskCompletedEventSchema>;
+
+/**
+ * Emitted by LearningModule when the user acknowledges the word of the day
+ * ("learned it") — the only WOTD streak source (ADR-011/014). `date` is the
+ * UTC learning day the pin belonged to.
+ */
+export const WOTD_ACKNOWLEDGED_EVENT = 'wotd.acknowledged';
+
+export const WotdAcknowledgedEventSchema = z.object({
+  userId: z.string().min(1),
+  /** Vault-relative note path. */
+  itemId: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** ISO datetime the acknowledge was recorded at (server clock). */
+  acknowledgedAt: z.string().datetime(),
+});
+export type WotdAcknowledgedEvent = z.infer<typeof WotdAcknowledgedEventSchema>;
