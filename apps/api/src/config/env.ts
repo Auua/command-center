@@ -18,6 +18,13 @@ const SCHEDULER_KEYS = [
   'VAPID_SUBJECT',
 ] as const;
 
+/**
+ * The learning vault pair (ADR-024/040) is optional as a whole too: unset,
+ * every /learning read answers `{ configured: false }` and the widgets show
+ * their not-configured state.
+ */
+const LEARNING_KEYS = ['GITHUB_LEARNING_REPO', 'GITHUB_LEARNING_TOKEN'] as const;
+
 export const EnvSchema = z
   .object({
     /** HTTP port for the API process. */
@@ -58,8 +65,26 @@ export const EnvSchema = z
       .string()
       .regex(/^(mailto:|https:)/, 'VAPID_SUBJECT must be a mailto: or https: URL')
       .optional(),
+    /** `owner/name` of the private learning-center vault repo (ADR-024/040). */
+    GITHUB_LEARNING_REPO: z
+      .string()
+      .regex(/^[\w.-]+\/[\w.-]+$/, 'GITHUB_LEARNING_REPO must be owner/name')
+      .optional(),
+    /** Fine-grained PAT, Contents read/write on that one repo. Never logged. */
+    GITHUB_LEARNING_TOKEN: z.string().min(1).optional(),
   })
   .superRefine((env, ctx) => {
+    const learningPresent = LEARNING_KEYS.filter((key) => env[key] !== undefined);
+    if (learningPresent.length === 1) {
+      const missing = LEARNING_KEYS.filter((key) => env[key] === undefined);
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [missing[0] ?? 'GITHUB_LEARNING_REPO'],
+        message:
+          'Learning vault env is a pair (ADR-024): set GITHUB_LEARNING_REPO and ' +
+          `GITHUB_LEARNING_TOKEN together or neither. Missing: ${missing.join(', ')}`,
+      });
+    }
     const present = SCHEDULER_KEYS.filter((key) => env[key] !== undefined);
     if (present.length !== 0 && present.length !== SCHEDULER_KEYS.length) {
       const missing = SCHEDULER_KEYS.filter((key) => env[key] === undefined);
@@ -80,11 +105,18 @@ export function isSchedulerConfigured(env: Pick<Env, (typeof SCHEDULER_KEYS)[num
   return SCHEDULER_KEYS.every((key) => env[key] !== undefined);
 }
 
+/** True iff the ADR-024 vault pair is set. */
+export function isLearningConfigured(env: Pick<Env, (typeof LEARNING_KEYS)[number]>): boolean {
+  return LEARNING_KEYS.every((key) => env[key] !== undefined);
+}
+
+const OPTIONAL_GROUP_KEYS: readonly string[] = [...SCHEDULER_KEYS, ...LEARNING_KEYS];
+
 export function validateEnv(config: Record<string, unknown>): Env {
   // Empty strings (an unset dashboard field, a placeholder line) count as unset.
   const cleaned = Object.fromEntries(
     Object.entries(config).filter(
-      ([key, value]) => !(value === '' && (SCHEDULER_KEYS as readonly string[]).includes(key)),
+      ([key, value]) => !(value === '' && OPTIONAL_GROUP_KEYS.includes(key)),
     ),
   );
   const result = EnvSchema.safeParse(cleaned);

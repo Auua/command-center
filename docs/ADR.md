@@ -291,7 +291,7 @@ erDiagram
         uuid user_id FK
         text title
         text body "nullable; lock-screen-safe plain text"
-        text source "automation today; future sources need not be"
+        text source "automation (service-role insert) | learning (user-scoped insert, migration 0010)"
         uuid automation_id "FK; on delete set null"
         timestamptz created_at
         timestamptz read_at "null = unread"

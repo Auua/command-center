@@ -112,6 +112,34 @@ export const messages = {
   'settings.reminders.maxRows': 'Rows to show',
   'settings.reminders.showEventAutomations': 'Show event-triggered automations',
 
+  'settings.japanese-wotd.jlptCeiling': 'JLPT ceiling',
+  'settings.japanese-wotd.meaningLanguage': 'Meaning language',
+  'settings.japanese-wotd.showFurigana': 'Show furigana',
+  'settings.japanese-wotd.showRomaji': 'Show romaji',
+
   'shell.loadingDashboard': 'Loading dashboard…',
   'shell.unknownWidget': 'Unknown widget "{id}". It may have been removed or not registered yet.',
+
+  'wotd.acknowledge': 'Learned it',
+  'wotd.acknowledged.announce': 'Marked learned — next word tomorrow.',
+  'wotd.acknowledged.state': 'Learned — next word tomorrow',
+  'wotd.error.action': 'Could not save that — try again.',
+  'wotd.error.load': 'Couldn’t load today’s word.',
+  'wotd.exhausted':
+    'Nothing new left under this JLPT ceiling — raise it in settings or reset statuses in Obsidian.',
+  'wotd.kind.verb': 'verb',
+  'wotd.kind.vocab': 'word',
+  'wotd.noExample': 'No example yet.',
+  'wotd.noMeaning': 'No meaning written yet.',
+  'wotd.notConfigured': 'Learning vault not configured.',
+  'wotd.notConfiguredHint':
+    'Set GITHUB_LEARNING_REPO and GITHUB_LEARNING_TOKEN on the API (docs/runbook-learning-center.md).',
+  'wotd.openNote': 'Open note',
+  'wotd.retry': 'Try again',
+  'wotd.skip': 'Already knew it',
+  'wotd.skipped.announce': 'Marked known. New word: {word}.',
+  'wotd.title': 'Word of the day',
+  'wotd.tokenInvalid': 'GitHub token expired.',
+  'wotd.tokenInvalidHint': 'Rotate the vault token — runbook step 4.',
+  'wotd.unavailable': 'Couldn’t reach the vault — showing nothing rather than a wrong word.',
 } as const satisfies Record<string, string>;

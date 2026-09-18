@@ -17,6 +17,6 @@ import { WebPushService } from './web-push.service';
   imports: [SupabaseModule],
   controllers: [NotificationsController, SubscriptionsController],
   providers: [NotificationService, NotificationRepository, WebPushService],
-  exports: [WebPushService],
+  exports: [WebPushService, NotificationRepository],
 })
 export class NotificationModule {}
