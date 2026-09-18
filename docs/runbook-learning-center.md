@@ -119,7 +119,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: <owner>/command-center/tools/anki-sync@anki-sync-v1
+      - uses: Auua/command-center/tools/anki-sync@anki-sync-v1
         with:
           ankiweb-email: ${{ secrets.ANKIWEB_EMAIL }}
           ankiweb-password: ${{ secrets.ANKIWEB_PASSWORD }}
@@ -129,6 +129,9 @@ jobs:
 run. There is no `mode: import` any more — the vault is the deck's source, and the sync parses
 every `## Kortit` section the way `00 Meta/Scripts/sr_to_anki.py` does (UID = sha1 of
 `<path>|<front>`, note type `Japani (Obsidian)`).
+
+The caller is committed on the vault branch `anki-sync` (2026-09-18); merge it after step 8's tag
+exists, then dispatch it once by hand. `docs/PHASE3_SETUP.md` §4 is the ordered checklist.
 
 ## 8. Release the sync action
 

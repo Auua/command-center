@@ -30,6 +30,7 @@ describe('Learning (e2e)', () => {
       await request(server).get('/api/v1/learning/vault-status').expect(401);
       await request(server).get('/api/v1/learning/grammar/today').expect(401);
       await request(server).get('/api/v1/streaks').expect(401);
+      await request(server).get('/api/v1/learning/anki-status').expect(401);
       await request(server)
         .post('/api/v1/learning/wotd/acknowledge')
         .send({ itemId: 'x.md' })
@@ -79,6 +80,11 @@ describe('Learning (e2e)', () => {
         .expect({ configured: false });
       await request(server)
         .get('/api/v1/learning/grammar/today')
+        .set(asAnna)
+        .expect(200)
+        .expect({ configured: false });
+      await request(server)
+        .get('/api/v1/learning/anki-status')
         .set(asAnna)
         .expect(200)
         .expect({ configured: false });

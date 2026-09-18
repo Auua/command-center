@@ -1,0 +1,98 @@
+name: anki-sync
+description: >
+  Sync the learning-center vault's `## Kortit` cards to AnkiWeb (ADR-026 as
+  amended by ADR-040). Runs in the vault checkout; sync down → upsert → sync
+  up → write sync/state.json → commit it. Never full-uploads.
+inputs:
+  ankiweb-email:
+    description: AnkiWeb account email (repo secret)
+    required: true
+  ankiweb-password:
+    description: AnkiWeb account password (repo secret)
+    required: true
+  deck:
+    description: Anki deck name
+    required: false
+    default: Japani
+  note-type:
+    description: Anki note type name (fields UID, Front, Back, Source)
+    required: false
+    default: Japani (Obsidian)
+  vault-dir:
+    description: Vault folder inside the repo
+    required: false
+    default: Japanese
+  state-path:
+    description: Where to write the sync state (committed back)
+    required: false
+    default: sync/state.json
+  commit-state:
+    description: Commit and push the state file ('true' / 'false')
+    required: false
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Restore the local collection (optimization only; a miss is normal)
+      id: cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.anki-sync
+        key: anki-sync-${{ github.repository }}-${{ github.run_id }}
+        restore-keys: |
+          anki-sync-${{ github.repository }}-
+
+    - name: Install the pinned anki library
+      shell: bash
+      run: python3 -m pip install --quiet -r "${{ github.action_path }}/requirements.txt"
+
+    - name: Sync
+      id: sync
+      shell: bash
+      env:
+        ANKIWEB_EMAIL: ${{ inputs.ankiweb-email }}
+        ANKIWEB_PASSWORD: ${{ inputs.ankiweb-password }}
+      run: |
+        set +e
+        python3 "${{ github.action_path }}/sync.py" \
+          --repo . \
+          --vault-dir "${{ inputs.vault-dir }}" \
+          --state "${{ inputs.state-path }}" \
+          --deck "${{ inputs.deck }}" \
+          --note-type "${{ inputs.note-type }}"
+        echo "exit=$?" >> "$GITHUB_OUTPUT"
+
+    - name: Save the collection for the next run
+      if: always()
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.anki-sync
+        key: anki-sync-${{ github.repository }}-${{ github.run_id }}
+
+    - name: Commit sync state
+      if: always() && inputs.commit-state == 'true'
+      shell: bash
+      run: |
+        git config user.name "command-center[bot]"
+        git config user.email "command-center[bot]@users.noreply.github.com"
+        git add "${{ inputs.state-path }}"
+        if git diff --cached --quiet; then
+          echo "state unchanged"
+        else
+          git commit -m "cc: anki sync ${{ steps.sync.outputs.exit == '0' && 'ok' || 'failed' }}"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push
+        fi
+
+    - name: Fail the run if the sync failed
+      if: always()
+      shell: bash
+      run: |
+        if [ "${{ steps.sync.outputs.exit }}" != "0" ]; then
+          echo "::error::anki sync failed (see sync/state.json errors)"
+          exit 1
+        fi

@@ -114,6 +114,11 @@ export class VaultClient {
     return `https://github.com/${this.repo}`;
   }
 
+  /** Actions tab of the vault repo. */
+  get actionsUrl(): string {
+    return `${this.repoUrl}/actions`;
+  }
+
   /** github.com URL of a note on main. */
   noteUrl(path: string): string {
     return `${this.repoUrl}/blob/${BRANCH}/${encodePath(path)}`;
@@ -181,6 +186,18 @@ export class VaultClient {
     const newSha = body.content?.sha;
     if (!newSha) throw new VaultUnavailableError(`write response without a sha for ${path}`);
     return newSha;
+  }
+
+  /**
+   * Commits touching `path` on main since `sinceIso`, excluding the bot's
+   * own (ADR-026's "N waiting for sync"). Capped at one page (100).
+   */
+  async countCommitsSince(path: string, sinceIso: string, excludeAuthor: string): Promise<number> {
+    const query = `?sha=${BRANCH}&path=${encodePath(path)}&since=${encodeURIComponent(sinceIso)}&per_page=100`;
+    const response = await this.request(`commits${query}`, undefined, `commits ${path}`);
+    const body = (await response.json()) as { commit?: { author?: { name?: string } } }[];
+    if (!Array.isArray(body)) return 0;
+    return body.filter((entry) => entry.commit?.author?.name !== excludeAuthor).length;
   }
 
   private async request(route: string, init?: FetchInit, path = route): Promise<FetchResponse> {

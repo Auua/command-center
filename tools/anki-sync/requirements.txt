@@ -1,0 +1,4 @@
+# Pinned deliberately (ADR-026): the daily scheduled run is the alarm if
+# AnkiWeb stops accepting this client; bump here, test, move the
+# anki-sync-v1 tag.
+anki==24.11
