@@ -67,6 +67,11 @@ export async function createE2eApp(options: E2eOptions = {}): Promise<E2eContext
   process.env.VAPID_PUBLIC_KEY = 'e2e-placeholder-vapid-public';
   process.env.VAPID_PRIVATE_KEY = 'e2e-placeholder-vapid-private';
   process.env.VAPID_SUBJECT = 'mailto:e2e@example.com';
+  // Learning vault pair (ADR-024/040) deliberately blank: validateEnv treats
+  // '' as unset, and a defined process.env value beats any .env file, so the
+  // e2e app never reaches GitHub even on a machine with a real token.
+  process.env.GITHUB_LEARNING_REPO = '';
+  process.env.GITHUB_LEARNING_TOKEN = '';
 
   // Load after env setup so nothing captures a half-configured process.env.
   // Deferred require() rather than import(): under module=nodenext, tsc keeps

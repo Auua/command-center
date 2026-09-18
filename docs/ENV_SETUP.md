@@ -40,6 +40,8 @@ Secrets never live in the repo (ADR §5.2). Local dev needs two gitignored files
 | `VAPID_PUBLIC_KEY`         | Web Push VAPID public key — `npx web-push generate-vapid-keys`                                                                            |
 | `VAPID_PRIVATE_KEY`        | Web Push VAPID private key (same command, same pair)                                                                                      |
 | `VAPID_SUBJECT`            | `mailto:` your email (or an `https:` contact URL)                                                                                         |
+| `GITHUB_LEARNING_REPO`     | `owner/learning-center` — the Obsidian vault repo (Phase 3, ADR-024/040; optional pair, see below)                                        |
+| `GITHUB_LEARNING_TOKEN`    | fine-grained PAT, **Contents read/write on that one repo only** (runbook step 2)                                                          |
 
 Every user-facing endpoint runs RLS-scoped under the caller's JWT (ADR §5.1).
 The one exception is the ADR-039 carve-out: `SUPABASE_SECRET_KEY` is the
@@ -85,6 +87,20 @@ ticks answer 401, no pushes). Setting some but not all is a boot error.
   local dev; required for the scheduler paths to work.
 - No `DATABASE_URL` — ADR-039 deferred pg-boss; the scheduler uses the
   HTTPS-based service-role client instead of a raw Postgres connection.
+
+## 3b. Phase 3 learning vault — the optional pair
+
+`GITHUB_LEARNING_REPO` + `GITHUB_LEARNING_TOKEN` are **optional as a pair**: unset, every
+`/api/v1/learning/*` read answers `{ "configured": false }` and the learning widgets render
+their not-configured state. One set without the other is a boot error. The token is a
+fine-grained PAT scoped to the vault repo with Contents read/write (≤ 1 y expiry; rotation in
+`docs/runbook-learning-center.md` step 2). Consumed only by `LearningModule`'s vault client;
+never logged, never `NEXT_PUBLIC_*`. Unit and e2e tests never need real values — the e2e app
+blanks the pair so it can never reach GitHub.
+
+**Local dev rule:** a local API with the production pair writes real progress and day pins into
+the real vault (front-matter + `.cc/state.json`). That is by design for dogfooding, but be aware a
+local acknowledge is a real commit on `main`.
 
 ## 4. Deploy targets
 

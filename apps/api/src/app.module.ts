@@ -9,6 +9,7 @@ import { BraindumpModule } from './braindump/braindump.module';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { validateEnv } from './config/env';
 import { HealthModule } from './health/health.module';
+import { LearningModule } from './learning/learning.module';
 import { MoodModule } from './mood/mood.module';
 import { NotificationModule } from './notification/notification.module';
 import { ProfileModule } from './profile/profile.module';
@@ -48,6 +49,7 @@ import { WidgetRegistryModule } from './widget-registry/widget-registry.module';
     AutomationModule,
     BraindumpModule,
     HealthModule,
+    LearningModule,
     MoodModule,
     NotificationModule,
     ProfileModule,

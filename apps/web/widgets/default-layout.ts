@@ -35,4 +35,10 @@ export const DEFAULT_LAYOUT: WidgetLayoutItem[] = [
     instanceKey: '',
     settings: {},
   },
+  {
+    widgetId: 'japanese-wotd',
+    gridPos: { x: 0, y: 3, w: 2, h: 2 },
+    instanceKey: '',
+    settings: {},
+  },
 ];

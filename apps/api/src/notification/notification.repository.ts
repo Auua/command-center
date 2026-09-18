@@ -113,6 +113,48 @@ export class NotificationRepository {
     return count ?? 0;
   }
 
+  /** Any unread row from `source` with this exact title? (learning alerts dedupe, ADR-040) */
+  async hasUnreadForUser(user: AuthenticatedUser, source: string, title: string): Promise<boolean> {
+    const client = this.supabaseService.forUser(user.token);
+    const { count, error } = await client
+      .from(NOTIFICATIONS_TABLE)
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('source', source)
+      .eq('title', title)
+      .is('read_at', null);
+
+    if (error) {
+      this.logger.error(`Failed to look up open notifications: ${error.message}`);
+      throw new InternalServerErrorException('Failed to look up notifications');
+    }
+    return (count ?? 0) > 0;
+  }
+
+  /**
+   * User-scoped insert for non-automation producers (RLS policy
+   * `notifications_insert_own_learning`, migration 0010). Automation rows
+   * keep coming only from the scheduler's service-role path.
+   */
+  async insertForUser(
+    user: AuthenticatedUser,
+    values: { title: string; body: string | null; source: 'learning' },
+  ): Promise<void> {
+    const client = this.supabaseService.forUser(user.token);
+    const { error } = await client.from(NOTIFICATIONS_TABLE).insert({
+      user_id: user.id,
+      title: values.title,
+      body: values.body,
+      source: values.source,
+      automation_id: null,
+    });
+
+    if (error) {
+      this.logger.error(`Failed to insert ${values.source} notification: ${error.message}`);
+      throw new InternalServerErrorException('Failed to insert notification');
+    }
+  }
+
   /** Marks unread rows read; `ids === 'all'` covers the whole inbox (D5). */
   async markReadForUser(user: AuthenticatedUser, ids: string[] | 'all'): Promise<void> {
     const client = this.supabaseService.forUser(user.token);
