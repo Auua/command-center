@@ -42,7 +42,8 @@ grammar point, streaks (Phase 3 — the learning widgets read the product owner'
 vault, ADR-040; streaks credit deliberate study and completed tasks, ADR-014). Braindump is the first
 MongoDB-backed module; everything else lives in Supabase Postgres
 (`supabase/migrations/`). One-time Phase 2 external setup:
-[docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md). See ADR §9 for Phases 1–4.
+[docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md); Phase 3's (vault token, Anki sync) is
+[docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md). See ADR §9 for Phases 1–4.
 
 Design decisions are recorded as ADRs under `docs/adr/` in domain subfolders
 (foundation / productivity / reflection / learning / external-data / lifestyle),

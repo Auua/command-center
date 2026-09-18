@@ -130,6 +130,12 @@ export const messages = {
   'streaks.title': 'Streaks',
   'streaks.todayPending': 'today pending',
 
+  'anki.failed': 'Anki sync failed —',
+  'anki.never': 'Anki not synced yet',
+  'anki.pending': '{count} waiting for Anki sync',
+  'anki.synced': 'Anki synced {when}',
+  'anki.viewRun': 'view run',
+
   'grammar.advanced.announce': 'Next point: {pattern}.',
   'grammar.attaches': 'Attaches to:',
   'grammar.error.action': 'Could not save that — try again.',

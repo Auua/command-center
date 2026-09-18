@@ -291,3 +291,53 @@ export type GrammarConfiguredResponse = Extract<GrammarResponse, { configured: t
 export const GrammarActionRequestSchema = WotdActionRequestSchema;
 export type GrammarActionRequest = z.infer<typeof GrammarActionRequestSchema>;
 export const GrammarCeilingSchema = JlptLevelSchema.default('N5');
+
+/* ------------------------------------------------------------ anki sync */
+
+/** `sync/state.json`, written only by the vault's anki-sync Action (ADR-026). */
+export const SyncStateFileSchema = z
+  .object({
+    schemaVersion: z.literal(1),
+    lastSyncAt: nullableString,
+    lastRun: z.object({
+      at: z.string(),
+      status: z.enum(['ok', 'failed']),
+      runId: nullableString,
+      url: nullableString,
+    }),
+    counts: z.record(z.number().int()),
+    decks: z.array(
+      z
+        .object({
+          name: z.string(),
+          notes: z.number().int(),
+          dueToday: z.number().int().optional(),
+          new: z.number().int().optional(),
+        })
+        .passthrough(),
+    ),
+    errors: z.array(z.string()),
+  })
+  .passthrough();
+export type SyncStateFile = z.infer<typeof SyncStateFileSchema>;
+
+/** GET /learning/anki-status — the footer's three honest states (ADR-026). */
+export const AnkiStatusResponseSchema = z.discriminatedUnion('configured', [
+  z.object({ configured: z.literal(false) }),
+  z.object({
+    configured: z.literal(true),
+    state: LearningStateSchema,
+    /** Null until the first successful run has committed its state. */
+    lastSyncAt: nullableString,
+    lastRunStatus: z.enum(['ok', 'failed', 'never']),
+    lastRunUrl: nullableString,
+    /** Note commits on the vault since lastSyncAt, excluding the bot's own. */
+    pendingCommits: z.number().int().min(0),
+    decks: z.array(z.object({ name: z.string(), notes: z.number().int() })),
+    errors: z.array(z.string()),
+    /** Actions tab of the vault repo (retry lives there). */
+    actionsUrl: z.string().url(),
+  }),
+]);
+export type AnkiStatusResponse = z.infer<typeof AnkiStatusResponseSchema>;
+export type AnkiStatusConfiguredResponse = Extract<AnkiStatusResponse, { configured: true }>;

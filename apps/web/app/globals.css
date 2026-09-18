@@ -1989,3 +1989,27 @@ p {
     opacity: 0.85;
   }
 }
+
+/* ---- Anki sync status (ADR-026) ---- */
+
+.cc-anki-status {
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  color: var(--cc-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cc-anki-status a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.cc-anki-status-synced {
+  color: var(--cc-text-muted);
+}
+
+.cc-anki-status-failed {
+  color: var(--cc-danger);
+}

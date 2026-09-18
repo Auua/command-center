@@ -21,7 +21,7 @@ Delivery is five PRs, each leaving `main` deployable and dogfood-able:
 | 3A ✓ | `phase3-sdk` (PR #27)    | Settings panel, per-instance widget ids, size validation. Closes the SDK gaps every learning ADR leans on. | —           |
 | 3B ✓ | `phase3-learning-core`   | `LearningModule`: vault client, index cache, day pins, front-matter writes, WOTD endpoints + widget.       | 3A          |
 | 3C ✓ | `phase3-grammar-streaks` | Grammar endpoints + widget; `StreaksService` + `streaks` widget; `wotd.acknowledged`/`grammar.studied`.    | 3B          |
-| 3D   | `phase3-anki-sync`       | `tools/anki-sync` composite action, `anki-sync.yml` caller in the vault, `GET /anki-status`, footers.      | 3B          |
+| 3D ✓ | `phase3-anki-sync`       | `tools/anki-sync` composite action, `anki-sync.yml` caller in the vault, `GET /anki-status`, footers.      | 3B          |
 | 3E   | `phase3-kanji` (stretch) | ADR-041 kanji widget, then the widget on the existing index shard.                                         | 3C, ADR-041 |
 
 3C and 3D are independent of each other and can land in either order.

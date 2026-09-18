@@ -4,12 +4,14 @@ import {
   GrammarCeilingSchema,
   WotdActionRequestSchema,
   WotdCeilingSchema,
+  type AnkiStatusResponse,
   type GrammarResponse,
   type VaultStatusResponse,
   type WotdResponse,
 } from '@command-center/contracts';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/auth.types';
+import { AnkiStatusService } from './anki/anki-status.service';
 import { GrammarService } from './grammar/grammar.service';
 import { LearningService } from './learning.service';
 import { WotdService } from './wotd/wotd.service';
@@ -25,6 +27,7 @@ export class LearningController {
     private readonly wotdService: WotdService,
     private readonly grammarService: GrammarService,
     private readonly learningService: LearningService,
+    private readonly ankiStatusService: AnkiStatusService,
   ) {}
 
   @Get('wotd')
@@ -80,6 +83,11 @@ export class LearningController {
   ): Promise<GrammarResponse> {
     const request = GrammarActionRequestSchema.parse(body);
     return this.grammarService.studied(user, GrammarCeilingSchema.parse(ceiling), request.itemId);
+  }
+
+  @Get('anki-status')
+  ankiStatus(@CurrentUser() user: AuthenticatedUser): Promise<AnkiStatusResponse> {
+    return this.ankiStatusService.status(user);
   }
 
   @Get('vault-status')
