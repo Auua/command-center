@@ -83,12 +83,17 @@ describe('TasksService', () => {
 
     await service.updateTask(user, TASK.id, { completed: true });
 
-    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(TASK_COMPLETED_EVENT, {
-      userId: user.id,
-      taskId: TASK.id,
-      title: TASK.title,
-      completedAt: '2026-07-11T12:00:00.000Z',
-    });
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      TASK_COMPLETED_EVENT,
+      {
+        userId: user.id,
+        taskId: TASK.id,
+        title: TASK.title,
+        completedAt: '2026-07-11T12:00:00.000Z',
+      },
+      // Out-of-band request context so listeners can write user rows (ADR-014).
+      { user },
+    );
   });
 
   it('does not emit task.completed for non-completion updates', async () => {

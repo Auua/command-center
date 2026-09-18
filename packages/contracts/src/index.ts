@@ -8,3 +8,4 @@ export * from './schemas/notifications';
 export * from './schemas/profile';
 export * from './schemas/tasks';
 export * from './schemas/learning';
+export * from './schemas/streaks';

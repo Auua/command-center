@@ -11,8 +11,10 @@ import {
   type WotdResponse,
 } from '@command-center/contracts';
 import { useQuickAction, type WidgetProps } from '@command-center/ui';
+import { StreakPill } from '@/components/streak-pill';
 import { t } from '@/lib/i18n';
 import { acknowledgeWotd, fetchWotd, skipWotd } from '@/lib/learning-api';
+import { STREAKS_QUERY_KEY } from '@/lib/use-streaks';
 import { checkIcon, skipIcon } from './icon';
 
 export const wotdSettingsSchema = z.object({
@@ -81,6 +83,7 @@ function Chips({ item }: { item: WotdItem }): ReactElement {
         {t(item.kind === 'verb' ? 'wotd.kind.verb' : 'wotd.kind.vocab')}
         {detail ? ` · ${detail}` : ''}
       </span>
+      <StreakPill streakKey="japanese-wotd" />
     </p>
   );
 }
@@ -133,6 +136,7 @@ export function WotdWidget({ settings }: WidgetProps<WotdSettings>): ReactElemen
     mutationFn: (itemId: string) => acknowledgeWotd(itemId),
     onSuccess: (response) => {
       settle(response);
+      void queryClient.invalidateQueries({ queryKey: STREAKS_QUERY_KEY });
       announce('polite', t('wotd.acknowledged.announce'));
     },
     onError: () => announce('alert', t('wotd.error.action')),
