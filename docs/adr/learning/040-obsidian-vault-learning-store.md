@@ -1,8 +1,10 @@
 # ADR-040: The Obsidian vault is the learning store — ADR-024's repo layout superseded
 
-- **Status:** proposed
-- **Date:** 2026-09-17
-- **Review:** new
+- **Status:** accepted (2026-09-18)
+- **Date:** 2026-09-17 (accepted 2026-09-18 at the product-owner walkthrough — every decision as
+  drafted; the two Phase 2 amendments folded in on 2026-09-17 confirmed; the owed amendments to
+  ADR-011/012/013/019/024/026/032, the runbook and `docs/ADR.md` applied in the acceptance commit)
+- **Review:** claude-reviewed, PO-reviewed — accepted 2026-09-18
 - **Supersedes:** ADR-024 §"Repo layout", §"Card file format", §"Content pool", §"Per-kind
   progress"; amends ADR-011, 012, 013, 019, 026, 032 and `docs/runbook-learning-center.md` as
   listed under Consequences. ADR-024's store decision (GitHub repo, no database, Contents API
@@ -99,6 +101,7 @@ Note identity is the **vault-relative path** (e.g. `Japanese/30 Sanasto/Sanat/�
 It is stable as long as the user does not rename the note, which is the vault's own identity
 rule (wikilinks break on rename too), so the app inherits it rather than inventing an id.
 `itemId` in every ADR-024 contract is this path.
+→ _PO-review (2026-09-18):_ path identity confirmed — no `id` front-matter field, neither for existing notes nor for new ones; the rename cost is accepted and recorded in the runbook.
 
 Fields are consumed **as the vault names them** (Finnish-neutral keys: `word`, `reading`,
 `meaning`, `jlpt`, `status`, …). No renaming layer. A note missing a required field (per
@@ -119,6 +122,7 @@ Meaning language: the vault is FI-first (`meaning` is Finnish; the body's `## Me
 `**FI:**` and `**EN:**` lines). The WOTD and grammar widgets gain a setting
 `meaningLanguage: "fi" | "en"` (default `fi`); `en` falls back to `fi` when the body has no EN
 line. Widget chrome stays English.
+→ _PO-review (2026-09-18):_ Finnish default confirmed, `en` as the opt-in setting with Finnish fallback.
 
 ### Progress = `status`, `confidence`, `reviewed` — written to the note
 
@@ -137,11 +141,13 @@ front-matter, so what the app records is what Obsidian's `Kertaus` views show:
 not the UTC learning day. The day pin stays on the UTC day; this is ADR-014's existing split
 (pace on UTC, record on home time) applied to the vault. `LearningModule` consumes
 `ProfileService`'s exported timezone lookup, the seam `AutomationModule` already uses.
+→ _PO-review (2026-09-18):_ front-matter as the progress store confirmed (no app-owned progress file, no mirror); `reviewed` stamps the **home-timezone date**, the pin stays on the UTC day.
 
 A `confidence` already above the floor is never lowered by the app; `shaky`/`known` set by hand
 in Obsidian are respected (a `known` word is never served). Un-doing anything is editing the
 note in Obsidian — the hand-editability ADR-024 promised, now in the tool the user actually
 uses. The app never touches the body.
+→ _PO-review (2026-09-18):_ confidence rule confirmed — acknowledge floors `confidence` to 2 and never lowers a hand-set value; skip sets `known`.
 
 **Day pin.** The one piece of state the vault has no field for is "which item is today's".
 It lives in a single small file the app owns, `.cc/state.json`: `{ "<kind>": { date, itemId,
@@ -157,6 +163,7 @@ Grammar ordering: the vault has no `sequence`. Order = `jlpt` ascending, then th
 number), then `created`. Notes with no `sources` (106 of 317 today) sort last within their
 level. This is the textbook's teaching order, which is what ADR-012's curated `sequence` was
 approximating.
+→ _PO-review (2026-09-18):_ ordering rule confirmed — JLPT, then the first `sources` link's book and chapter, then `created`; no `sequence` field is added.
 
 ### Cards = `## Kortit`; "Add to Anki" = the vault's own export
 
@@ -183,6 +190,7 @@ shared `POST /cards/:kind` contract survives only for kinds whose content has no
 optional personal `notes` field is **dropped for vault kinds**: appending it to the note's
 `## Sekoitan tähän` section would break the rule that the app never touches the body, and a
 personal remark belongs in Obsidian, where the note is already open.
+→ _PO-review (2026-09-18):_ "Add to Anki" removed for vault kinds confirmed — no per-note flag, no tag-based selection; the sync exports every `## Kortit` card. `notes` dropped for vault kinds confirmed.
 
 ### Read path: a vault-side index, not a tree walk
 
@@ -200,6 +208,7 @@ changes is who produces them:
   locally with the vault's existing tooling; the workflow is the thin caller. Same
   vault-runs-machinery posture as ADR-026, without a cross-repo action: the parser is the
   vault's, so it lives with the vault.
+  → _PO-review (2026-09-18):_ indexer in the vault confirmed (`00 Meta/Scripts/cc_index.py` + `.github/workflows/cc-index.yml` in the learning-center repo); the monorepo composite action and the tarball-per-refresh fallback stay rejected.
 - The API reads `manifest.json` + the JSONL shards at one SHA. Shards are split at ~500 lines
   when over the 1 MB comfort zone (vocab will be ~16 files), following ADR-024's own sharding
   rule. The index is **derived data** — regenerated wholesale, never hand-edited, and a
@@ -248,7 +257,9 @@ ADR-024's endpoints stand with these changes:
   non-automation producers), at most one open row per condition, written when the condition is
   first observed on a read. The about panel keeps the detail; the bell is how the user learns
   something needs a hand.
-  No write endpoints beyond the above; the vault stays the user's to shape.
+  → _PO-review (2026-09-18):_ bell routing for learning-side failures confirmed.
+
+No write endpoints beyond the above; the vault stays the user's to shape.
 
 ## Consequences
 
@@ -286,15 +297,17 @@ ADR-024's endpoints stand with these changes:
   first Action runs there — they are not read by anything here, but a 107 MB `.git` makes
   every Actions checkout slow, and the content should not sit in a repo a CI token can reach.
   Recorded in the runbook as a setup step.
-- **Docs owed on acceptance:** ADR-024 — mark the four layout sections superseded, and revise
+- **Docs applied at acceptance (2026-09-18):** ADR-024 — mark the four layout sections superseded, and revise
   the "Obsidian-vault-in-Git" alternative to say why it now wins; ADR-011 — `itemId`, settings
   (`meaningLanguage`; `showRomaji` reads `romaji`), no "Add to Anki", no attribution; ADR-012
   — folder, ordering rule, block-embed examples, no `sequence`; ADR-013/019 — `pool/tech/`
   and `pool/system-design/` re-homed under a `Tech/` vault area (shape unchanged), `notes`
   dropped for vault kinds; ADR-026 — card source, guid, note type, trigger filter, import mode
   dropped; ADR-032 — R5 closed by ownership for Japanese, attribution row withdrawn;
-  `docs/runbook-learning-center.md` — steps 6–8 replaced by index workflow + `obsidian-git`
-  settings + hygiene; `docs/ADR.md` §3 diagram, §4.3/§4.5 prose, §7 rows 011/012/024/026/032.
+  `docs/runbook-learning-center.md` — steps 5–8 replaced by the content-folder trigger, hygiene +
+  `obsidian-git` settings, and the index workflow; `docs/ADR.md` §2 failure row, §3 diagram, §4.3/§4.5
+  prose, §7 rows 011/012/024/026/032. Each amended ADR carries a dated note under its header pointing
+  here; their bodies are left as history, the way ADR-011's Mongo design survived its 2026-07-17 edit.
 
 ## Alternatives considered
 

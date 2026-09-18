@@ -4,7 +4,17 @@
 - **Date:** 2026-07-16 (rewritten twice: the 2026-07-14 draft used AnkiConnect
   queue-and-flush; the same-day revision then dropped Mongo with ADR-024 — GitHub is the
   store, and sync results live in `sync/state.json` instead of a report endpoint)
-- **Review:** claude-reviewed, PO-reviewed — accepted 2026-07-17
+- **Review:** claude-reviewed, PO-reviewed — accepted 2026-07-17; amended 2026-09-18
+
+> **Amended by ADR-040 (2026-09-18).** The sync's shape stands — thin caller workflow in the learning
+> repo, machinery in `tools/anki-sync`, sync-down → upsert → sync-up, **never full-upload**,
+> `sync/state.json` — with four substitutions: the card source is the vault's `## Kortit` sections
+> parsed the way `00 Meta/Scripts/sr_to_anki.py` does (not `cards/**`); the note key and guid are the
+> vault's sha1 UID (not `cc:<id>`), on the `Japani (Obsidian)` note type with fields `UID`, `Front`,
+> `Back`, `Source` (the `CC Japanese v1` / `CC Tech v1` models are not created for vault content);
+> the push trigger is path-filtered to the content folders (`Japanese/**/*.md`, excluding `.cc/**`
+> and `sync/**`); and **import mode is dropped** — the vault is the deck's source. The `anki: true`
+> flag no longer selects cards. Diagram media (ADR-019) and the `Notes` field stay for lesson kinds.
 
 ## Context
 

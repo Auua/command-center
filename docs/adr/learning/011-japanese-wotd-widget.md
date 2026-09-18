@@ -7,7 +7,18 @@
   superseded and survive only in git history; the widget surface, a11y, and streak
   decisions stand. Accepted the same day with carry-over pacing confirmed and
   `showRomaji` flipped to default-off.)
-- **Review:** claude-reviewed, PO-reviewed — accepted 2026-07-17
+- **Review:** claude-reviewed, PO-reviewed — accepted 2026-07-17; amended 2026-09-18
+
+> **Amended by ADR-040 (2026-09-18).** The word pool is the vault's `type: vocab` and `type: verb` notes
+> (`30 Sanasto/Sanat`, `20 Verbit/Lekseemit`), not a JMdict shard; `itemId` is the vault-relative
+> path; progress is the note's own `status`/`confidence`/`reviewed` front-matter (acknowledge →
+> `learning`, floor confidence to 2, `reviewed` = home-timezone date; skip → `known`), with only the
+> day pin in `.cc/state.json` — `progress/japanese-wotd.json` is not created. Settings gain
+> `meaningLanguage: "fi" | "en"` (default `fi`); `showRomaji` reads the note's `romaji` field; the
+> reading renders as `<ruby>` from the kana `reading`, sentences stay plain. **"Add to Anki" is
+> removed** — every note already carries a `## Kortit` card that the sync exports; the sync-status
+> footer stays. `attribution`, `saved` and `cardPath` leave the `GET /wotd` response. Everything
+> else — carry-over pacing, UTC learning day, acknowledge as the only streak source, a11y — stands.
 
 ## Context
 

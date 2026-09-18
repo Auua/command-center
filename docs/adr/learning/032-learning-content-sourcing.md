@@ -4,7 +4,14 @@
 - **Date:** 2026-07-14 (accepted 2026-07-18, amended for ADR-011/012/024/026 as accepted: repo pool
   replaces `jp_content`, bracket furigana replaces `rubySegments`, manifest replaces `content_sources`,
   and the attribution footer is withdrawn for the private deployment — see Licensing)
-- **Review:** claude-reviewed, PO-reviewed
+- **Review:** claude-reviewed, PO-reviewed; amended 2026-09-18
+
+> **Amended by ADR-040 (2026-09-18).** For Japanese, R5 closes by ownership: the content is the user's
+> own vault notes, so the pinned JMdict / JmdictFurigana / Tatoeba ingest, the manifest's
+> attribution block, and the EDRDG about-panel row are withdrawn (the public-exposure footer
+> tripwire is moot — nothing third-party is displayed). The about panel shows a one-line "content:
+> your learning-center vault" credit. The authored-content stance for tech and system-design lessons
+> and the licence-block requirement for any borrowed material stand.
 
 ## Context
 

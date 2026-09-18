@@ -6,7 +6,17 @@
   moved to the learning repo — authored `pool/grammar/` files, `JapaneseModule` dissolved —
   carry-over pacing on the UTC learning day, and the JLPT ceiling sent per-request. The
   original Mongo `jp_content` design survives in git history.)
-- **Review:** claude-reviewed, PO-reviewed — accepted 2026-07-17
+- **Review:** claude-reviewed, PO-reviewed — accepted 2026-07-17; amended 2026-09-18
+
+> **Amended by ADR-040 (2026-09-18).** Grammar points are the vault's `type: grammar` notes in
+> `10 Kielioppi/Pisteet` (Finnish front-matter: `ja`, `reading`, `jlpt`, `func`, `attaches`,
+> `compare`, `sources`), not authored `pool/grammar/` files, and `itemId` is the vault path. There is
+> no `sequence` field: the sequenced policy orders by `jlpt`, then the first `sources` link's book and
+> chapter, then `created` (unsourced notes last in their level). Examples are `^block-id` embeds into
+> `50 Lauseet`, resolved by the vault-side indexer. Progress is the note's front-matter ("mark
+> studied" = acknowledge; "next point" stamps `reviewed` only) — `progress/grammar.json` is not
+> created. **"Add example to Anki" is removed**; `meaningLanguage` mirrors ADR-011. Selection
+> policy, carry-over on the UTC day, `?ceiling=` on the request, and `grammar.studied` stand.
 
 ## Context
 
