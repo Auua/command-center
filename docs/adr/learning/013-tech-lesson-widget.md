@@ -6,7 +6,13 @@
   Action sync; amended at acceptance 2026-07-18: lesson content moves from Mongo
   `lesson_content` to authored `pool/tech/` files in the learning repo, and day-pinning
   flips from home timezone to the UTC learning day — both product-owner decisions)
-- **Review:** claude-reviewed, PO-reviewed
+- **Review:** claude-reviewed, PO-reviewed; amended 2026-09-18
+
+> **Amended by ADR-040 (2026-09-18).** The learning repo is an Obsidian vault with no tech area yet.
+> `pool/tech/<track>/` files keep their shape but are re-homed under a sibling top-level vault area
+> (`Tech/`) when authored, and `progress/tech.json` becomes that area's front-matter once lessons
+> are notes; until then the lesson kinds are the only users of ADR-024's `POST /cards/:kind`. Nothing
+> in the widget contract changes.
 
 ## Context
 

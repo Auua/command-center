@@ -1,6 +1,6 @@
 # Runbook: learning-center repo + Anki sync setup
 
-One-time setup for the learning center (ADR-024) and Anki sync (ADR-026). Everything here is
+One-time setup for the learning center (ADR-024 as amended by ADR-040) and Anki sync (ADR-026). Everything here is
 manual on purpose — see ADR-026's alternatives for why the app doesn't provision the other
 repo itself.
 
@@ -41,25 +41,72 @@ learning-center → Settings → Secrets and variables → Actions:
 Consider proving the pipeline against a **throwaway AnkiWeb account** first (ADR-026 open
 question 3), then switching the secrets to the real one.
 
-## 5. Commit the caller workflow
+## 5. Vault hygiene + `obsidian-git` settings (ADR-040)
 
-`.github/workflows/anki-sync.yml` in learning-center — this file is the whole footprint of
-the sync machinery in that repo:
+Before the first Action runs in the vault:
+
+- Untrack the PDF-extraction intermediates and editor state, and purge them from history
+  (they are copyrighted textbook pages and ~480 MB): add `Japanese/60 Lahteet/.mnn-rebuild/`,
+  `Japanese/60 Lahteet/.kic-rebuild/`, `.DS_Store`, `.obsidian/workspace.json` to `.gitignore`,
+  `git rm -r --cached` them, then rewrite history (`git filter-repo`) and force-push once.
+- In the `obsidian-git` plugin settings turn on **pull before push** (auto-pull), so a backup push
+  after an API commit is never rejected. API commits arrive as `command-center[bot]` with a
+  `cc: <kind> <action> <path>` message and touch only the acted-on note's front-matter,
+  `.cc/`, and (via the sync Action) `sync/`.
+- Note identity is the vault path: renaming a note resets its day pin and re-creates its Anki
+  card (review history lost) — the same cost as editing a card's front.
+
+## 6. Commit the index workflow
+
+`00 Meta/Scripts/cc_index.py` (next to `check_vault.py`, reusing its parser) emits
+`.cc/index/{vocab,verb,kanji,grammar}.jsonl` + `.cc/index/manifest.json`. Run it once locally
+(`python3 "00 Meta/Scripts/cc_index.py"`), commit the output, then commit the thin caller:
+
+```yaml
+name: cc-index
+on:
+  push:
+    branches: [main]
+    paths: ['Japanese/**/*.md']
+  workflow_dispatch:
+concurrency:
+  group: cc-index
+permissions:
+  contents: write
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 "00 Meta/Scripts/cc_index.py"
+      - run: |
+          git config user.name command-center[bot]
+          git config user.email command-center[bot]@users.noreply.github.com
+          git add .cc/index
+          git diff --cached --quiet || git commit -m "cc: index rebuild"
+          git push
+```
+
+The `paths` filter excludes `.cc/**` by construction (only `Japanese/**/*.md` triggers), so an
+index commit never re-triggers the indexer. The API reads only `.cc/index/**`.
+
+## 7. Commit the sync caller workflow
+
+`.github/workflows/anki-sync.yml` in learning-center — the whole footprint of the sync machinery
+in that repo. The push trigger is the **content folders**, not `cards/**` (ADR-040):
 
 ```yaml
 name: anki-sync
 on:
   push:
     branches: [main]
-    paths: ['cards/**']
+    paths: ['Japanese/**/*.md', '!.cc/**', '!sync/**']
   schedule:
     - cron: '15 5 * * *'
   workflow_dispatch:
-    inputs:
-      mode:
-        type: choice
-        options: [sync, import]
-        default: sync
 concurrency:
   group: anki-sync
 permissions:
@@ -73,24 +120,14 @@ jobs:
         with:
           ankiweb-email: ${{ secrets.ANKIWEB_EMAIL }}
           ankiweb-password: ${{ secrets.ANKIWEB_PASSWORD }}
-          mode: ${{ inputs.mode || 'sync' }}
 ```
 
-The `paths: ['cards/**']` filter is what keeps the Action's own `sync/state.json` commits
-from retriggering it. `concurrency: anki-sync` coalesces bursts of card commits into at most
-one running + one queued run.
+`concurrency: anki-sync` coalesces bursts of note commits into at most one running + one queued
+run. There is no `mode: import` any more — the vault is the deck's source, and the sync parses
+every `## Kortit` section the way `00 Meta/Scripts/sr_to_anki.py` does (UID = sha1 of
+`<path>|<front>`, note type `Japani (Obsidian)`).
 
-## 6. Seed the word pool
-
-From the monorepo, against a local clone of learning-center:
-
-```
-pnpm --filter @command-center/jmdict-ingest ingest -- --out ../learning-center
-```
-
-Review the generated `pool/japanese/` (manifest pins + shards), commit, push.
-
-## 7. Release the sync action
+## 8. Release the sync action
 
 Tag the monorepo commit that ships `tools/anki-sync` and push the tag:
 
@@ -102,17 +139,11 @@ Releasing a new sync version later = moving the tag (rollback = moving it back).
 pinned `anki` pip version deliberately; the daily scheduled run is the alarm if AnkiWeb
 stops accepting the old client.
 
-## 8. Import the existing deck
-
-learning-center → Actions → anki-sync → Run workflow → `mode: import`. Review the commit it
-produces under `cards/japanese/imported/**`. Import is read-only against Anki — it never
-syncs up.
-
 ## 9. Prove a sync
 
-Run workflow with `mode: sync` (or just save a card from the widget). Green run,
-`sync/state.json` commit, the note visible in AnkiWeb and on the phone after its next sync —
-deck `Japanese`, note type `CC Japanese v1`, `CardId` field filled.
+Acknowledge a word from the widget (or run the workflow by hand). Green run, `sync/state.json`
+commit, the note visible in AnkiWeb and on the phone after its next sync — deck `Japani`, note
+type `Japani (Obsidian)`, `UID` field filled.
 
 ## Troubleshooting
 
@@ -121,5 +152,8 @@ deck `Japanese`, note type `CC Japanese v1`, `CardId` field filled.
 - **Stale "Anki synced …" in the widget:** the status reads `sync/state.json`; check the
   repo's Actions tab — a run that crashed before committing state leaves it stale until the
   next run.
+- **Index stale in the widget's about panel:** check the vault's Actions tab for the last
+  `cc-index` run; a schema change in the vault without a matching `cc_index.py` change shows as
+  "vault schema changed" via `manifest.json`'s `schemaVersion`.
 - **Sync suddenly failing after months:** likely a rejected old client — bump `anki==` in
   `tools/anki-sync/requirements.txt`, test, move the `anki-sync-v1` tag.

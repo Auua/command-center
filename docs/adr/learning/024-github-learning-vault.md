@@ -1,10 +1,20 @@
 # ADR-024: GitHub learning-center repo — the store for learning content and cards
 
-- **Status:** Accepted
+- **Status:** Accepted — **layout superseded in part by ADR-040 (2026-09-18)**; the store decision stands
 - **Date:** 2026-07-16 (rewritten; the 2026-07-14 draft — "GitHub learning vault" — made Mongo
   `vault_items` the system of record with GitHub as a write-behind mirror. Product-owner decision:
   **no Mongo for learning data, GitHub is the store.** This rewrite records that.)
 - **Review:** claude-reviewed — PO-reviewed
+
+> **Superseded in part by ADR-040 (2026-09-18).** The decision that the private `learning-center`
+> GitHub repo is the store — no database, Contents API behind an in-memory cache, token custody,
+> privacy rules, sha-guarded writes, credential failures never hidden behind serve-stale — **stands**.
+> Four sections below describe a layout that was never built and is now replaced: **Repo layout**
+> (`pool/`, `progress/`, `cards/`), **Card file format**, **Content pool: seeded JMdict subset**, and
+> **Per-kind progress**. The repo is an Obsidian vault; content is its typed notes, progress is their
+> `status`/`confidence`/`reviewed` front-matter, cards are their `## Kortit` sections, the read path is
+> a vault-generated `.cc/index/*.jsonl`, and the day pin is `.cc/state.json`. `tools/jmdict-ingest`
+> will not exist. Read ADR-040 for the current shape; the sections are kept as history.
 
 ## Context
 
@@ -239,3 +249,7 @@ Under `/api/v1/learning`, JWT-guarded, zod contracts in `packages/contracts` (AD
   Anki's ownership of its own schedule (ADR-025/026).
 - **Obsidian-vault-in-Git / third-party sync services:** rejected — nothing to integrate
   server-side, and paid sync violates NFR-8. The format stays Obsidian-openable anyway.
+
+  → _Revisited 2026-09-18 (ADR-040):_ the second half stands (no paid sync); the first half was wrong once
+  the user built the vault _in this repo_ — an Obsidian vault in the GitHub repo the API already
+  reads is exactly this store with a hand-maintained schema. ADR-040 adopts it.

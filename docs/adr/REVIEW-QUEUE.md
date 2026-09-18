@@ -129,9 +129,9 @@ One ADR from the Phase 2 planning session (three expert passes: backend/queue, h
 push/PWA). The product owner relaxed NFR-3 to best-effort delivery, which removed the always-on
 worker from the phase; ADR-039 records the resulting architecture.
 
-| ADR | Title                                          | Review state    | Approved |
-| --- | ---------------------------------------------- | --------------- | -------- |
-| 039 | Automation delivery — inline tick + pinger MVP | claude-reviewed | —        |
+| ADR | Title                                          | Review state    | Approved               |
+| --- | ---------------------------------------------- | --------------- | ---------------------- |
+| 039 | Automation delivery — inline tick + pinger MVP | claude-reviewed | ✓ 2026-09-17 (Batch 8) |
 
 **ADR-039 changes foundation rows** — the walkthrough should confirm these explicitly:
 
@@ -353,24 +353,6 @@ described a deployment that never happened; web and api are in fact both hosted 
 Vercel. The constraint ADR-006 was built on still stands and is recorded in the row: a long-running
 pg-boss consumer doesn't fit Vercel functions, so the worker's home gets decided when Phase 2 lands.
 
-## Batch 7 — learning store realignment (2026-09-17)
-
-One ADR from the 2026-09-17 project review: the `learning-center` repo turned out to be an Obsidian
-vault (built 2026-08-29 → 09-17), not the `pool/` + `progress/` + `cards/` layout ADR-024 specified
-and ADR-011/012/013/019/026/032 build on. ADR-040 makes the vault's own schema the content model.
-
-| ADR | Title                                                                | Review state | Approved |
-| --- | -------------------------------------------------------------------- | ------------ | -------- |
-| 040 | The Obsidian vault is the learning store (ADR-024 layout superseded) | new          |          |
-
-Decisions most worth the product owner's attention, in order: (1) progress is written into the
-notes' `status`/`confidence`/`reviewed` front-matter — the app edits vault files; (2) "Add to Anki"
-disappears from the WOTD/grammar widgets because every note already carries a card; (3) note
-identity is the vault path, so renaming a note in Obsidian resets its day pin and re-creates its
-Anki card; (4) the indexer lives in the vault as a Python script next to `check_vault.py`, not in
-the monorepo. Amendments to six accepted ADRs and the runbook are listed under the ADR's
-Consequences and are owed on acceptance, not before.
-
 ## Batch 8 — Phase 2 acceptance (2026-09-17)
 
 ADR-039 was drafted 2026-07-18 and implemented in PRs #21/#22 the next day, then sat in draft
@@ -386,3 +368,34 @@ writes are retry-safe via `automation_runs.notification_id` (migration 0008), an
 moved to `packages/contracts`. ADR-005 carries a deferral note. The manual checklist (real push
 receipt, iOS installed-PWA push, lock-screen copy, catch-up acceptance test) runs after the
 one-time setup in `docs/PHASE2_SETUP.md`.
+
+## Batch 9 — learning store realignment (drafted 2026-09-17, walked through 2026-09-18)
+
+One ADR from the 2026-09-17 project review: the `learning-center` repo turned out to be an Obsidian
+vault (built 2026-08-29 → 09-17), not the `pool/` + `progress/` + `cards/` layout ADR-024 specified
+and ADR-011/012/013/019/026/032 build on. ADR-040 makes the vault's own schema the content model.
+
+| ADR | Title                                                                | Review state    | Approved     |
+| --- | -------------------------------------------------------------------- | --------------- | ------------ |
+| 040 | The Obsidian vault is the learning store (ADR-024 layout superseded) | claude-reviewed | ✓ 2026-09-18 |
+
+Decisions most worth the product owner's attention, in order: (1) progress is written into the
+notes' `status`/`confidence`/`reviewed` front-matter — the app edits vault files; (2) "Add to Anki"
+disappears from the WOTD/grammar widgets because every note already carries a card; (3) note
+identity is the vault path, so renaming a note in Obsidian resets its day pin and re-creates its
+Anki card; (4) the indexer lives in the vault as a Python script next to `check_vault.py`, not in
+the monorepo. Amendments to six accepted ADRs and the runbook are listed under the ADR's
+Consequences and are owed on acceptance, not before.
+
+**2026-09-18 walkthrough: ADR-040 accepted, every decision as drafted.** Product-owner decisions:
+progress lives in the notes' front-matter (no app-owned progress file, no mirror); "Add to Anki"
+is removed for vault kinds (no per-note flag, no tag selection); note identity is the vault path
+(no `id` field, now or for new notes); the indexer lives in the vault as Python next to
+`check_vault.py`; `reviewed` stamps the home-timezone date while the pin stays on the UTC day;
+acknowledge floors `confidence` to 2 and never lowers it; grammar orders by JLPT → textbook
+chapter → `created`; learning-side failures go to the bell; meaning defaults to Finnish with an
+English switch. The owed amendments landed in the acceptance commit as dated header notes on
+ADR-011/012/013/019/024/026/032 (bodies kept as history), a rewritten runbook (steps 5–9), and
+`docs/ADR.md` §2/§3/§4.3/§4.5/§7. **Phase 3 is unblocked on the design side**; what remains before
+build is the vault-side work (hygiene, `cc_index.py`, the two workflows) and the widget-SDK gaps
+(settings panel, per-instance widget ids) noted in `docs/REVIEW-2026-09-17.md`.

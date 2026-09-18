@@ -5,7 +5,12 @@
   learning repo — `pool/system-design/` authored files, `tools/lesson-ingest` runs dagre and
   emits the IR; day-pinning flips to the UTC learning day; Anki cards ship the diagram as
   media in v1; saved cards gain optional personal notes, stored in the repo card file)
-- **Review:** claude-reviewed, PO-reviewed
+- **Review:** claude-reviewed, PO-reviewed; amended 2026-09-18
+
+> **Amended by ADR-040 (2026-09-18).** As ADR-013: `pool/system-design/` re-homes under the vault's
+> `Tech/` area when authored, shape unchanged. The optional personal `notes` field on saved cards is
+> **dropped for vault kinds** (the app never edits a note body; remarks are written in Obsidian) and
+> survives only for lesson kinds that have no vault note yet.
 
 ## Context
 
