@@ -60,7 +60,8 @@ Before the first Action runs in the vault:
 
 `00 Meta/Scripts/cc_index.py` (next to `check_vault.py`, reusing its parser) emits
 `.cc/index/{vocab,verb,kanji,grammar}.jsonl` + `.cc/index/manifest.json`. Run it once locally
-(`python3 "00 Meta/Scripts/cc_index.py"`), commit the output, then commit the thin caller:
+(`python3 "Japanese/00 Meta/Scripts/cc_index.py"` from the repo root — the script resolves the
+repo from its own location), commit the output, then commit the thin caller:
 
 ```yaml
 name: cc-index
@@ -81,15 +82,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python3 "00 Meta/Scripts/cc_index.py"
+      - run: python3 "Japanese/00 Meta/Scripts/cc_index.py"
       - run: |
-          git config user.name command-center[bot]
-          git config user.email command-center[bot]@users.noreply.github.com
+          git config user.name "command-center[bot]"
+          git config user.email "command-center[bot]@users.noreply.github.com"
           git add .cc/index
           git diff --cached --quiet || git commit -m "cc: index rebuild"
+          git pull --rebase origin main
           git push
 ```
 
+The `pull --rebase` before the push absorbs an `obsidian-git` backup that landed during the run.
 The `paths` filter excludes `.cc/**` by construction (only `Japanese/**/*.md` triggers), so an
 index commit never re-triggers the indexer. The API reads only `.cc/index/**`.
 
