@@ -41,4 +41,16 @@ export const DEFAULT_LAYOUT: WidgetLayoutItem[] = [
     instanceKey: '',
     settings: {},
   },
+  {
+    widgetId: 'japanese-grammar',
+    gridPos: { x: 2, y: 4, w: 3, h: 2 },
+    instanceKey: '',
+    settings: {},
+  },
+  {
+    widgetId: 'streaks',
+    gridPos: { x: 0, y: 5, w: 2, h: 2 },
+    instanceKey: '',
+    settings: {},
+  },
 ];

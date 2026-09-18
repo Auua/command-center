@@ -11,6 +11,8 @@ describe('widgetRegistry', () => {
     expect(widgetRegistry.get('tasks')).toBeDefined();
     expect(widgetRegistry.get('reminders')).toBeDefined();
     expect(widgetRegistry.get('japanese-wotd')).toBeDefined();
+    expect(widgetRegistry.get('japanese-grammar')).toBeDefined();
+    expect(widgetRegistry.get('streaks')).toBeDefined();
   });
 
   it('returns undefined for unregistered ids (grid shows a fallback card)', () => {

@@ -9,6 +9,10 @@ vi.mock('@/lib/learning-api', () => ({
   fetchWotd: vi.fn(),
   acknowledgeWotd: vi.fn(),
   skipWotd: vi.fn(),
+  fetchGrammarToday: vi.fn().mockResolvedValue({ configured: false }),
+  advanceGrammar: vi.fn(),
+  studyGrammar: vi.fn(),
+  fetchStreaks: vi.fn().mockResolvedValue({ timezone: 'UTC', streaks: [] }),
 }));
 
 import { acknowledgeWotd, fetchWotd, skipWotd } from '@/lib/learning-api';

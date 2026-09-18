@@ -28,6 +28,8 @@ describe('Learning (e2e)', () => {
     it('rejects requests without a token', async () => {
       await request(server).get('/api/v1/learning/wotd').expect(401);
       await request(server).get('/api/v1/learning/vault-status').expect(401);
+      await request(server).get('/api/v1/learning/grammar/today').expect(401);
+      await request(server).get('/api/v1/streaks').expect(401);
       await request(server)
         .post('/api/v1/learning/wotd/acknowledge')
         .send({ itemId: 'x.md' })
@@ -38,6 +40,15 @@ describe('Learning (e2e)', () => {
   describe('request validation (400s)', () => {
     it('rejects an unknown JLPT ceiling', async () => {
       await request(server).get('/api/v1/learning/wotd?ceiling=N9').set(asAnna).expect(400);
+    });
+
+    it('rejects a grammar action without itemId', async () => {
+      await request(server)
+        .post('/api/v1/learning/grammar/studied')
+        .set(asAnna)
+        .send({})
+        .expect(400);
+      await request(server).get('/api/v1/learning/grammar/today?ceiling=X').set(asAnna).expect(400);
     });
 
     it('rejects an acknowledge/skip body without itemId or with extra fields', async () => {
@@ -63,6 +74,11 @@ describe('Learning (e2e)', () => {
         .expect({ configured: false });
       await request(server)
         .get('/api/v1/learning/vault-status')
+        .set(asAnna)
+        .expect(200)
+        .expect({ configured: false });
+      await request(server)
+        .get('/api/v1/learning/grammar/today')
         .set(asAnna)
         .expect(200)
         .expect({ configured: false });
