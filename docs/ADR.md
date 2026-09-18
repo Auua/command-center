@@ -194,7 +194,9 @@ interface WidgetDefinition<TSettings = unknown> {
 - **Registry pattern:** widgets self-register into a client-side registry; the dashboard shell renders from the user's persisted layout (widget id + position + size + settings). Adding a widget = adding one folder under `apps/web/widgets/` + one registry entry.
 - **Isolation:** each widget gets an error boundary and its own suspense boundary — a broken widget renders a fallback card, never a blank dashboard.
 - **Data:** widgets fetch through hooks in `packages/contracts` (generated from OpenAPI). No widget talks to Supabase/Mongo directly.
-- **Layout persistence:** grid layout stored per-user via `WidgetRegistryModule` (Postgres, JSONB column for settings).
+- **Layout persistence:** grid layout stored per-user via `WidgetRegistryModule` (Postgres, JSONB column for settings). A placement is identified by `widgetId` + `instanceKey` (`''` for single-instance widgets), so one definition can be placed several times (ADR-013's per-track widgets) — `UNIQUE (user_id, widget_id, instance_key)`, migration 0009.
+- **Settings panel (built 2026-09-18):** the shell introspects `settingsSchema` (`describeSettingsSchema` in `packages/ui`: boolean, enum, number, string, string[], enum[], each optionally `.default()`/`.optional()`) into a native `<dialog>` form behind a gear button in the card header; widgets whose schema has no fields get no gear. Save re-validates with the schema and writes the whole layout back through `PUT /layout` — the first caller of that endpoint. Field labels come from the i18n catalog (`settings.<widgetId>.<field>`).
+- **Sizes are the contract:** a stored footprint not in the widget's `sizes` snaps to the largest declared size that fits (`clampToDeclaredSize`).
 
 ### 4.3 Data architecture — who owns what
 
@@ -318,6 +320,7 @@ erDiagram
         uuid id PK
         uuid user_id FK
         text widget_id
+        text instance_key "'' for single-instance; UNIQUE(user_id, widget_id, instance_key)"
         jsonb grid_pos
         jsonb settings
     }

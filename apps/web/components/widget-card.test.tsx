@@ -88,6 +88,25 @@ describe('WidgetCard quickActions', () => {
     expect(screen.getByText('fired 1 times')).toBeInTheDocument();
   });
 
+  it('renders a settings button only when the shell wires one', async () => {
+    const user = userEvent.setup();
+    const onOpenSettings = vi.fn();
+    const { rerender } = render(
+      <WidgetCard title="Clock">
+        <p>body</p>
+      </WidgetCard>,
+    );
+    expect(screen.queryByRole('button', { name: /settings/i })).toBeNull();
+
+    rerender(
+      <WidgetCard title="Clock" onOpenSettings={onOpenSettings} settingsLabel="Settings for Clock">
+        <p>body</p>
+      </WidgetCard>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Settings for Clock' }));
+    expect(onOpenSettings).toHaveBeenCalledTimes(1);
+  });
+
   it('is a safe no-op when the hooks run outside a WidgetCard', () => {
     const handler = vi.fn();
     expect(() => render(<Subscriber onAction={handler} />)).not.toThrow();

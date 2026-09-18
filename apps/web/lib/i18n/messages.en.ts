@@ -97,6 +97,21 @@ export const messages = {
   'schedule.weekends': 'weekends',
   'schedule.weekly': '{time} · {days}',
 
+  'settings.cancel': 'Cancel',
+  'settings.invalid': 'Check "{field}": {reason}',
+  'settings.open': 'Settings for {title}',
+  'settings.save': 'Save',
+  'settings.saveFailed': 'Could not save settings — try again.',
+  'settings.saved': 'Settings saved.',
+  'settings.saving': 'Saving…',
+  'settings.title': '{title} settings',
+  'settings.unsupported': 'This setting has no editor yet.',
+  'settings.clock.hour12': '12-hour clock',
+  'settings.mood.tags': 'Mood tags (comma-separated)',
+  'settings.reminders.hourCycle': 'Time format',
+  'settings.reminders.maxRows': 'Rows to show',
+  'settings.reminders.showEventAutomations': 'Show event-triggered automations',
+
   'shell.loadingDashboard': 'Loading dashboard…',
   'shell.unknownWidget': 'Unknown widget "{id}". It may have been removed or not registered yet.',
 } as const satisfies Record<string, string>;

@@ -8,8 +8,14 @@ export const GridPosSchema = z.object({
 });
 export type GridPos = z.infer<typeof GridPosSchema>;
 
+/**
+ * `widgetId` is the registry lookup key; `instanceKey` tells apart several
+ * placements of the same definition (ADR-013's per-track widgets). Empty for
+ * the ordinary single-instance case.
+ */
 export const WidgetLayoutItemSchema = z.object({
   widgetId: z.string().min(1),
+  instanceKey: z.string().max(64).default(''),
   gridPos: GridPosSchema,
   settings: z.record(z.unknown()).default({}),
 });

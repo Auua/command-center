@@ -43,7 +43,9 @@ describe('LayoutController', () => {
     await controller.putLayout(user, body);
 
     expect(service.putLayout).toHaveBeenCalledWith(user, {
-      items: [{ widgetId: 'clock', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} }],
+      items: [
+        { widgetId: 'clock', instanceKey: '', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
+      ],
     });
   });
 

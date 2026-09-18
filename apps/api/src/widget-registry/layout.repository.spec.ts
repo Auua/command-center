@@ -45,6 +45,7 @@ function makeRepository(...chains: ReturnType<typeof chain>[]): {
 
 const ROW = {
   widget_id: 'clock',
+  instance_key: '',
   grid_pos: { x: 0, y: 0, w: 2, h: 1 },
   settings: { hour12: true },
 };
@@ -68,10 +69,19 @@ describe('LayoutRepository', () => {
     expect(items).toEqual([
       {
         widgetId: 'clock',
+        instanceKey: '',
         gridPos: { x: 0, y: 0, w: 2, h: 1 },
         settings: { hour12: true },
       },
     ]);
+  });
+
+  it('maps a legacy row without instance_key to the empty key', async () => {
+    const { repo } = makeRepository(chain({ data: [{ ...ROW, instance_key: null }], error: null }));
+
+    const items = await repo.findAllForUser(user);
+
+    expect(items[0]?.instanceKey).toBe('');
   });
 
   it('surfaces query errors as 500s, not client errors', async () => {
@@ -83,7 +93,7 @@ describe('LayoutRepository', () => {
   it('surfaces corrupt stored rows as 500s (never ZodErrors)', async () => {
     const { repo } = makeRepository(
       chain({
-        data: [{ widget_id: 'clock', grid_pos: { bad: true }, settings: {} }],
+        data: [{ widget_id: 'clock', instance_key: '', grid_pos: { bad: true }, settings: {} }],
         error: null,
       }),
     );
@@ -97,7 +107,7 @@ describe('LayoutRepository', () => {
     const { repo } = makeRepository(deleteChain, insertChain);
 
     await repo.replaceForUser(user, [
-      { widgetId: 'clock', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
+      { widgetId: 'clock', instanceKey: '', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
     ]);
 
     expect(deleteChain.delete).toHaveBeenCalled();
@@ -106,6 +116,7 @@ describe('LayoutRepository', () => {
       {
         user_id: user.id,
         widget_id: 'clock',
+        instance_key: '',
         grid_pos: { x: 0, y: 0, w: 2, h: 1 },
         settings: {},
       },
@@ -126,7 +137,7 @@ describe('LayoutRepository', () => {
 
     await expect(
       repo.replaceForUser(user, [
-        { widgetId: 'clock', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
+        { widgetId: 'clock', instanceKey: '', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
       ]),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
   });

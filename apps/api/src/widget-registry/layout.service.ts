@@ -22,13 +22,16 @@ export class LayoutService {
     return { items: request.items };
   }
 
+  /** One placement per (widgetId, instanceKey) — mirrors the table's unique key. */
   private assertUniqueWidgetIds(request: PutLayoutRequest): void {
     const seen = new Set<string>();
     for (const item of request.items) {
-      if (seen.has(item.widgetId)) {
-        throw new BadRequestException(`Duplicate widgetId in layout: "${item.widgetId}"`);
+      const key = `${item.widgetId}\u0000${item.instanceKey}`;
+      if (seen.has(key)) {
+        const label = item.instanceKey ? `${item.widgetId}/${item.instanceKey}` : item.widgetId;
+        throw new BadRequestException(`Duplicate widget placement in layout: "${label}"`);
       }
-      seen.add(item.widgetId);
+      seen.add(key);
     }
   }
 }
