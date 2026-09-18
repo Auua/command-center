@@ -11,6 +11,7 @@ import {
   type WotdResponse,
 } from '@command-center/contracts';
 import { useQuickAction, type WidgetProps } from '@command-center/ui';
+import { AnkiSyncStatus } from '@/components/anki-sync-status';
 import { StreakPill } from '@/components/streak-pill';
 import { t } from '@/lib/i18n';
 import { acknowledgeWotd, fetchWotd, skipWotd } from '@/lib/learning-api';
@@ -262,6 +263,7 @@ export function WotdWidget({ settings }: WidgetProps<WotdSettings>): ReactElemen
           >
             {t('wotd.openNote')}
           </a>
+          <AnkiSyncStatus />
         </div>
       </article>
     );

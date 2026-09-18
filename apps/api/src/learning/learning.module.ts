@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { NotificationModule } from '../notification/notification.module';
 import { ProfileModule } from '../profile/profile.module';
 import { SupabaseModule } from '../supabase/supabase.module';
+import { AnkiStatusService } from './anki/anki-status.service';
 import { GrammarService } from './grammar/grammar.service';
 import { IndexCacheService } from './index/index-cache.service';
 import { LearningAlertsService } from './learning-alerts.service';
@@ -38,6 +39,7 @@ import { WotdService } from './wotd/wotd.service';
     GrammarService,
     StreaksRepository,
     StreaksService,
+    AnkiStatusService,
   ],
 })
 export class LearningModule {}

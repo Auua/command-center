@@ -1,8 +1,10 @@
 import {
+  AnkiStatusResponseSchema,
   GrammarResponseSchema,
   StreaksResponseSchema,
   VaultStatusResponseSchema,
   WotdResponseSchema,
+  type AnkiStatusResponse,
   type GrammarResponse,
   type JlptLevel,
   type StreaksResponse,
@@ -68,4 +70,10 @@ export async function studyGrammar(itemId: string, ceiling: JlptLevel): Promise<
 export async function fetchStreaks(): Promise<StreaksResponse> {
   const response = await apiFetch('/api/v1/streaks');
   return StreaksResponseSchema.parse(await response.json());
+}
+
+/** GET /learning/anki-status (ADR-026) — the footer's three honest states. */
+export async function fetchAnkiStatus(): Promise<AnkiStatusResponse> {
+  const response = await apiFetch('/api/v1/learning/anki-status');
+  return AnkiStatusResponseSchema.parse(await response.json());
 }

@@ -2,18 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { NotificationRepository } from '../notification/notification.repository';
 
-export type LearningCondition = 'token-invalid' | 'unavailable' | 'index-stale';
+export type LearningCondition =
+  'token-invalid' | 'unavailable' | 'index-stale' | 'anki-sync-failed';
 
 const TITLES: Record<LearningCondition, string> = {
   'token-invalid': 'Learning vault token expired',
   unavailable: 'Learning vault unreachable',
   'index-stale': 'Learning index is stale',
+  'anki-sync-failed': 'Anki sync failed',
 };
 
 const BODIES: Record<LearningCondition, string> = {
   'token-invalid': 'GitHub rejected the vault token — rotate it (runbook step 4).',
   unavailable: 'The vault could not be read; showing the last good data if any.',
   'index-stale': 'The vault index is over 48 h old — check the cc-index workflow run.',
+  'anki-sync-failed': 'The last anki-sync run went red — open the vault Actions tab.',
 };
 
 /** Index older than this raises `index-stale`. */
