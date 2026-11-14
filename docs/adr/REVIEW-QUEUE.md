@@ -399,3 +399,19 @@ ADR-011/012/013/019/024/026/032 (bodies kept as history), a rewritten runbook (s
 `docs/ADR.md` §2/§3/§4.3/§4.5/§7. **Phase 3 is unblocked on the design side**; what remains before
 build is the vault-side work (hygiene, `cc_index.py`, the two workflows) and the widget-SDK gaps
 (settings panel, per-instance widget ids) noted in `docs/REVIEW-2026-09-17.md`.
+
+## Batch 10 — Phase 3E kanji (drafted 2026-11-14)
+
+| ADR | Title                            | Review state    | Approved |
+| --- | -------------------------------- | --------------- | -------- |
+| 041 | Japanese Kanji-of-the-Day widget | claude-reviewed |          |
+
+Decisions most worth the product owner's attention, in order: (1) example words come from the
+word notes' `kanji` wikilinks (the note's own "Sanat joissa esiintyy" rule) — no `words[]` field
+on the kanji shard, no substring fallback, so untagged words never appear under a kanji; (2) the
+mnemonic is an optional index field the vault-side `cc_index.py` must learn to emit — the widget
+ships before that and shows no mnemonic section until it lands; (3) a separate `japanese-kanji`
+streak fed only by `kanji.acknowledged` (ADR-014 amendment owed on acceptance); (4) no
+`meaningLanguage` setting because no kanji note carries an EN meaning today; (5) two kun-only
+kanji are skipped by the indexer for a missing `onyomi` — a vault fix (`onyomi: []`), recorded,
+not an app change.
