@@ -16,13 +16,13 @@ Two scope facts change the order from the July plan:
 
 Delivery is five PRs, each leaving `main` deployable and dogfood-able:
 
-| Step | PR                       | Ships                                                                                                      | Depends on  |
-| ---- | ------------------------ | ---------------------------------------------------------------------------------------------------------- | ----------- |
-| 3A ✓ | `phase3-sdk` (PR #27)    | Settings panel, per-instance widget ids, size validation. Closes the SDK gaps every learning ADR leans on. | —           |
-| 3B ✓ | `phase3-learning-core`   | `LearningModule`: vault client, index cache, day pins, front-matter writes, WOTD endpoints + widget.       | 3A          |
-| 3C ✓ | `phase3-grammar-streaks` | Grammar endpoints + widget; `StreaksService` + `streaks` widget; `wotd.acknowledged`/`grammar.studied`.    | 3B          |
-| 3D ✓ | `phase3-anki-sync`       | `tools/anki-sync` composite action, `anki-sync.yml` caller in the vault, `GET /anki-status`, footers.      | 3B          |
-| 3E   | `phase3-kanji` (stretch) | ADR-041 kanji widget, then the widget on the existing index shard.                                         | 3C, ADR-041 |
+| Step | PR                       | Ships                                                                                                                                                | Depends on  |
+| ---- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 3A ✓ | `phase3-sdk` (PR #27)    | Settings panel, per-instance widget ids, size validation. Closes the SDK gaps every learning ADR leans on.                                           | —           |
+| 3B ✓ | `phase3-learning-core`   | `LearningModule`: vault client, index cache, day pins, front-matter writes, WOTD endpoints + widget.                                                 | 3A          |
+| 3C ✓ | `phase3-grammar-streaks` | Grammar endpoints + widget; `StreaksService` + `streaks` widget; `wotd.acknowledged`/`grammar.studied`.                                              | 3B          |
+| 3D ✓ | `phase3-anki-sync`       | `tools/anki-sync` composite action, `anki-sync.yml` caller in the vault, `GET /anki-status`, footers.                                                | 3B          |
+| 3E ✓ | `phase3-kanji-build`     | ADR-041 accepted + built: `learning/kanji/`, `japanese-kanji` widget, `kanji.acknowledged` streak; shared widget primitives in `@command-center/ui`. | 3C, ADR-041 |
 
 3C and 3D are independent of each other and can land in either order.
 
@@ -175,17 +175,15 @@ counts, errors[] }`. Caller workflow `anki-sync.yml` in the vault per runbook st
 note commits since `lastSyncAt`. Footers on WOTD and grammar render the three honest states.
 Vault secrets `ANKIWEB_EMAIL`/`ANKIWEB_PASSWORD` are the product owner's step.
 
-## 3E — Kanji (stretch)
+## 3E — Kanji (stretch) ✓
 
-ADR-041 drafted 2026-11-14 (`docs/adr/learning/041-japanese-kanji-widget.md`), awaiting the
-product-owner walkthrough. Decisions: selection = WOTD's over the kanji shard (seed `|kanji`);
-example words derived at index load from the vocab/verb records' `kanji` wikilinks — **no
-`words[]` field on the kanji shard**; the mnemonic (`## Muistisääntö`) becomes an optional
-additive `mnemonic` field emitted by the vault's `cc_index.py`, and the widget ships without
-waiting for it; `kanji.acknowledged` → streak key `japanese-kanji`. Build after acceptance:
-`learning/kanji/` (selection + service, shared helpers extracted from WOTD), contracts
-(`KanjiItem`, `KanjiWord`, the event, the streak key), `apps/web/widgets/japanese-kanji/`,
-`learning-api.ts`, catalog keys, ADR-014/040 header notes.
+ADR-041 accepted and built 2026-11-14 (`docs/adr/learning/041-japanese-kanji-widget.md`). Selection
+is WOTD's over the kanji shard (seed `|kanji`); linked words come from the vocab/verb records'
+`kanji` wikilinks at index load (no `words[]` field); the mnemonic is an optional additive
+`mnemonic` index field the vault's `cc_index.py` still has to emit (runbook step 6 note);
+`kanji.acknowledged` → streak key `japanese-kanji`. The widget was built on the shared widget
+primitives added to `@command-center/ui` in the same PR, and every earlier widget was moved onto
+them.
 
 ## Docs owed per step
 

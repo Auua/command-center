@@ -1,12 +1,14 @@
 import {
   AnkiStatusResponseSchema,
   GrammarResponseSchema,
+  KanjiResponseSchema,
   StreaksResponseSchema,
   VaultStatusResponseSchema,
   WotdResponseSchema,
   type AnkiStatusResponse,
   type GrammarResponse,
   type JlptLevel,
+  type KanjiResponse,
   type StreaksResponse,
   type VaultStatusResponse,
   type WotdResponse,
@@ -64,6 +66,28 @@ export async function studyGrammar(itemId: string, ceiling: JlptLevel): Promise<
     body: { itemId },
   });
   return GrammarResponseSchema.parse(await response.json());
+}
+
+/** Kanji of the day (ADR-041) — WOTD's three calls over the kanji shard. */
+export async function fetchKanji(ceiling: JlptLevel): Promise<KanjiResponse> {
+  const response = await apiFetch(`/api/v1/learning/kanji?ceiling=${ceiling}`);
+  return KanjiResponseSchema.parse(await response.json());
+}
+
+export async function acknowledgeKanji(itemId: string): Promise<KanjiResponse> {
+  const response = await apiFetch('/api/v1/learning/kanji/acknowledge', {
+    method: 'POST',
+    body: { itemId },
+  });
+  return KanjiResponseSchema.parse(await response.json());
+}
+
+export async function skipKanji(itemId: string, ceiling: JlptLevel): Promise<KanjiResponse> {
+  const response = await apiFetch(`/api/v1/learning/kanji/skip?ceiling=${ceiling}`, {
+    method: 'POST',
+    body: { itemId },
+  });
+  return KanjiResponseSchema.parse(await response.json());
 }
 
 /** GET /streaks (ADR-014) — one read for the streaks widget and every streak pill. */

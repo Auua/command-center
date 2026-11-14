@@ -52,7 +52,7 @@ export function TemplatesEmptyState({
           ))}
         </ul>
       )}
-      <p className="cc-widget-placeholder">{t('reminders.empty.addHint')}</p>
+      <p className="cc-hint">{t('reminders.empty.addHint')}</p>
     </div>
   );
 }

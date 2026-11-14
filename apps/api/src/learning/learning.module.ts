@@ -5,6 +5,7 @@ import { SupabaseModule } from '../supabase/supabase.module';
 import { AnkiStatusService } from './anki/anki-status.service';
 import { GrammarService } from './grammar/grammar.service';
 import { IndexCacheService } from './index/index-cache.service';
+import { KanjiService } from './kanji/kanji.service';
 import { LearningAlertsService } from './learning-alerts.service';
 import { LearningController } from './learning.controller';
 import { LearningService } from './learning.service';
@@ -37,6 +38,7 @@ import { WotdService } from './wotd/wotd.service';
     ProgressService,
     WotdService,
     GrammarService,
+    KanjiService,
     StreaksRepository,
     StreaksService,
     AnkiStatusService,

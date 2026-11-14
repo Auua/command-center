@@ -3,6 +3,7 @@ import {
   IndexManifestSchema,
   IndexRecordSchema,
   jlptRank,
+  KanjiResponseSchema,
   LearningStateFileSchema,
   WotdActionRequestSchema,
   WotdCeilingSchema,
@@ -62,6 +63,22 @@ describe('IndexRecordSchema', () => {
         lookalikes: [],
       }).type,
     ).toBe('kanji');
+    // `mnemonic` is additive (ADR-041): absent today, a string once the indexer emits it.
+    const withMnemonic = IndexRecordSchema.parse({
+      ...vocabLine,
+      type: 'kanji',
+      kanji: '練',
+      strokes: 14,
+      grade: null,
+      onyomi: ['レン'],
+      kunyomi: ['ね-る'],
+      components: [],
+      lookalikes: [],
+      mnemonic: 'Silkkilanka kiertyy itäpuolella.',
+    });
+    expect(withMnemonic.type === 'kanji' && withMnemonic.mnemonic).toBe(
+      'Silkkilanka kiertyy itäpuolella.',
+    );
     expect(
       IndexRecordSchema.parse({
         ...vocabLine,
@@ -149,5 +166,59 @@ describe('WotdActionRequestSchema / WotdCeilingSchema', () => {
   it('defaults the ceiling to N5 and rejects unknown levels', () => {
     expect(WotdCeilingSchema.parse(undefined)).toBe('N5');
     expect(WotdCeilingSchema.safeParse('N6').success).toBe(false);
+  });
+});
+
+describe('KanjiResponseSchema', () => {
+  it('accepts an ok response with linked words and a null mnemonic', () => {
+    const parsed = KanjiResponseSchema.parse({
+      configured: true,
+      state: 'ok',
+      date: '2026-11-14',
+      item: {
+        itemId: 'Japanese/40 Kanji/Merkit/食.md',
+        kanji: '食',
+        strokes: 9,
+        grade: 2,
+        jlpt: 'N5',
+        onyomi: ['ショク', 'ジキ'],
+        kunyomi: ['た.べる', 'く.う'],
+        meaning: { fi: 'syödä, ruoka', en: null },
+        components: ['人', '良'],
+        lookalikes: ['飲'],
+        mnemonic: null,
+        words: [
+          {
+            itemId: 'Japanese/20 Verbit/Lekseemit/食べる.md',
+            word: '食べる',
+            reading: 'たべる',
+            meaning: { fi: 'syödä', en: null },
+            jlpt: 'N5',
+            status: 'known',
+          },
+        ],
+        status: 'new',
+        confidence: 1,
+        sourceUrl: 'https://github.com/x/y/blob/main/z.md',
+      },
+      acknowledged: false,
+      exhausted: false,
+      index: { sha: 'abc', generatedAt: '2026-10-23T08:59:23Z' },
+    });
+    expect(parsed.configured && parsed.item?.words[0]?.word).toBe('食べる');
+  });
+
+  it('rejects a kanji item without a character', () => {
+    expect(
+      KanjiResponseSchema.safeParse({
+        configured: true,
+        state: 'ok',
+        date: '2026-11-14',
+        item: { itemId: 'x.md', kanji: '' },
+        acknowledged: false,
+        exhausted: false,
+        index: { sha: null, generatedAt: null },
+      }).success,
+    ).toBe(false);
   });
 });

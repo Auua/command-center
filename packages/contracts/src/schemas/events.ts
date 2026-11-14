@@ -45,3 +45,15 @@ export const GrammarStudiedEventSchema = z.object({
   studiedAt: z.string().datetime(),
 });
 export type GrammarStudiedEvent = z.infer<typeof GrammarStudiedEventSchema>;
+
+/** Emitted by LearningModule on kanji "learned it" — the only kanji streak source (ADR-041/014). */
+export const KANJI_ACKNOWLEDGED_EVENT = 'kanji.acknowledged';
+
+export const KanjiAcknowledgedEventSchema = z.object({
+  userId: z.string().min(1),
+  /** Vault-relative note path. */
+  itemId: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  acknowledgedAt: z.string().datetime(),
+});
+export type KanjiAcknowledgedEvent = z.infer<typeof KanjiAcknowledgedEventSchema>;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState, type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { z } from 'zod';
 import {
   JLPT_LEVELS,
@@ -10,14 +10,28 @@ import {
   type GrammarResponse,
   type JlptLevel,
 } from '@command-center/contracts';
-import { useQuickAction, type WidgetProps } from '@command-center/ui';
+import {
+  Button,
+  CheckIcon,
+  Chip,
+  ChipRow,
+  DoneState,
+  Hint,
+  NextIcon,
+  SourceLink,
+  useAnnouncer,
+  useQuickAction,
+  WidgetBody,
+  WidgetFooter,
+  type WidgetProps,
+} from '@command-center/ui';
 import { AnkiSyncStatus } from '@/components/anki-sync-status';
+import { LearningState } from '@/components/learning-state';
 import { StreakPill } from '@/components/streak-pill';
 import { t } from '@/lib/i18n';
 import { advanceGrammar, fetchGrammarToday, studyGrammar } from '@/lib/learning-api';
 import { STREAKS_QUERY_KEY } from '@/lib/use-streaks';
 import { pickMeaning } from '../japanese-wotd/wotd-widget';
-import { checkIcon, nextIcon } from './icon';
 
 export const grammarSettingsSchema = z.object({
   jlptCeiling: z.enum(JLPT_LEVELS).default('N5'),
@@ -41,27 +55,25 @@ function Examples({
 }): ReactElement {
   const [revealed, setRevealed] = useState(false);
   const examples = item.examples.slice(0, count);
-  if (examples.length === 0) {
-    return <p className="cc-grammar-example cc-grammar-hint">{t('grammar.noExample')}</p>;
-  }
+  if (examples.length === 0) return <Hint>{t('learning.noExample')}</Hint>;
   const showFi = reveal === 'always' || revealed;
   return (
-    <div className="cc-grammar-examples">
+    <div className="cc-examples">
       {examples.map((example) => (
-        <div key={example.ja} className="cc-grammar-example">
+        <div key={example.ja} className="cc-example">
           <p lang="ja">{example.ja}</p>
-          {example.fi && showFi && <p className="cc-grammar-example-fi">{example.fi}</p>}
+          {example.fi && showFi && <p className="cc-example-fi">{example.fi}</p>}
         </div>
       ))}
       {reveal === 'tap' && examples.some((example) => example.fi) && (
-        <button
-          type="button"
-          className="cc-btn cc-btn-ghost cc-grammar-reveal"
+        <Button
+          variant="link"
+          size="sm"
           aria-expanded={revealed}
           onClick={() => setRevealed((current) => !current)}
         >
           {revealed ? t('grammar.hideTranslation') : t('grammar.showTranslation')}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -81,13 +93,7 @@ export function GrammarWidget({ settings, size }: WidgetProps<GrammarSettings>):
   const meaningLanguage = settings.meaningLanguage ?? 'fi';
   const queryKey = [...GRAMMAR_QUERY_KEY, ceiling];
   const exampleCount = size.h >= 3 ? 2 : 1;
-
-  const [announcements, setAnnouncements] = useState({ polite: '', alert: '' });
-  const announce = useCallback((kind: 'polite' | 'alert', message: string): void => {
-    setAnnouncements((current) =>
-      kind === 'polite' ? { polite: message, alert: '' } : { ...current, alert: message },
-    );
-  }, []);
+  const { announce, regions } = useAnnouncer();
 
   const query = useQuery({
     queryKey,
@@ -106,7 +112,7 @@ export function GrammarWidget({ settings, size }: WidgetProps<GrammarSettings>):
       void queryClient.invalidateQueries({ queryKey: STREAKS_QUERY_KEY });
       announce('polite', t('grammar.studied.announce'));
     },
-    onError: () => announce('alert', t('grammar.error.action')),
+    onError: () => announce('alert', t('learning.error.action')),
   });
 
   const advanceMutation = useMutation({
@@ -119,7 +125,7 @@ export function GrammarWidget({ settings, size }: WidgetProps<GrammarSettings>):
         next ? t('grammar.advanced.announce', { pattern: next.ja }) : t('grammar.exhausted'),
       );
     },
-    onError: () => announce('alert', t('grammar.error.action')),
+    onError: () => announce('alert', t('learning.error.action')),
   });
 
   const data = query.data;
@@ -138,130 +144,83 @@ export function GrammarWidget({ settings, size }: WidgetProps<GrammarSettings>):
   useQuickAction('grammar-advance', advance);
 
   let body: ReactElement;
-  if (query.isPending) {
+  if (!configured || configured.state !== 'ok' || item === null) {
     body = (
-      <div className="cc-wotd-skeleton" aria-hidden="true">
-        <span className="cc-wotd-ghost cc-wotd-ghost-word" />
-        <span className="cc-wotd-ghost" />
-        <span className="cc-wotd-ghost cc-wotd-ghost-short" />
-      </div>
-    );
-  } else if (query.isError || !data) {
-    body = (
-      <div className="cc-wotd-state">
-        <p className="cc-wotd-error">{t('grammar.error.load')}</p>
-        <button type="button" className="cc-btn" onClick={() => void query.refetch()}>
-          {t('wotd.retry')}
-        </button>
-      </div>
-    );
-  } else if (!data.configured) {
-    body = (
-      <div className="cc-wotd-state">
-        <p>{t('wotd.notConfigured')}</p>
-        <p className="cc-wotd-hint">{t('wotd.notConfiguredHint')}</p>
-      </div>
-    );
-  } else if (data.state === 'token-invalid') {
-    body = (
-      <div className="cc-wotd-state">
-        <p className="cc-wotd-error">{t('wotd.tokenInvalid')}</p>
-        <p className="cc-wotd-hint">{t('wotd.tokenInvalidHint')}</p>
-      </div>
-    );
-  } else if (data.state === 'unavailable' || item === null) {
-    body = (
-      <div className="cc-wotd-state">
-        <p>{data.exhausted ? t('grammar.exhausted') : t('wotd.unavailable')}</p>
-        {!data.exhausted && (
-          <button type="button" className="cc-btn" onClick={() => void query.refetch()}>
-            {t('wotd.retry')}
-          </button>
-        )}
-      </div>
+      <LearningState
+        query={query}
+        exhaustedText={t('grammar.exhausted')}
+        errorText={t('grammar.error.load')}
+      />
     );
   } else {
     const meaning = pickMeaning(item.meaning, meaningLanguage);
     body = (
-      <article className="cc-grammar">
-        <p className="cc-wotd-chips">
-          {item.jlpt && <span className="cc-wotd-chip">{item.jlpt}</span>}
-          {data.mode === 'review' && (
-            <span className="cc-wotd-chip cc-wotd-chip-muted">{t('grammar.review')}</span>
-          )}
-          <span className="cc-grammar-progress">
+      <WidgetBody>
+        <ChipRow>
+          {item.jlpt && <Chip>{item.jlpt}</Chip>}
+          {configured.mode === 'review' && <Chip tone="muted">{t('grammar.review')}</Chip>}
+          <span className="cc-hint">
             {t('grammar.progress', {
               level: ceiling,
-              seen: data.progress.seenAtLevel,
-              total: data.progress.totalAtLevel,
+              seen: configured.progress.seenAtLevel,
+              total: configured.progress.totalAtLevel,
             })}
           </span>
           <StreakPill streakKey="japanese-grammar" />
-        </p>
+        </ChipRow>
         <h3 className="cc-grammar-pattern" lang="ja">
           {item.ja}
         </h3>
-        {showReading && item.reading && <p className="cc-wotd-romaji">{item.reading}</p>}
+        {showReading && item.reading && (
+          <p className="cc-wotd-romaji" lang="ja">
+            {item.reading}
+          </p>
+        )}
         {meaning.text ? (
-          <p className="cc-grammar-meaning" lang={meaning.lang}>
+          <p className="cc-meaning" lang={meaning.lang}>
             {meaning.text}
           </p>
         ) : (
-          <p className="cc-grammar-meaning cc-wotd-hint">{t('wotd.noMeaning')}</p>
+          <Hint>{t('learning.noMeaning')}</Hint>
         )}
         {item.attaches.length > 0 && (
-          <p className="cc-grammar-attaches">
+          <Hint>
             {t('grammar.attaches')} {item.attaches.join(' · ')}
-          </p>
+          </Hint>
         )}
         <Examples item={item} count={exampleCount} reveal={reveal} />
-        <div className="cc-wotd-footer">
-          {data.studied ? (
-            <p className="cc-wotd-done">
-              <span aria-hidden="true">{checkIcon()}</span> {t('grammar.studied.state')}
-            </p>
+        <WidgetFooter>
+          {configured.studied ? (
+            <DoneState>{t('grammar.studied.state')}</DoneState>
           ) : (
-            <button
-              type="button"
-              className="cc-btn cc-wotd-btn"
+            <Button
+              icon={<CheckIcon />}
               onClick={study}
               disabled={busy}
-              aria-busy={studyMutation.isPending}
+              busy={studyMutation.isPending}
             >
-              <span aria-hidden="true">{checkIcon()}</span> {t('grammar.studied')}
-            </button>
+              {t('grammar.studied')}
+            </Button>
           )}
-          <button
-            type="button"
-            className="cc-btn cc-btn-ghost cc-wotd-btn"
+          <Button
+            variant="ghost"
+            icon={<NextIcon />}
             onClick={advance}
             disabled={busy}
-            aria-busy={advanceMutation.isPending}
+            busy={advanceMutation.isPending}
           >
-            <span aria-hidden="true">{nextIcon()}</span> {t('grammar.next')}
-          </button>
-          <a
-            className="cc-wotd-source"
-            href={item.sourceUrl}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {t('wotd.openNote')}
-          </a>
+            {t('grammar.next')}
+          </Button>
+          <SourceLink href={item.sourceUrl}>{t('learning.openNote')}</SourceLink>
           <AnkiSyncStatus />
-        </div>
-      </article>
+        </WidgetFooter>
+      </WidgetBody>
     );
   }
 
   return (
-    <div className="cc-wotd-root">
-      <p className="cc-visually-hidden" role="status" aria-live="polite">
-        {announcements.polite}
-      </p>
-      <p className="cc-visually-hidden" role="alert">
-        {announcements.alert}
-      </p>
+    <div className="cc-body">
+      {regions}
       {body}
     </div>
   );

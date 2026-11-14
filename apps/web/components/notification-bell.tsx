@@ -127,15 +127,15 @@ export function NotificationBell(): ReactElement {
       >
         <h2 className="cc-bell-heading">{t('bell.heading')}</h2>
         {listQuery.isPending ? (
-          <p role="status" className="cc-widget-placeholder">
+          <p role="status" className="cc-hint">
             {t('bell.loading')}
           </p>
         ) : listQuery.isError ? (
-          <p role="alert" className="cc-rem-error">
+          <p role="alert" className="cc-error">
             {t('bell.failed')}
           </p>
         ) : listQuery.data.items.length === 0 ? (
-          <p className="cc-widget-placeholder">{t('bell.empty')}</p>
+          <p className="cc-hint">{t('bell.empty')}</p>
         ) : (
           <ul className="cc-bell-list">
             {listQuery.data.items.map((notification) => {

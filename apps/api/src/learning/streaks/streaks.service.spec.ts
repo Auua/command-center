@@ -40,6 +40,20 @@ function makeService(
 }
 
 describe('StreaksService.record', () => {
+  it('maps kanji.acknowledged to the japanese-kanji key (ADR-041)', async () => {
+    const { service, repository } = makeService();
+    await service.onKanjiAcknowledged(
+      {
+        userId: user.id,
+        itemId: 'Japanese/40 Kanji/Merkit/食.md',
+        date: '2026-11-14',
+        acknowledgedAt: '2026-11-14T10:00:00.000Z',
+      },
+      { user },
+    );
+    expect(repository.insertDay).toHaveBeenCalledWith(user, 'japanese-kanji', '2026-11-14');
+  });
+
   it('skips (and does not throw) when the event carries no request context', async () => {
     const { service, repository } = makeService();
     await service.onTaskCompleted(

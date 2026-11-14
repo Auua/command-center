@@ -5,7 +5,12 @@ import { z } from 'zod';
  * from domain events. Keys are the source widget ids; display names come
  * from the i18n catalog, never from the API.
  */
-export const STREAK_KEYS = ['tasks', 'japanese-wotd', 'japanese-grammar'] as const;
+export const STREAK_KEYS = [
+  'tasks',
+  'japanese-wotd',
+  'japanese-grammar',
+  'japanese-kanji',
+] as const;
 export const StreakKeySchema = z.enum(STREAK_KEYS);
 export type StreakKey = z.infer<typeof StreakKeySchema>;
 

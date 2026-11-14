@@ -4,7 +4,16 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactElement } from 'react';
 import { z } from 'zod';
 import type { MoodCheckin, MoodScore } from '@command-center/contracts';
-import type { WidgetProps } from '@command-center/ui';
+import {
+  Button,
+  ErrorText,
+  RetryIcon,
+  Skeleton,
+  WidgetBody,
+  WidgetMessage,
+  type WidgetProps,
+} from '@command-center/ui';
+import { t } from '@/lib/i18n';
 import { createMoodCheckin, deleteMoodCheckin, fetchMoodCheckins } from '@/lib/mood-api';
 import { MOOD_FACES, buildTrend, latestToday, moodLabel, type TrendDay } from './trend';
 
@@ -63,7 +72,7 @@ function TrendChart({ trend }: { trend: TrendDay[] }): ReactElement {
     <svg
       viewBox={`0 0 ${CHART.width} ${CHART.height}`}
       role="img"
-      aria-label={`Mood scores for the last ${trend.length} days: ${description}`}
+      aria-label={t('mood.chartLabel', { days: trend.length, description })}
     >
       {[CHART.top, (CHART.top + CHART.bottom) / 2, CHART.bottom].map((y) => (
         <line
@@ -159,10 +168,10 @@ export function MoodWidget({ settings }: WidgetProps<MoodSettings>): ReactElemen
   }
 
   return (
-    <div className="cc-mood">
-      <p className="cc-mood-q">How are you feeling right now?</p>
+    <WidgetBody className="cc-mood">
+      <p className="cc-mood-q">{t('mood.question')}</p>
 
-      <div className="cc-mood-scale" role="group" aria-label="Mood scale 1 to 5">
+      <div className="cc-mood-scale" role="group" aria-label={t('mood.scaleLabel')}>
         {MOOD_FACES.map((face) => (
           <button
             key={face.score}
@@ -178,14 +187,14 @@ export function MoodWidget({ settings }: WidgetProps<MoodSettings>): ReactElemen
         ))}
       </div>
 
-      <div className="cc-mood-tags" role="group" aria-label="Mood tags">
+      <div className="cc-chips" role="group" aria-label={t('mood.tagsLabel')}>
         {availableTags.map((tag) => {
           const on = selectedTags.includes(tag);
           return (
             <button
               key={tag}
               type="button"
-              className={on ? 'cc-mood-tag on' : 'cc-mood-tag'}
+              className={on ? 'cc-chip cc-chip-toggle on' : 'cc-chip cc-chip-muted cc-chip-toggle'}
               aria-pressed={on}
               onClick={() => toggleTag(tag)}
             >
@@ -196,46 +205,47 @@ export function MoodWidget({ settings }: WidgetProps<MoodSettings>): ReactElemen
       </div>
 
       {logMutation.isError || undoMutation.isError ? (
-        <p className="cc-mood-error" role="alert">
-          Couldn&rsquo;t save that check-in — try again.
-        </p>
+        <ErrorText>{t('mood.error.save')}</ErrorText>
       ) : lastLogged ? (
-        <p className="cc-mood-status" role="status">
-          Logged {moodLabel(lastLogged.score)}.{' '}
-          <button
-            type="button"
-            className="cc-mood-undo"
+        <p className="cc-hint" role="status">
+          {t('mood.logged', { label: moodLabel(lastLogged.score) })}{' '}
+          <Button
+            variant="link"
+            size="sm"
             disabled={undoMutation.isPending}
             onClick={() => undoMutation.mutate(lastLogged.id)}
           >
-            Undo
-          </button>
+            {t('mood.undo')}
+          </Button>
         </p>
       ) : null}
 
       <div className="cc-mood-trend">
         <div className="cc-mood-trend-head">
-          <span className="cc-mood-trend-lbl">7-day trend</span>
+          <span className="cc-mood-trend-lbl">{t('mood.trend')}</span>
           <span className="cc-mood-trend-val">
             {latest ? `${moodLabel(latest.score)} · ${latest.score}/5` : '—'}
           </span>
         </div>
         {moodQuery.isPending ? (
-          <p className="cc-widget-placeholder" role="status">
-            Loading check-ins…
-          </p>
+          <Skeleton shapes={['row']} label={t('mood.loading')} />
         ) : moodQuery.isError ? (
-          <p className="cc-mood-error" role="alert">
-            Couldn&rsquo;t load mood check-ins.
-          </p>
+          <WidgetMessage
+            tone="error"
+            action={{
+              label: t('common.retry'),
+              icon: <RetryIcon />,
+              onClick: () => void moodQuery.refetch(),
+            }}
+          >
+            {t('mood.error.load')}
+          </WidgetMessage>
         ) : items.length === 0 ? (
-          <p className="cc-widget-placeholder">
-            No check-ins yet. Tap a face above to log your first mood.
-          </p>
+          <WidgetMessage>{t('mood.empty')}</WidgetMessage>
         ) : (
           <TrendChart trend={trend} />
         )}
       </div>
-    </div>
+    </WidgetBody>
   );
 }

@@ -3,7 +3,15 @@
 import type { ReactElement } from 'react';
 import { z } from 'zod';
 import { STREAK_KEYS, type Streak } from '@command-center/contracts';
-import type { WidgetProps } from '@command-center/ui';
+import {
+  List,
+  ListItem,
+  RetryIcon,
+  Skeleton,
+  WidgetBody,
+  WidgetMessage,
+  type WidgetProps,
+} from '@command-center/ui';
 import { t, type MessageKey } from '@/lib/i18n';
 import { messages } from '@/lib/i18n/messages.en';
 import { useStreaks } from '@/lib/use-streaks';
@@ -39,7 +47,7 @@ function StreakRow({ streak, showBest }: { streak: Streak; showBest: boolean }):
     .join(' ');
 
   return (
-    <li className="cc-streak-row" aria-label={label}>
+    <ListItem className="cc-streak-row" aria-label={label}>
       <span
         className={`cc-streak-count${streak.activeToday ? '' : ' cc-streak-count-pending'}`}
         aria-hidden="true"
@@ -56,7 +64,7 @@ function StreakRow({ streak, showBest }: { streak: Streak; showBest: boolean }):
             </span>
           )}
         </span>
-        <span className="cc-streak-sub">
+        <span className="cc-hint">
           {streak.activeToday ? t('streaks.row.activeToday') : t('streaks.todayPending')}
           {showBest ? ` · ${t('streaks.row.best', { best: streak.bestLen })}` : ''}
         </span>
@@ -66,7 +74,7 @@ function StreakRow({ streak, showBest }: { streak: Streak; showBest: boolean }):
           <span key={index} className={`cc-streak-dot${active ? ' cc-streak-dot-on' : ''}`} />
         ))}
       </span>
-    </li>
+    </ListItem>
   );
 }
 
@@ -81,28 +89,20 @@ export function StreaksWidget({ settings }: WidgetProps<StreaksSettings>): React
   const query = useStreaks();
 
   if (query.isPending) {
-    return (
-      <ul className="cc-streak-list" aria-hidden="true">
-        {[0, 1, 2].map((index) => (
-          <li key={index} className="cc-streak-row cc-streak-ghost">
-            <span className="cc-streak-count" />
-            <span className="cc-streak-main">
-              <span className="cc-wotd-ghost" />
-              <span className="cc-wotd-ghost cc-wotd-ghost-short" />
-            </span>
-          </li>
-        ))}
-      </ul>
-    );
+    return <Skeleton shapes={['row', 'row', 'row']} label={t('streaks.loading')} />;
   }
   if (query.isError || !query.data) {
     return (
-      <div className="cc-wotd-state">
-        <p className="cc-wotd-error">{t('streaks.error')}</p>
-        <button type="button" className="cc-btn" onClick={() => void query.refetch()}>
-          {t('wotd.retry')}
-        </button>
-      </div>
+      <WidgetMessage
+        tone="error"
+        action={{
+          label: t('common.retry'),
+          icon: <RetryIcon />,
+          onClick: () => void query.refetch(),
+        }}
+      >
+        {t('streaks.error')}
+      </WidgetMessage>
     );
   }
 
@@ -110,18 +110,18 @@ export function StreaksWidget({ settings }: WidgetProps<StreaksSettings>): React
     (visible as readonly string[]).includes(streak.streakKey),
   );
   if (streaks.length === 0) {
-    return <p className="cc-streak-empty">{t('streaks.empty')}</p>;
+    return <WidgetMessage>{t('streaks.empty')}</WidgetMessage>;
   }
   const best = Math.max(...streaks.map((streak) => streak.bestLen));
 
   return (
-    <div className="cc-streaks">
-      <ul className="cc-streak-list">
+    <WidgetBody>
+      <List>
         {streaks.map((streak) => (
           <StreakRow key={streak.streakKey} streak={streak} showBest={showBest} />
         ))}
-      </ul>
-      {showBest && <p className="cc-streak-footer">{t('streaks.allTimeBest', { best })}</p>}
-    </div>
+      </List>
+      {showBest && <p className="cc-hint cc-streak-footer">{t('streaks.allTimeBest', { best })}</p>}
+    </WidgetBody>
   );
 }

@@ -38,8 +38,10 @@ done, Phase 1 is underway, and the Phase 2 automations backend has landed
 (ADR-039: reminders fired by an inline scheduler tick behind an external
 pinger — no worker process, no queue; Web Push + in-app notification bell).
 Widgets so far: clock, braindump, tasks, mood, reminders, Japanese word of the day,
-grammar point, streaks (Phase 3 — the learning widgets read the product owner's Obsidian
-vault, ADR-040; streaks credit deliberate study and completed tasks, ADR-014). Braindump is the first
+grammar point, kanji of the day, streaks (Phase 3 — the learning widgets read the product owner's
+Obsidian vault, ADR-040/041; streaks credit deliberate study and completed tasks, ADR-014). All
+widgets share one set of UI primitives from `@command-center/ui` (buttons, chips, states,
+skeletons, live regions, lists) so the dashboard reads as one design. Braindump is the first
 MongoDB-backed module; everything else lives in Supabase Postgres
 (`supabase/migrations/`). One-time Phase 2 external setup:
 [docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md); Phase 3's (vault token, Anki sync) is

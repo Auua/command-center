@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { z } from 'zod';
 import {
   JLPT_LEVELS,
@@ -10,13 +10,27 @@ import {
   type WotdItem,
   type WotdResponse,
 } from '@command-center/contracts';
-import { useQuickAction, type WidgetProps } from '@command-center/ui';
+import {
+  Button,
+  CheckIcon,
+  Chip,
+  ChipRow,
+  DoneState,
+  Hint,
+  SkipIcon,
+  SourceLink,
+  useAnnouncer,
+  useQuickAction,
+  WidgetBody,
+  WidgetFooter,
+  type WidgetProps,
+} from '@command-center/ui';
 import { AnkiSyncStatus } from '@/components/anki-sync-status';
+import { LearningState } from '@/components/learning-state';
 import { StreakPill } from '@/components/streak-pill';
 import { t } from '@/lib/i18n';
 import { acknowledgeWotd, fetchWotd, skipWotd } from '@/lib/learning-api';
 import { STREAKS_QUERY_KEY } from '@/lib/use-streaks';
-import { checkIcon, skipIcon } from './icon';
 
 export const wotdSettingsSchema = z.object({
   jlptCeiling: z.enum(JLPT_LEVELS).default('N5'),
@@ -75,29 +89,13 @@ function Headword({
   );
 }
 
-function Chips({ item }: { item: WotdItem }): ReactElement {
-  const detail = item.kind === 'verb' ? item.verbclass : item.pos;
-  return (
-    <p className="cc-wotd-chips">
-      {item.jlpt && <span className="cc-wotd-chip">{item.jlpt}</span>}
-      <span className="cc-wotd-chip cc-wotd-chip-muted">
-        {t(item.kind === 'verb' ? 'wotd.kind.verb' : 'wotd.kind.vocab')}
-        {detail ? ` · ${detail}` : ''}
-      </span>
-      <StreakPill streakKey="japanese-wotd" />
-    </p>
-  );
-}
-
 function Example({ item }: { item: WotdItem }): ReactElement {
   const example = item.examples[0];
-  if (!example) {
-    return <p className="cc-wotd-example cc-wotd-example-none">{t('wotd.noExample')}</p>;
-  }
+  if (!example) return <Hint>{t('learning.noExample')}</Hint>;
   return (
-    <div className="cc-wotd-example">
+    <div className="cc-example">
       <p lang="ja">{example.ja}</p>
-      {example.fi && <p className="cc-wotd-example-fi">{example.fi}</p>}
+      {example.fi && <p className="cc-example-fi">{example.fi}</p>}
     </div>
   );
 }
@@ -115,13 +113,7 @@ export function WotdWidget({ settings }: WidgetProps<WotdSettings>): ReactElemen
   const showRomaji = settings.showRomaji ?? false;
   const meaningLanguage = settings.meaningLanguage ?? 'fi';
   const queryKey = [...WOTD_QUERY_KEY, ceiling];
-
-  const [announcements, setAnnouncements] = useState({ polite: '', alert: '' });
-  const announce = useCallback((kind: 'polite' | 'alert', message: string): void => {
-    setAnnouncements((current) =>
-      kind === 'polite' ? { polite: message, alert: '' } : { ...current, alert: message },
-    );
-  }, []);
+  const { announce, regions } = useAnnouncer();
 
   const wotdQuery = useQuery({
     queryKey,
@@ -140,7 +132,7 @@ export function WotdWidget({ settings }: WidgetProps<WotdSettings>): ReactElemen
       void queryClient.invalidateQueries({ queryKey: STREAKS_QUERY_KEY });
       announce('polite', t('wotd.acknowledged.announce'));
     },
-    onError: () => announce('alert', t('wotd.error.action')),
+    onError: () => announce('alert', t('learning.error.action')),
   });
 
   const skipMutation = useMutation({
@@ -153,7 +145,7 @@ export function WotdWidget({ settings }: WidgetProps<WotdSettings>): ReactElemen
         next ? t('wotd.skipped.announce', { word: next.word }) : t('wotd.exhausted'),
       );
     },
-    onError: () => announce('alert', t('wotd.error.action')),
+    onError: () => announce('alert', t('learning.error.action')),
   });
 
   const data = wotdQuery.data;
@@ -172,111 +164,70 @@ export function WotdWidget({ settings }: WidgetProps<WotdSettings>): ReactElemen
   useQuickAction('wotd-skip', skip);
 
   let body: ReactElement;
-  if (wotdQuery.isPending) {
+  if (!configured || configured.state !== 'ok' || item === null) {
     body = (
-      <div className="cc-wotd-skeleton" aria-hidden="true">
-        <span className="cc-wotd-ghost cc-wotd-ghost-word" />
-        <span className="cc-wotd-ghost" />
-        <span className="cc-wotd-ghost cc-wotd-ghost-short" />
-      </div>
-    );
-  } else if (wotdQuery.isError || !data) {
-    body = (
-      <div className="cc-wotd-state">
-        <p className="cc-wotd-error">{t('wotd.error.load')}</p>
-        <button type="button" className="cc-btn" onClick={() => void wotdQuery.refetch()}>
-          {t('wotd.retry')}
-        </button>
-      </div>
-    );
-  } else if (!data.configured) {
-    body = (
-      <div className="cc-wotd-state">
-        <p>{t('wotd.notConfigured')}</p>
-        <p className="cc-wotd-hint">{t('wotd.notConfiguredHint')}</p>
-      </div>
-    );
-  } else if (data.state === 'token-invalid') {
-    body = (
-      <div className="cc-wotd-state">
-        <p className="cc-wotd-error">{t('wotd.tokenInvalid')}</p>
-        <p className="cc-wotd-hint">{t('wotd.tokenInvalidHint')}</p>
-      </div>
-    );
-  } else if (data.state === 'unavailable' || item === null) {
-    body = (
-      <div className="cc-wotd-state">
-        <p>{data.exhausted ? t('wotd.exhausted') : t('wotd.unavailable')}</p>
-        {!data.exhausted && (
-          <button type="button" className="cc-btn" onClick={() => void wotdQuery.refetch()}>
-            {t('wotd.retry')}
-          </button>
-        )}
-      </div>
+      <LearningState
+        query={wotdQuery}
+        exhaustedText={t('wotd.exhausted')}
+        errorText={t('wotd.error.load')}
+      />
     );
   } else {
     const meaning = pickMeaning(item.meaning, meaningLanguage);
+    const detail = item.kind === 'verb' ? item.verbclass : item.pos;
     body = (
-      <article className="cc-wotd">
-        <Chips item={item} />
+      <WidgetBody>
+        <ChipRow>
+          {item.jlpt && <Chip>{item.jlpt}</Chip>}
+          <Chip tone="muted">
+            {t(item.kind === 'verb' ? 'wotd.kind.verb' : 'wotd.kind.vocab')}
+            {detail ? ` · ${detail}` : ''}
+          </Chip>
+          <StreakPill streakKey="japanese-wotd" />
+        </ChipRow>
         <Headword item={item} showFurigana={showFurigana} showRomaji={showRomaji} />
         {meaning.text ? (
-          <p className="cc-wotd-meaning" lang={meaning.lang}>
+          <p className="cc-meaning" lang={meaning.lang}>
             {meaning.text}
           </p>
         ) : (
-          <p className="cc-wotd-meaning cc-wotd-hint">{t('wotd.noMeaning')}</p>
+          <Hint>{t('learning.noMeaning')}</Hint>
         )}
         <Example item={item} />
-        <div className="cc-wotd-footer">
-          {data.acknowledged ? (
-            <p className="cc-wotd-done">
-              <span aria-hidden="true">{checkIcon()}</span> {t('wotd.acknowledged.state')}
-            </p>
+        <WidgetFooter>
+          {configured.acknowledged ? (
+            <DoneState>{t('wotd.acknowledged.state')}</DoneState>
           ) : (
             <>
-              <button
-                type="button"
-                className="cc-btn cc-wotd-btn"
+              <Button
+                icon={<CheckIcon />}
                 onClick={acknowledge}
                 disabled={busy}
-                aria-busy={acknowledgeMutation.isPending}
+                busy={acknowledgeMutation.isPending}
               >
-                <span aria-hidden="true">{checkIcon()}</span> {t('wotd.acknowledge')}
-              </button>
-              <button
-                type="button"
-                className="cc-btn cc-btn-ghost cc-wotd-btn"
+                {t('wotd.acknowledge')}
+              </Button>
+              <Button
+                variant="ghost"
+                icon={<SkipIcon />}
                 onClick={skip}
                 disabled={busy}
-                aria-busy={skipMutation.isPending}
+                busy={skipMutation.isPending}
               >
-                <span aria-hidden="true">{skipIcon()}</span> {t('wotd.skip')}
-              </button>
+                {t('wotd.skip')}
+              </Button>
             </>
           )}
-          <a
-            className="cc-wotd-source"
-            href={item.sourceUrl}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {t('wotd.openNote')}
-          </a>
+          <SourceLink href={item.sourceUrl}>{t('learning.openNote')}</SourceLink>
           <AnkiSyncStatus />
-        </div>
-      </article>
+        </WidgetFooter>
+      </WidgetBody>
     );
   }
 
   return (
-    <div className="cc-wotd-root">
-      <p className="cc-visually-hidden" role="status" aria-live="polite">
-        {announcements.polite}
-      </p>
-      <p className="cc-visually-hidden" role="alert">
-        {announcements.alert}
-      </p>
+    <div className="cc-body">
+      {regions}
       {body}
     </div>
   );

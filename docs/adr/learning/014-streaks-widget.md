@@ -20,6 +20,10 @@
 > mood/journal/habit join when those modules emit. `recomputeDay` (habit un-mark) lands with
 > ADR-027's build.
 
+> **Amended by ADR-041 (2026-11-14).** A fourth learning source joins the acknowledge-only rule:
+> `kanji.acknowledged` → streak key `japanese-kanji` (one map entry in `StreaksService`, the
+> key added to `STREAK_KEYS`; no migration — keys are data). Skip never credits, as for WOTD.
+
 ## Context
 
 Phase 3 introduces streaks (ADR §9): consecutive-day counters for habits like Japanese study,

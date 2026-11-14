@@ -4,10 +4,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState, type ReactElement } from 'react';
 import { z } from 'zod';
 import type { AutomationTemplate, TodayResponse } from '@command-center/contracts';
-import { useQuickAction } from '@command-center/ui';
+import {
+  List,
+  RetryIcon,
+  SectionLabel,
+  Skeleton,
+  useAnnouncer,
+  useQuickAction,
+  WidgetBody,
+  WidgetMessage,
+  type WidgetProps,
+} from '@command-center/ui';
 import { createAutomation, fetchToday, updateAutomation } from '@/lib/automations-api';
 import { t } from '@/lib/i18n';
-import type { WidgetProps } from '@command-center/ui';
 import { BuilderModal } from './builder-modal';
 import { PermissionBanner } from './permission-banner';
 import { SlotRow } from './slot-row';
@@ -27,11 +36,6 @@ const TODAY_KEY = ['automations', 'today'];
 
 type ModalState = { mode: 'create' } | { mode: 'edit'; automationId: string } | null;
 
-interface Announcements {
-  polite: string;
-  alert: string;
-}
-
 /**
  * Today's reminders (ADR-015): server-expanded timed slots + event
  * automations below a divider. The client never evaluates schedules — it
@@ -45,12 +49,7 @@ export function RemindersWidget({ settings }: WidgetProps<RemindersSettings>): R
 
   const todayQuery = useQuery({ queryKey: TODAY_KEY, queryFn: fetchToday });
 
-  const [announcements, setAnnouncements] = useState<Announcements>({ polite: '', alert: '' });
-  const announce = useCallback((kind: 'polite' | 'alert', message: string): void => {
-    setAnnouncements((current) =>
-      kind === 'polite' ? { polite: message, alert: '' } : { ...current, alert: message },
-    );
-  }, []);
+  const { announce, regions } = useAnnouncer();
 
   const [modal, setModal] = useState<ModalState>(null);
   const invokerRef = useRef<HTMLElement | null>(null);
@@ -145,14 +144,8 @@ export function RemindersWidget({ settings }: WidgetProps<RemindersSettings>): R
   const isEmpty = data !== undefined && data.slots.length === 0 && data.events.length === 0;
 
   return (
-    <div className="cc-rem">
-      {/* House pattern: persistent live regions — successes polite, failures alert. */}
-      <p className="cc-visually-hidden" role="status" aria-live="polite">
-        {announcements.polite}
-      </p>
-      <p className="cc-visually-hidden" role="alert">
-        {announcements.alert}
-      </p>
+    <WidgetBody className="cc-rem">
+      {regions}
 
       <PermissionBanner
         ux={pushPermission.ux}
@@ -162,33 +155,18 @@ export function RemindersWidget({ settings }: WidgetProps<RemindersSettings>): R
       />
 
       {todayQuery.isPending ? (
-        <>
-          <p className="cc-visually-hidden" role="status">
-            {t('reminders.loading')}
-          </p>
-          <ul className="cc-rem-list" aria-hidden="true">
-            {Array.from({ length: 5 }, (_, index) => (
-              <li key={index} className="cc-rem-ghost">
-                <span className="cc-rem-ghost-time" />
-                <span className="cc-rem-ghost-name" />
-                <span className="cc-rem-ghost-switch" />
-              </li>
-            ))}
-          </ul>
-        </>
+        <Skeleton shapes={['row', 'row', 'row', 'row', 'row']} label={t('reminders.loading')} />
       ) : todayQuery.isError ? (
-        <div className="cc-rem-error-state">
-          <p role="alert" className="cc-rem-error">
-            {t('reminders.loadFailed')}
-          </p>
-          <button
-            type="button"
-            className="cc-btn cc-btn-ghost"
-            onClick={() => void todayQuery.refetch()}
-          >
-            {t('reminders.retry')}
-          </button>
-        </div>
+        <WidgetMessage
+          tone="error"
+          action={{
+            label: t('common.retry'),
+            icon: <RetryIcon />,
+            onClick: () => void todayQuery.refetch(),
+          }}
+        >
+          {t('reminders.loadFailed')}
+        </WidgetMessage>
       ) : isEmpty ? (
         <TemplatesEmptyState
           hourCycle={hourCycle as HourCycleSetting}
@@ -198,7 +176,7 @@ export function RemindersWidget({ settings }: WidgetProps<RemindersSettings>): R
       ) : (
         <>
           {sortedSlots.length > 0 && (
-            <ul className="cc-rem-list">
+            <List>
               {sortedSlots.map((slot) => (
                 <SlotRow
                   key={`${slot.automationId}:${slot.at}`}
@@ -213,12 +191,12 @@ export function RemindersWidget({ settings }: WidgetProps<RemindersSettings>): R
                   onEdit={handleEdit}
                 />
               ))}
-            </ul>
+            </List>
           )}
           {events.length > 0 && (
             <>
-              <h3 className="cc-rem-divider">{t('reminders.eventsHeading')}</h3>
-              <ul className="cc-rem-list">
+              <SectionLabel>{t('reminders.eventsHeading')}</SectionLabel>
+              <List>
                 {events.map((event) => (
                   <SlotRow
                     key={event.automationId}
@@ -232,7 +210,7 @@ export function RemindersWidget({ settings }: WidgetProps<RemindersSettings>): R
                     onEdit={handleEdit}
                   />
                 ))}
-              </ul>
+              </List>
             </>
           )}
         </>
@@ -245,6 +223,6 @@ export function RemindersWidget({ settings }: WidgetProps<RemindersSettings>): R
           onClose={closeModal}
         />
       )}
-    </div>
+    </WidgetBody>
   );
 }

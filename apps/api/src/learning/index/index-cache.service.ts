@@ -16,8 +16,21 @@ export interface LoadedIndex {
   loadedAt: number;
   byPath: Map<string, IndexRecord>;
   byKind: Map<IndexKind, IndexRecord[]>;
+  /**
+   * Character → paths of the vocab/verb notes whose `kanji` list links it
+   * (`[[食]]`) — the vault's own "Sanat joissa esiintyy" rule (ADR-041).
+   */
+  wordsByKanji: Map<string, string[]>;
   /** JSONL lines the contract rejected — skipped, counted, never fatal. */
   invalidLines: number;
+}
+
+const WIKILINK_RE = /^\[\[([^\]|#]*)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]$/;
+
+/** `[[食]]` → `食`; a bare value is returned as is. */
+export function linkTarget(value: string): string {
+  const match = WIKILINK_RE.exec(value.trim());
+  return (match?.[1] ?? value).trim();
 }
 
 const TTL_MS = 6 * 60 * 60 * 1000;
@@ -98,6 +111,7 @@ export class IndexCacheService {
 
     const byPath = new Map<string, IndexRecord>();
     const byKind = new Map<IndexKind, IndexRecord[]>();
+    const wordsByKanji = new Map<string, string[]>();
     let invalidLines = 0;
 
     for (const shards of Object.values(manifest.shards)) {
@@ -122,6 +136,15 @@ export class IndexCacheService {
           const list = byKind.get(record.type) ?? [];
           list.push(record);
           byKind.set(record.type, list);
+          if (record.type === 'vocab' || record.type === 'verb') {
+            for (const link of record.kanji) {
+              const character = linkTarget(link);
+              if (!character) continue;
+              const paths = wordsByKanji.get(character) ?? [];
+              paths.push(record.path);
+              wordsByKanji.set(character, paths);
+            }
+          }
         }
       }
     }
@@ -132,6 +155,6 @@ export class IndexCacheService {
     this.logger.log(
       `Index loaded at ${sha.slice(0, 8)} (generated ${manifest.generatedAt}): ${byPath.size} notes`,
     );
-    return { sha, manifest, loadedAt: Date.now(), byPath, byKind, invalidLines };
+    return { sha, manifest, loadedAt: Date.now(), byPath, byKind, wordsByKanji, invalidLines };
   }
 }

@@ -1,8 +1,9 @@
 # ADR-041: Japanese Kanji-of-the-Day widget
 
-- **Status:** proposed
-- **Date:** 2026-11-14
-- **Review:** claude-reviewed — awaiting the product-owner walkthrough
+- **Status:** accepted (2026-11-14)
+- **Date:** 2026-11-14 (accepted the same day at the product-owner walkthrough — every decision as
+  drafted; built as Phase 3E in the acceptance PR)
+- **Review:** claude-reviewed, PO-reviewed — accepted 2026-11-14
 - **Depends on:** ADR-040 (vault as the learning store), ADR-011 (WOTD selection and pacing),
   ADR-014 (streaks). Amends ADR-014's learning-source list and ADR-040's kind table on acceptance.
 
@@ -93,6 +94,8 @@ word renders "no linked words yet" — a normal state and a curation nudge, neve
 
 The lookup is a one-time inverted map built when the index loads (`character → word paths`),
 not a scan per request.
+→ _PO-review (2026-11-14):_ words from the word notes' `kanji` links confirmed — no `words[]`
+field, no substring fallback.
 
 ### Mnemonic = optional index field
 
@@ -104,6 +107,8 @@ reads it as `.optional().nullable()` and the widget renders the section only whe
 non-empty. **The widget ships without waiting for it**: until the vault's indexer emits the field,
 every card simply has no mnemonic section. The readings table's per-reading example words stay
 in the body: the `kunyomi`/`onyomi` lists plus the linked words cover the same ground.
+→ _PO-review (2026-11-14):_ optional additive `mnemonic` confirmed; the widget ships ahead of
+the vault-side indexer change.
 
 ### Frontend
 
@@ -155,6 +160,8 @@ mnemonic: string | null, words: KanjiWord[], status, confidence, sourceUrl }`;
   shape; `StreaksService` maps it to the new key `japanese-kanji` (`STREAK_KEYS` grows by one;
   no migration — keys are data in `streaks`/`streak_days`). Emitters pass `{ user }` as the
   event context (Phase 3C convention) so the streak row is written under the request's JWT.
+  → _PO-review (2026-11-14):_ separate `japanese-kanji` streak confirmed; no `meaningLanguage`
+  setting confirmed; the two kun-only kanji stay a vault-side `onyomi: []` fix.
 
 ### Data model
 
@@ -184,12 +191,18 @@ vocab/verb shards; the mnemonic is an additive index field. The app never touche
 - **Vault hygiene surfaced:** 2 kun-only kanji are skipped by the indexer because `onyomi` is
   required; the fix is `onyomi: []` in those notes, or relaxing `REQUIRED` — a vault decision,
   recorded here so the manifest's `skipped.kanji: 2` is understood.
-- **Docs owed on acceptance:** ADR-014 — header note adding `kanji.acknowledged` → `japanese-kanji`
-  to the learning sources; ADR-040 — kind table row `japanese-kanji` points here, and the index
-  record shape gains the optional `mnemonic`; `docs/ADR.md` §4.2 widget list, §7 row 041;
+- **Docs applied at acceptance (2026-11-14):** ADR-014 — header note adding `kanji.acknowledged`
+  → `japanese-kanji` to the learning sources; ADR-040 — kind table row `japanese-kanji` points
+  here, and the index record shape gains the optional `mnemonic`; `docs/ADR.md` §7 row 041;
   `docs/runbook-learning-center.md` — the `cc_index.py` change (`mnemonic`) and the `onyomi: []`
-  hygiene note; `docs/plans/phase3-learning.md` 3E; CLAUDE.md Current State and README after
-  the build.
+  hygiene note; `docs/plans/phase3-learning.md` 3E; CLAUDE.md Current State and README.
+- **Built with the acceptance (Phase 3E):** `learning/kanji/` (`selection.ts`, `KanjiService`),
+  the inverted `wordsByKanji` map in `IndexCacheService`, WOTD's `pickForDate`/`decidePin`/
+  `pickReplacement` generalised with a kind seed, `kanji.acknowledged` + the `japanese-kanji`
+  streak key in `packages/contracts`, and `apps/web/widgets/japanese-kanji/`. The widget is the
+  first consumer of the shared widget primitives in `@command-center/ui` (`Button`, `Chip`,
+  `WidgetMessage`, `Skeleton`, `useAnnouncer`, `WidgetBody`/`WidgetFooter`, `List`), which every
+  other widget was moved onto in the same change so the dashboard reads as one design.
 
 ## Alternatives considered
 

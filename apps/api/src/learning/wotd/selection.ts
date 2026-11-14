@@ -69,12 +69,15 @@ export function eligibleWotd(
   return out.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }
 
-/** Date-seeded pick: sha256(`${date}|wotd`) mod n over the sorted list. */
-export function pickForDate(eligible: readonly WotdRecord[], utcDate: string): WotdRecord | null {
+/**
+ * Date-seeded pick: sha256(`${date}|${seed}`) mod n over the sorted list.
+ * Each kind seeds with its own name so the tiles do not step in lockstep.
+ */
+export function pickForDate<T>(eligible: readonly T[], utcDate: string, seed = 'wotd'): T | null {
   if (eligible.length === 0) return null;
-  const digest = createHash('sha256').update(`${utcDate}|wotd`).digest();
-  const seed = digest.readUInt32BE(0);
-  return eligible[seed % eligible.length] ?? null;
+  const digest = createHash('sha256').update(`${utcDate}|${seed}`).digest();
+  const index = digest.readUInt32BE(0);
+  return eligible[index % eligible.length] ?? null;
 }
 
 export interface PinDecision {
@@ -90,11 +93,12 @@ export interface PinDecision {
  * a fresh pick is drawn for today. A pin whose note disappeared (renamed) or
  * was resolved by hand in Obsidian counts as resolved.
  */
-export function decidePin(
+export function decidePin<T extends { path: string }>(
   current: DayPin | undefined,
   utcDate: string,
-  eligible: readonly WotdRecord[],
+  eligible: readonly T[],
   exists: (path: string) => boolean,
+  seed = 'wotd',
 ): PinDecision {
   const eligiblePaths = new Set(eligible.map((record) => record.path));
   if (current && exists(current.itemId)) {
@@ -103,7 +107,7 @@ export function decidePin(
       return { pin: current, write: false, exhausted: false };
     }
   }
-  const pick = pickForDate(eligible, utcDate);
+  const pick = pickForDate(eligible, utcDate, seed);
   if (!pick) return { pin: null, write: false, exhausted: true };
   return {
     pin: { date: utcDate, itemId: pick.path, resolved: false },
@@ -113,13 +117,15 @@ export function decidePin(
 }
 
 /** Next pick after a skip: today's hash over the remaining eligible list. */
-export function pickReplacement(
-  eligible: readonly WotdRecord[],
+export function pickReplacement<T extends { path: string }>(
+  eligible: readonly T[],
   skippedPath: string,
   utcDate: string,
-): WotdRecord | null {
+  seed = 'wotd',
+): T | null {
   return pickForDate(
     eligible.filter((record) => record.path !== skippedPath),
     utcDate,
+    seed,
   );
 }
