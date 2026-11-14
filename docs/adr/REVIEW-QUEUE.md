@@ -402,9 +402,9 @@ build is the vault-side work (hygiene, `cc_index.py`, the two workflows) and the
 
 ## Batch 10 — Phase 3E kanji (drafted 2026-11-14)
 
-| ADR | Title                            | Review state    | Approved |
-| --- | -------------------------------- | --------------- | -------- |
-| 041 | Japanese Kanji-of-the-Day widget | claude-reviewed |          |
+| ADR | Title                            | Review state    | Approved     |
+| --- | -------------------------------- | --------------- | ------------ |
+| 041 | Japanese Kanji-of-the-Day widget | claude-reviewed | ✓ 2026-11-14 |
 
 Decisions most worth the product owner's attention, in order: (1) example words come from the
 word notes' `kanji` wikilinks (the note's own "Sanat joissa esiintyy" rule) — no `words[]` field
@@ -415,3 +415,8 @@ streak fed only by `kanji.acknowledged` (ADR-014 amendment owed on acceptance); 
 `meaningLanguage` setting because no kanji note carries an EN meaning today; (5) two kun-only
 kanji are skipped by the indexer for a missing `onyomi` — a vault fix (`onyomi: []`), recorded,
 not an app change.
+
+**2026-11-14 walkthrough: ADR-041 accepted, every decision as drafted.** Built in the same PR as
+Phase 3E (`learning/kanji/`, `japanese-kanji` widget, `kanji.acknowledged` → `japanese-kanji`
+streak). The owed amendments landed as dated header notes on ADR-014 and ADR-040, a runbook note
+(indexer `mnemonic` field, `onyomi: []` hygiene), the plan's 3E row, CLAUDE.md and README.

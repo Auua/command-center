@@ -97,7 +97,7 @@ describe('RemindersWidget', () => {
     fetchTodayMock.mockReturnValue(new Promise(() => undefined));
     renderWidget();
     expect(screen.getByText('Loading reminders…')).toBeInTheDocument();
-    expect(document.querySelectorAll('.cc-rem-ghost')).toHaveLength(5);
+    expect(document.querySelectorAll('.cc-ghost-row')).toHaveLength(5);
   });
 
   it('renders timed slots in API order, then event automations after a divider', async () => {

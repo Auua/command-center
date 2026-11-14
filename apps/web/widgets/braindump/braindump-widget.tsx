@@ -3,7 +3,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent, type ReactElement } from 'react';
 import { z } from 'zod';
+import {
+  DismissButton,
+  ErrorText,
+  List,
+  ListItem,
+  PencilIcon,
+  RetryIcon,
+  Skeleton,
+  WidgetBody,
+  WidgetMessage,
+} from '@command-center/ui';
 import { createBraindumpNote, deleteBraindumpNote, fetchBraindumpNotes } from '@/lib/braindump-api';
+import { t } from '@/lib/i18n';
 
 export const braindumpSettingsSchema = z.object({});
 
@@ -18,8 +30,8 @@ const QUERY_KEY = ['braindump'];
 function formatTimestamp(iso: string, now: Date = new Date()): string {
   const then = new Date(iso);
   const minutes = Math.floor((now.getTime() - then.getTime()) / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
+  if (minutes < 1) return t('time.justNow');
+  if (minutes < 60) return t('time.minutesAgo', { count: minutes });
 
   const time = then.toLocaleTimeString(undefined, {
     hour: '2-digit',
@@ -29,33 +41,14 @@ function formatTimestamp(iso: string, now: Date = new Date()): string {
     new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const dayDiff = Math.round((startOfDay(now) - startOfDay(then)) / 86_400_000);
   if (dayDiff === 0) {
-    const hours = Math.floor(minutes / 60);
-    return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+    return t('time.hoursAgo', { count: Math.floor(minutes / 60) });
   }
-  if (dayDiff === 1) return `yesterday, ${time}`;
+  if (dayDiff === 1) return t('time.yesterdayAt', { time });
   const date = then.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
   });
   return `${date}, ${time}`;
-}
-
-function PencilIcon(): ReactElement {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-    </svg>
-  );
 }
 
 /**
@@ -95,19 +88,59 @@ export function BraindumpWidget(): ReactElement {
     createMutation.mutate(content);
   }
 
+  let body: ReactElement;
+  if (notesQuery.isPending) {
+    body = <Skeleton shapes={['row', 'row', 'row']} label={t('braindump.loading')} />;
+  } else if (notesQuery.isError) {
+    body = (
+      <WidgetMessage
+        tone="error"
+        action={{
+          label: t('common.retry'),
+          icon: <RetryIcon />,
+          onClick: () => void notesQuery.refetch(),
+        }}
+      >
+        {t('braindump.error.load')}
+      </WidgetMessage>
+    );
+  } else if (notesQuery.data.items.length === 0) {
+    body = <WidgetMessage>{t('braindump.empty')}</WidgetMessage>;
+  } else {
+    body = (
+      <List className="cc-braindump-list">
+        {notesQuery.data.items.map((note) => (
+          <ListItem key={note.id} className="cc-braindump-item">
+            <div className="cc-braindump-item-main">
+              <p className="cc-braindump-item-content">{note.content}</p>
+              <time className="cc-braindump-item-time" dateTime={note.createdAt}>
+                {formatTimestamp(note.createdAt)}
+              </time>
+            </div>
+            <DismissButton
+              label={t('braindump.delete', { excerpt: note.content.slice(0, 40) })}
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate(note.id)}
+            />
+          </ListItem>
+        ))}
+      </List>
+    );
+  }
+
   return (
-    <div className="cc-braindump">
+    <WidgetBody className="cc-braindump">
       <form className="cc-braindump-form" onSubmit={handleSubmit}>
         <span className="cc-braindump-form-icon" aria-hidden="true">
           <PencilIcon />
         </span>
         <label className="cc-visually-hidden" htmlFor="cc-braindump-input">
-          Dump a thought
+          {t('braindump.label')}
         </label>
         <textarea
           id="cc-braindump-input"
           className="cc-braindump-input"
-          placeholder="Dump a thought — it lands here, sort it later"
+          placeholder={t('braindump.placeholder')}
           rows={1}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
@@ -125,51 +158,11 @@ export function BraindumpWidget(): ReactElement {
           className="cc-visually-hidden"
           disabled={createMutation.isPending || draft.trim().length === 0}
         >
-          Add
+          {t('braindump.add')}
         </button>
       </form>
-
-      {createMutation.isError && (
-        <p className="cc-braindump-error" role="alert">
-          Couldn&rsquo;t save that thought — try again.
-        </p>
-      )}
-
-      {notesQuery.isPending ? (
-        <p className="cc-widget-placeholder" role="status">
-          Loading notes…
-        </p>
-      ) : notesQuery.isError ? (
-        <p className="cc-braindump-error" role="alert">
-          Couldn&rsquo;t load braindump notes.
-        </p>
-      ) : notesQuery.data.items.length === 0 ? (
-        <p className="cc-widget-placeholder">
-          Empty head, full heart. Dump your first thought above.
-        </p>
-      ) : (
-        <ul className="cc-braindump-list">
-          {notesQuery.data.items.map((note) => (
-            <li key={note.id} className="cc-braindump-item">
-              <div className="cc-braindump-item-main">
-                <p className="cc-braindump-item-content">{note.content}</p>
-                <time className="cc-braindump-item-time" dateTime={note.createdAt}>
-                  {formatTimestamp(note.createdAt)}
-                </time>
-              </div>
-              <button
-                type="button"
-                className="cc-braindump-delete"
-                aria-label={`Delete note: ${note.content.slice(0, 40)}`}
-                disabled={deleteMutation.isPending}
-                onClick={() => deleteMutation.mutate(note.id)}
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+      {createMutation.isError && <ErrorText>{t('braindump.error.save')}</ErrorText>}
+      {body}
+    </WidgetBody>
   );
 }

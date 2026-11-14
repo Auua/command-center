@@ -58,6 +58,13 @@ Before the first Action runs in the vault:
 
 ## 6. Commit the index workflow
 
+> **ADR-041 (2026-11-14) — two small vault-side items.** (1) `cc_index.py` may emit an optional
+> `mnemonic` string on kanji records (the `## Muistisääntö` section, block-quote markers stripped,
+> paragraphs joined with a blank line); the API reads it as optional and the kanji card shows the
+> section only when it is present — `schemaVersion` stays 1. (2) The two kun-only kanji the indexer
+> skips for a missing `onyomi` need `onyomi: []` in their front-matter (or `REQUIRED` relaxed in
+> `check_vault.py`); until then `manifest.skipped.kanji` reads 2.
+
 `00 Meta/Scripts/cc_index.py` (next to `check_vault.py`, reusing its parser) emits
 `.cc/index/{vocab,verb,kanji,grammar}.jsonl` + `.cc/index/manifest.json`. Run it once locally
 (`python3 "Japanese/00 Meta/Scripts/cc_index.py"` from the repo root — the script resolves the

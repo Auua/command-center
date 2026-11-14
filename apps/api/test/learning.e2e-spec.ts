@@ -29,6 +29,7 @@ describe('Learning (e2e)', () => {
       await request(server).get('/api/v1/learning/wotd').expect(401);
       await request(server).get('/api/v1/learning/vault-status').expect(401);
       await request(server).get('/api/v1/learning/grammar/today').expect(401);
+      await request(server).get('/api/v1/learning/kanji').expect(401);
       await request(server).get('/api/v1/streaks').expect(401);
       await request(server).get('/api/v1/learning/anki-status').expect(401);
       await request(server)
@@ -50,6 +51,15 @@ describe('Learning (e2e)', () => {
         .send({})
         .expect(400);
       await request(server).get('/api/v1/learning/grammar/today?ceiling=X').set(asAnna).expect(400);
+    });
+
+    it('rejects kanji requests with a bad ceiling or body', async () => {
+      await request(server).get('/api/v1/learning/kanji?ceiling=N0').set(asAnna).expect(400);
+      await request(server)
+        .post('/api/v1/learning/kanji/acknowledge')
+        .set(asAnna)
+        .send({})
+        .expect(400);
     });
 
     it('rejects an acknowledge/skip body without itemId or with extra fields', async () => {
@@ -87,6 +97,17 @@ describe('Learning (e2e)', () => {
         .get('/api/v1/learning/anki-status')
         .set(asAnna)
         .expect(200)
+        .expect({ configured: false });
+      await request(server)
+        .get('/api/v1/learning/kanji')
+        .set(asAnna)
+        .expect(200)
+        .expect({ configured: false });
+      await request(server)
+        .post('/api/v1/learning/kanji/skip')
+        .set(asAnna)
+        .send({ itemId: 'x.md' })
+        .expect(201)
         .expect({ configured: false });
       await request(server)
         .post('/api/v1/learning/wotd/acknowledge')

@@ -171,7 +171,7 @@ export function BuilderModal({ mode, automationId, onClose }: BuilderModalProps)
       {mode === 'edit' && !editReady ? (
         <div className="cc-dialog-body">
           {listQuery.isError ? (
-            <p role="alert" className="cc-rem-error">
+            <p role="alert" className="cc-error">
               {t('builder.error.save')}
             </p>
           ) : (
@@ -404,7 +404,7 @@ function BuilderForm({
           aria-labelledby={mode === 'edit' ? 'cc-builder-tab-details' : undefined}
         >
           {formError && (
-            <p role="alert" className="cc-rem-error">
+            <p role="alert" className="cc-error">
               {formError}
             </p>
           )}
@@ -626,13 +626,13 @@ function ActivityPanel({ automationId }: { automationId: string }): ReactElement
   }
   if (runsQuery.isError) {
     return (
-      <p role="alert" className="cc-rem-error">
+      <p role="alert" className="cc-error">
         {t('builder.activity.failed')}
       </p>
     );
   }
   if (runsQuery.data.items.length === 0) {
-    return <p className="cc-widget-placeholder">{t('builder.activity.empty')}</p>;
+    return <p className="cc-hint">{t('builder.activity.empty')}</p>;
   }
 
   return (

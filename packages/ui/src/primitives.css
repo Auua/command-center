@@ -1,0 +1,315 @@
+/* ============================================================
+   @command-center/ui — widget primitives (class contract)
+   Consumed by the components in src/primitives/. Tokens come from the
+   app's :root (--cc-*); a widget's accent arrives as --cc-wc from
+   WidgetCard. Imported once from apps/web/app/globals.css.
+   ============================================================ */
+
+/* ---- Accessibility ---- */
+
+.cc-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Buttons (pill-shaped; accent = the widget's --cc-wc) ---- */
+
+.cc-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  background: var(--cc-wc, var(--cc-coral));
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.2;
+  padding: 8px 17px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+
+.cc-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.cc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cc-btn:focus-visible {
+  outline: 2px solid var(--cc-wc, var(--cc-accent));
+  outline-offset: 2px;
+}
+
+.cc-btn-ghost {
+  background: var(--cc-bg-raised);
+  border-color: var(--cc-border);
+  color: var(--cc-text-muted);
+}
+
+.cc-btn-danger {
+  background: var(--cc-bg-raised);
+  color: var(--cc-danger);
+  border-color: var(--cc-danger);
+}
+
+.cc-btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 4px;
+  color: var(--cc-wc, var(--cc-accent));
+  text-decoration: underline;
+  font-size: inherit;
+}
+
+.cc-btn-sm {
+  padding: 5px 12px;
+  font-size: 12.5px;
+}
+
+.cc-btn-link.cc-btn-sm {
+  padding: 0;
+}
+
+/* The quiet × at the end of a row. */
+.cc-dismiss {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--cc-text-faint);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: none;
+}
+
+.cc-dismiss:hover:not(:disabled) {
+  color: var(--cc-danger);
+  background: var(--cc-danger-bg);
+}
+
+.cc-dismiss:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- Chips ---- */
+
+.cc-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+}
+
+.cc-chip {
+  --cc-chip-ink: var(--cc-wc, var(--cc-accent));
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+  color: var(--cc-chip-ink);
+  background: color-mix(in srgb, var(--cc-chip-ink) 14%, var(--cc-bg-raised));
+  white-space: nowrap;
+}
+
+.cc-chip-muted {
+  color: var(--cc-text-muted);
+  background: var(--cc-bg-inset);
+  font-weight: 600;
+}
+
+.cc-chip-coral {
+  --cc-chip-ink: var(--cc-coral);
+}
+
+.cc-chip-sky {
+  --cc-chip-ink: var(--cc-sky);
+}
+
+.cc-chip-green {
+  --cc-chip-ink: var(--cc-green);
+}
+
+.cc-chip-amber {
+  --cc-chip-ink: var(--cc-amber-ink);
+}
+
+.cc-chip-violet {
+  --cc-chip-ink: var(--cc-violet);
+}
+
+.cc-chip-danger {
+  --cc-chip-ink: var(--cc-danger);
+}
+
+/* ---- Text ---- */
+
+.cc-hint {
+  color: var(--cc-text-muted);
+  font-size: 0.84rem;
+  margin: 0;
+}
+
+.cc-section-label {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cc-text-faint);
+  border-top: 1px solid var(--cc-border);
+  padding-top: 8px;
+}
+
+/* ---- Non-content states ---- */
+
+.cc-error {
+  color: var(--cc-danger);
+  font-size: 0.86rem;
+  margin: 0;
+}
+
+.cc-message {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.cc-message-text {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.cc-message-empty .cc-message-text {
+  color: var(--cc-text-muted);
+}
+
+.cc-message-error .cc-message-text {
+  color: var(--cc-danger);
+}
+
+/* ---- Loading skeleton ---- */
+
+.cc-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cc-ghost {
+  display: block;
+  height: 14px;
+  width: 70%;
+  border-radius: 6px;
+  background: var(--cc-bg-inset);
+}
+
+.cc-ghost-title {
+  height: 34px;
+  width: 45%;
+}
+
+.cc-ghost-short {
+  width: 40%;
+}
+
+.cc-ghost-row {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cc-ghost {
+    animation: cc-ghost-shimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes cc-ghost-shimmer {
+    50% {
+      opacity: 0.45;
+    }
+  }
+}
+
+/* ---- Layout ---- */
+
+.cc-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+
+.cc-footer {
+  margin-top: auto;
+  padding-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cc-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--cc-wc, var(--cc-accent));
+  margin: 0;
+}
+
+.cc-source {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--cc-text-muted);
+}
+
+/* Hairline list: the shape every row-based widget shares. */
+.cc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cc-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--cc-border);
+}
+
+.cc-list-item:last-child {
+  border-bottom: none;
+}

@@ -6,3 +6,4 @@ export * from './quick-action-context';
 export * from './settings-schema';
 export * from './settings-form';
 export * from './sizes';
+export * from './primitives';

@@ -68,7 +68,7 @@ function DashboardWidget({ item, onSaveSettings }: DashboardWidgetProps): ReactE
   if (!definition) {
     return (
       <WidgetCard title={item.widgetId}>
-        <p className="cc-widget-placeholder">{t('shell.unknownWidget', { id: item.widgetId })}</p>
+        <p className="cc-hint">{t('shell.unknownWidget', { id: item.widgetId })}</p>
       </WidgetCard>
     );
   }

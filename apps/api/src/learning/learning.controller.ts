@@ -2,10 +2,13 @@ import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import {
   GrammarActionRequestSchema,
   GrammarCeilingSchema,
+  KanjiActionRequestSchema,
+  KanjiCeilingSchema,
   WotdActionRequestSchema,
   WotdCeilingSchema,
   type AnkiStatusResponse,
   type GrammarResponse,
+  type KanjiResponse,
   type VaultStatusResponse,
   type WotdResponse,
 } from '@command-center/contracts';
@@ -13,6 +16,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { AnkiStatusService } from './anki/anki-status.service';
 import { GrammarService } from './grammar/grammar.service';
+import { KanjiService } from './kanji/kanji.service';
 import { LearningService } from './learning.service';
 import { WotdService } from './wotd/wotd.service';
 
@@ -26,6 +30,7 @@ export class LearningController {
   constructor(
     private readonly wotdService: WotdService,
     private readonly grammarService: GrammarService,
+    private readonly kanjiService: KanjiService,
     private readonly learningService: LearningService,
     private readonly ankiStatusService: AnkiStatusService,
   ) {}
@@ -83,6 +88,33 @@ export class LearningController {
   ): Promise<GrammarResponse> {
     const request = GrammarActionRequestSchema.parse(body);
     return this.grammarService.studied(user, GrammarCeilingSchema.parse(ceiling), request.itemId);
+  }
+
+  @Get('kanji')
+  getKanji(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('ceiling') ceiling?: string,
+  ): Promise<KanjiResponse> {
+    return this.kanjiService.getToday(user, KanjiCeilingSchema.parse(ceiling));
+  }
+
+  @Post('kanji/acknowledge')
+  acknowledgeKanji(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+  ): Promise<KanjiResponse> {
+    const request = KanjiActionRequestSchema.parse(body);
+    return this.kanjiService.acknowledge(user, request.itemId);
+  }
+
+  @Post('kanji/skip')
+  skipKanji(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+    @Query('ceiling') ceiling?: string,
+  ): Promise<KanjiResponse> {
+    const request = KanjiActionRequestSchema.parse(body);
+    return this.kanjiService.skip(user, KanjiCeilingSchema.parse(ceiling), request.itemId);
   }
 
   @Get('anki-status')

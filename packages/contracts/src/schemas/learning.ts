@@ -89,6 +89,8 @@ export const KanjiRecordSchema = IndexRecordBase.extend({
   kunyomi: stringList,
   components: stringList,
   lookalikes: stringList,
+  /** `## Muistisääntö` text — optional, emitted once the vault's indexer learns it (ADR-041). */
+  mnemonic: nullableString.optional(),
 }).passthrough();
 
 export const GrammarRecordSchema = IndexRecordBase.extend({
@@ -291,6 +293,64 @@ export type GrammarConfiguredResponse = Extract<GrammarResponse, { configured: t
 export const GrammarActionRequestSchema = WotdActionRequestSchema;
 export type GrammarActionRequest = z.infer<typeof GrammarActionRequestSchema>;
 export const GrammarCeilingSchema = JlptLevelSchema.default('N5');
+
+/* ------------------------------------------------------------- kanji */
+
+/** One word that uses the kanji — a vocab/verb note whose `kanji` list links it (ADR-041). */
+export const KanjiWordSchema = z.object({
+  itemId: z.string().min(1),
+  word: z.string(),
+  reading: nullableString,
+  meaning: MeaningSchema,
+  jlpt: nullableString,
+  status: nullableString,
+});
+export type KanjiWord = z.infer<typeof KanjiWordSchema>;
+
+export const KanjiItemSchema = z.object({
+  /** Vault-relative note path. */
+  itemId: z.string().min(1),
+  kanji: z.string().min(1),
+  strokes: z.number().int().nullable(),
+  /** School grade 1–6 when the vault records one; prose values normalise to null. */
+  grade: z.number().int().nullable(),
+  jlpt: nullableString,
+  onyomi: z.array(z.string()),
+  /** As the vault writes them: `た.べる` — the dot separates stem and okurigana. */
+  kunyomi: z.array(z.string()),
+  meaning: MeaningSchema,
+  /** Component / look-alike characters, wikilink brackets stripped. */
+  components: z.array(z.string()),
+  lookalikes: z.array(z.string()),
+  mnemonic: nullableString,
+  /** Linked words, anchors first (progress ≠ new), then JLPT, capped server-side. */
+  words: z.array(KanjiWordSchema),
+  status: nullableString,
+  confidence: z.number().int().nullable(),
+  sourceUrl: z.string().url(),
+});
+export type KanjiItem = z.infer<typeof KanjiItemSchema>;
+
+/** GET /learning/kanji?ceiling=N5 and the acknowledge/skip responses — WOTD's envelope. */
+export const KanjiResponseSchema = z.discriminatedUnion('configured', [
+  z.object({ configured: z.literal(false) }),
+  z.object({
+    configured: z.literal(true),
+    state: LearningStateSchema,
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    item: KanjiItemSchema.nullable(),
+    acknowledged: z.boolean(),
+    exhausted: z.boolean(),
+    index: IndexInfoSchema,
+  }),
+]);
+export type KanjiResponse = z.infer<typeof KanjiResponseSchema>;
+export type KanjiConfiguredResponse = Extract<KanjiResponse, { configured: true }>;
+
+/** POST /learning/kanji/acknowledge and /learning/kanji/skip bodies. */
+export const KanjiActionRequestSchema = WotdActionRequestSchema;
+export type KanjiActionRequest = z.infer<typeof KanjiActionRequestSchema>;
+export const KanjiCeilingSchema = JlptLevelSchema.default('N5');
 
 /* ------------------------------------------------------------ anki sync */
 
