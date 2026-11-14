@@ -177,9 +177,15 @@ Vault secrets `ANKIWEB_EMAIL`/`ANKIWEB_PASSWORD` are the product owner's step.
 
 ## 3E — Kanji (stretch)
 
-ADR-041 first (selection = WOTD's over the kanji shard; card = character, meaning, readings table,
-example words from the `Sanat joissa esiintyy` base are not in the index — decide whether to add a
-`words[]` field to the indexer). Then `japanese-kanji` widget. Not started before 3C is on main.
+ADR-041 drafted 2026-11-14 (`docs/adr/learning/041-japanese-kanji-widget.md`), awaiting the
+product-owner walkthrough. Decisions: selection = WOTD's over the kanji shard (seed `|kanji`);
+example words derived at index load from the vocab/verb records' `kanji` wikilinks — **no
+`words[]` field on the kanji shard**; the mnemonic (`## Muistisääntö`) becomes an optional
+additive `mnemonic` field emitted by the vault's `cc_index.py`, and the widget ships without
+waiting for it; `kanji.acknowledged` → streak key `japanese-kanji`. Build after acceptance:
+`learning/kanji/` (selection + service, shared helpers extracted from WOTD), contracts
+(`KanjiItem`, `KanjiWord`, the event, the streak key), `apps/web/widgets/japanese-kanji/`,
+`learning-api.ts`, catalog keys, ADR-014/040 header notes.
 
 ## Docs owed per step
 
