@@ -1,7 +1,7 @@
 """
 Unit tests for the parts of sync.py that need no AnkiWeb: card collection
-through the vault's exporter, state documents, and the upsert planner
-against a fake collection.
+through the vault's exporter (media-only cards left out), state documents,
+and the note index + upsert planner against a fake collection.
 
     python3 -m unittest tools/anki-sync/test_sync.py
 """
@@ -53,6 +53,15 @@ def make_vault(root: Path) -> Path:
         "---\ntype: vocab\n---\n## Kortit\n#flashcards/vocab\n負ける::hävitä\n負ける::hävitä\n",
         encoding="utf-8",
     )
+    # A listening card in both directions, as the real exporter flattens it,
+    # listed before the text card that shares its translation.
+    (vault / "30 Sanasto" / "110番.md").write_text(
+        "---\ntype: vocab\n---\n## Kortit\n#flashcards/vocab\n"
+        "!tts_43114135cf52.m4a::Onnettomuudessa soitetaan numeroon 110.\n"
+        "Onnettomuudessa soitetaan numeroon 110.::!tts_43114135cf52.m4a\n"
+        "Onnettomuudessa soitetaan numeroon 110.::事故のとき、110番に電話します。\n",
+        encoding="utf-8",
+    )
     (vault / "Templates").mkdir()
     (vault / "Templates" / "t.md").write_text("#flashcards/x\na::b\n", encoding="utf-8")
     return vault
@@ -74,7 +83,7 @@ class FakeModels:
         return self.models.get(name)
 
     def new(self, name):
-        return {"name": name, "flds": [], "tmpls": []}
+        return {"name": name, "id": 1700000000000 + len(self.models), "flds": [], "tmpls": []}
 
     def new_field(self, name):
         return {"name": name}
@@ -93,17 +102,30 @@ class FakeModels:
         self.added.append(model["name"])
 
 
+class FakeDb:
+    """Answers the one query index_notes makes, in anki's storage format."""
+
+    def __init__(self, col):
+        self.col = col
+        self.queries = 0
+
+    def all(self, sql, model_id):
+        self.queries += 1
+        return [
+            [nid, "\x1f".join(note[name] for name in self.col.field_order), " " + " ".join(note.tags) + " "]
+            for nid, note in self.col.notes.items()
+        ]
+
+
 class FakeCollection:
-    def __init__(self, existing_model=None):
+    def __init__(self, existing_model=None, field_order=None):
         self.models = FakeModels({existing_model["name"]: existing_model} if existing_model else None)
         self.notes: dict[int, FakeNote] = {}
         self.added: list[tuple[FakeNote, int]] = []
         self.updated: list[FakeNote] = []
+        self.field_order = field_order or sync.NOTE_FIELDS
+        self.db = FakeDb(self)
         self._next = 1
-
-    def find_notes(self, query):
-        uid = query.split(":", 1)[1].strip('"')
-        return [nid for nid, note in self.notes.items() if note.get("UID") == uid]
 
     def get_note(self, nid):
         return self.notes[nid]
@@ -126,13 +148,32 @@ class CollectCardsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             vault = make_vault(Path(tmp))
             exporter = sync.load_exporter(vault)
-            cards, files = sync.collect_cards(vault, exporter)
-        self.assertEqual(files, 1)
-        self.assertEqual(len(cards), 1)
-        card = cards[0]
-        self.assertEqual((card.front, card.back, card.source), ("負ける", "hävitä", "30 Sanasto/負ける.md"))
+            cards, files, _ = sync.collect_cards(vault, exporter)
+        self.assertEqual(files, 2)
+        card = next(c for c in cards if c.source == "30 Sanasto/負ける.md")
+        self.assertEqual([c.source for c in cards].count("30 Sanasto/負ける.md"), 1)
+        self.assertEqual((card.front, card.back), ("負ける", "hävitä"))
         self.assertEqual(card.tags, ["flashcards::vocab"])
         self.assertEqual(card.uid, exporter.uid_for("30 Sanasto/負ける.md", "負ける"))
+
+    def test_leaves_out_media_only_cards_and_keeps_the_text_card_behind_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = make_vault(Path(tmp))
+            cards, _, media_only = sync.collect_cards(vault, sync.load_exporter(vault))
+        self.assertEqual(media_only, 2)
+        kept = [(c.front, c.back) for c in cards if c.source == "30 Sanasto/110番.md"]
+        self.assertEqual(kept, [("Onnettomuudessa soitetaan numeroon 110.", "事故のとき、110番に電話します。")])
+
+
+class StripMediaTest(unittest.TestCase):
+    def test_removes_flattened_embeds_and_the_line_breaks_they_leave(self):
+        self.assertEqual(sync.strip_media("!anki_MNN_110番.mp3"), "")
+        self.assertEqual(sync.strip_media("!kaavio.PNG<br>駅<br>!tts_ab12.m4a"), "駅")
+        self.assertEqual(sync.strip_media("駅 !tts_ab12.m4a asema"), "駅  asema")
+
+    def test_leaves_ordinary_text_alone(self):
+        for text in ("すごい!<br>Hienoa!", "tiedosto.mp3 ilman huutomerkkiä", "Hei! Katso a.mp3x"):
+            self.assertEqual(sync.strip_media(text), text)
 
 
 class EnsureModelTest(unittest.TestCase):
@@ -156,19 +197,48 @@ class UpsertTest(unittest.TestCase):
         self.card = sync.Card("abc", "負ける", "hävitä", "30 Sanasto/負ける.md", ["flashcards::vocab", "jlpt::n5"])
 
     def test_adds_then_leaves_unchanged_then_updates(self):
-        sync.upsert(self.col, self.model, 7, self.card, self.state)
+        index = sync.index_notes(self.col, self.model)
+        self.assertEqual(index, {})
+        sync.upsert(self.col, self.model, 7, self.card, self.state, index)
         self.assertEqual(self.state.counts["added"], 1)
         self.assertEqual(self.col.added[0][1], 7)
         self.assertEqual(self.col.added[0][0]["UID"], "abc")
 
-        sync.upsert(self.col, self.model, 7, self.card, self.state)
-        self.assertEqual(self.state.counts["unchanged"], 1)
+        # the same card again in the same run, then in the next run (fresh index)
+        sync.upsert(self.col, self.model, 7, self.card, self.state, index)
+        index = sync.index_notes(self.col, self.model)
+        sync.upsert(self.col, self.model, 7, self.card, self.state, index)
+        self.assertEqual(self.state.counts["unchanged"], 2)
         self.assertEqual(self.col.updated, [])
 
         changed = sync.Card("abc", "負ける", "hävitä; jäädä toiseksi", self.card.source, self.card.tags)
-        sync.upsert(self.col, self.model, 7, changed, self.state)
+        sync.upsert(self.col, self.model, 7, changed, self.state, index)
         self.assertEqual(self.state.counts["updated"], 1)
         self.assertEqual(self.col.updated[0]["Back"], "hävitä; jäädä toiseksi")
+        self.assertEqual(self.state.counts["added"], 1)
+        self.assertEqual(self.col.db.queries, 2)  # one read per index, none per card
+
+    def test_what_anki_normalises_is_not_a_change(self):
+        index = sync.index_notes(self.col, self.model)
+        sync.upsert(self.col, self.model, 7, self.card, self.state, index)
+        stored = self.col.notes[1]
+        stored["Back"] = "ha\u0308vita\u0308"  # the same text, decomposed
+        stored.tags = ["Flashcards::Vocab", "JLPT::N5"]
+        sync.upsert(self.col, self.model, 7, self.card, self.state, sync.index_notes(self.col, self.model))
+        self.assertEqual(self.state.counts["unchanged"], 1)
+        self.assertEqual(self.col.updated, [])
+
+    def test_reads_uid_by_field_name_when_the_note_type_orders_fields_differently(self):
+        order = ["Front", "Back", "UID", "Source"]
+        col = FakeCollection({"name": "Japani (Obsidian)", "id": 5, "flds": [{"name": n} for n in order]}, order)
+        model = sync.ensure_model(col, "Japani (Obsidian)")
+        note = col.new_note(model)
+        note.update({"UID": "abc", "Front": "負ける", "Back": "hävitä", "Source": self.card.source})
+        note.tags = list(self.card.tags)
+        col.add_note(note, 7)
+        state = sync.RunState()
+        sync.upsert(col, model, 7, self.card, state, sync.index_notes(col, model))
+        self.assertEqual((state.counts["unchanged"], state.counts["added"]), (1, 0))
 
 
 class StateDocumentTest(unittest.TestCase):

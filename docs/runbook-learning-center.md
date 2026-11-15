@@ -135,7 +135,9 @@ jobs:
 `concurrency: anki-sync` coalesces bursts of note commits into at most one running + one queued
 run. There is no `mode: import` any more — the vault is the deck's source, and the sync parses
 every `## Kortit` section the way `00 Meta/Scripts/sr_to_anki.py` does (UID = sha1 of
-`<path>|<front>`, note type `Japani (Obsidian)`).
+`<path>|<front>`, note type `Japani (Obsidian)`). Cards whose front or back is only a media
+embed are left out: the audio folders are gitignored (step 5), so the runner has nothing to
+upload — `sync/state.json` reports them as `counts.skippedMedia`.
 
 The caller is committed on the vault branch `anki-sync` (2026-09-18); merge it after step 8's tag
 exists, then dispatch it once by hand. `docs/PHASE3_SETUP.md` §4 is the ordered checklist.
