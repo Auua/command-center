@@ -41,7 +41,8 @@ Widgets so far: clock, braindump, tasks, mood, reminders, Japanese word of the d
 grammar point, kanji of the day, streaks (Phase 3 — the learning widgets read the product owner's
 Obsidian vault, ADR-040/041; streaks credit deliberate study and completed tasks, ADR-014). All
 widgets share one set of UI primitives from `@command-center/ui` (buttons, chips, states,
-skeletons, live regions, lists) so the dashboard reads as one design. Braindump is the first
+skeletons, live regions, lists) so the dashboard reads as one design. Phase 4 has started: the
+dashboard has a layout editor — add, remove, resize and reorder widgets from the app (ADR-042). Braindump is the first
 MongoDB-backed module; everything else lives in Supabase Postgres
 (`supabase/migrations/`). One-time Phase 2 external setup:
 [docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md); Phase 3's (vault token, Anki sync) is

@@ -420,3 +420,21 @@ not an app change.
 Phase 3E (`learning/kanji/`, `japanese-kanji` widget, `kanji.acknowledged` → `japanese-kanji`
 streak). The owed amendments landed as dated header notes on ADR-014 and ADR-040, a runbook note
 (indexer `mnemonic` field, `onyomi: []` hygiene), the plan's 3E row, CLAUDE.md and README.
+
+## Batch 11 — Phase 4A layout editor (drafted 2026-11-15)
+
+| ADR | Title                                                     | Review state    | Approved     |
+| --- | --------------------------------------------------------- | --------------- | ------------ |
+| 042 | Dashboard layout editor (ordered placements, packed grid) | claude-reviewed | ✓ 2026-11-15 |
+
+The arrangement model — an ordered list packed into the grid, moved with buttons — was chosen by
+the product owner on 2026-11-15 from three presented options (the others: the same with
+drag-and-drop, and free placement on the grid). Decisions still worth attention, in order:
+(1) one save per edit session (Done / Cancel), nothing saved per step; (2) removing a widget
+drops its settings; (3) the last widget cannot be removed, and "Reset to default" is the way back
+to the default layout; (4) one placement per widget in v1 (multi-instance waits for ADR-013's
+tech lessons); (5) a layout hand-placed before the ADR may shift the first time it is edited.
+
+**2026-11-15: ADR-042 accepted, every remaining decision as drafted** ("keep a removed widget's
+settings" was offered as an alternative and not taken). Build is Phase 4A
+(`docs/plans/phase4-reflection.md`).

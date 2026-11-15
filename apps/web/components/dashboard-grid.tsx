@@ -12,6 +12,8 @@ import type { LayoutResponse, WidgetLayoutItem } from '@command-center/contracts
 import {
   clampToDeclaredSize,
   describeSettingsSchema,
+  GRID_COLUMNS,
+  useAnnouncer,
   WidgetCard,
   WidgetErrorBoundary,
   type SettingsValues,
@@ -21,15 +23,16 @@ import { fetchLayout, putLayout } from '@/lib/layout-api';
 import { t } from '@/lib/i18n';
 import { DEFAULT_LAYOUT } from '@/widgets/default-layout';
 import { widgetRegistry } from '@/widgets/registry';
+import {
+  AddWidgetDialog,
+  LayoutItemBar,
+  LayoutToolbar,
+  placementKey,
+  useLayoutDraft,
+} from './layout-editor';
 import { WidgetSettingsDialog } from './widget-settings-dialog';
 
-const GRID_COLUMNS = 6;
 const LAYOUT_QUERY_KEY = ['layout'];
-
-/** Stable identity of a placement: definition + instance (ADR-013). */
-function placementKey(item: WidgetLayoutItem): string {
-  return `${item.widgetId}:${item.instanceKey}`;
-}
 
 /**
  * Grid placement via CSS custom properties (consumed in globals.css) so a
@@ -131,15 +134,25 @@ export function DashboardGrid(): ReactElement {
     queryKey: LAYOUT_QUERY_KEY,
     queryFn: fetchLayout,
   });
+  const { announce, regions } = useAnnouncer();
+  const say = (message: string): void => announce('polite', message);
+  const editor = useLayoutDraft(say);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  // The settings panel is the first PUT /layout caller: it writes the whole
-  // list back with one item's settings replaced, and the query cache takes
-  // the server's echo so every card re-reads its validated settings.
+  // Both writers PUT the whole list and hand the server's echo to the query
+  // cache, so every card re-reads its validated settings and placement:
+  // the settings panel (one item's settings replaced) and the layout editor
+  // (the packed draft, once, on Done — ADR-042).
+  const onSaved = (response: LayoutResponse): void => {
+    queryClient.setQueryData(LAYOUT_QUERY_KEY, response);
+  };
   const saveSettings = useMutation({
     mutationFn: (next: WidgetLayoutItem[]) => putLayout(next),
-    onSuccess: (response: LayoutResponse) => {
-      queryClient.setQueryData(LAYOUT_QUERY_KEY, response);
-    },
+    onSuccess: onSaved,
+  });
+  const saveLayout = useMutation({
+    mutationFn: (next: WidgetLayoutItem[]) => putLayout(next),
+    onSuccess: onSaved,
   });
 
   if (isPending) {
@@ -164,13 +177,80 @@ export function DashboardGrid(): ReactElement {
     await saveSettings.mutateAsync(next);
   };
 
+  const handleEdit = (): void => {
+    saveLayout.reset();
+    editor.start(items);
+  };
+
+  const handleCancel = (): void => {
+    saveLayout.reset();
+    editor.stop();
+    say(t('layout.announce.cancelled'));
+  };
+
+  const handleDone = (): void => {
+    if (!editor.draft) return;
+    if (!editor.dirty) {
+      editor.stop();
+      return;
+    }
+    saveLayout.mutate(editor.draft, {
+      onSuccess: () => {
+        editor.stop();
+        say(t('layout.announce.saved'));
+      },
+    });
+  };
+
+  // Outside edit mode the stored coordinates render as they are; in edit
+  // mode the packed draft does (ADR-042).
+  const shown = editor.draft ?? items;
+
   return (
-    <div className="cc-grid">
-      {items.map((item) => (
-        <div key={placementKey(item)} className="cc-grid-item" style={gridPlacement(item)}>
-          <DashboardWidget item={item} onSaveSettings={handleSaveSettings} />
-        </div>
-      ))}
+    <div className="cc-dashboard">
+      <LayoutToolbar
+        editing={editor.editing}
+        saving={saveLayout.isPending}
+        error={saveLayout.isError ? t('layout.saveFailed') : null}
+        onEdit={handleEdit}
+        onAdd={() => setPickerOpen(true)}
+        onReset={editor.reset}
+        onCancel={handleCancel}
+        onDone={handleDone}
+      />
+      <div ref={editor.gridRef} className={editor.editing ? 'cc-grid cc-grid-editing' : 'cc-grid'}>
+        {shown.map((item, index) => (
+          <div key={placementKey(item)} className="cc-grid-item" style={gridPlacement(item)}>
+            {editor.editing && (
+              <LayoutItemBar
+                item={item}
+                index={index}
+                count={shown.length}
+                onMove={(delta) => editor.move(index, delta)}
+                onResize={(size) => editor.resize(index, size)}
+                onRemove={() => editor.remove(index)}
+              />
+            )}
+            {/* Always rendered (the widget is not remounted on entering edit
+                mode); inert while editing — the editor arranges cards, it
+                does not operate them. */}
+            <div className="cc-grid-item-body" inert={editor.editing}>
+              <DashboardWidget item={item} onSaveSettings={handleSaveSettings} />
+            </div>
+          </div>
+        ))}
+      </div>
+      {pickerOpen && (
+        <AddWidgetDialog
+          definitions={editor.unplaced}
+          onPick={(definition) => {
+            setPickerOpen(false);
+            editor.add(definition);
+          }}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
+      {regions}
     </div>
   );
 }
