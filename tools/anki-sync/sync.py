@@ -7,9 +7,12 @@ script ships from command-center as a composite action). Steps, in order:
 
   1. parse every `## Kortit` card with the vault's own exporter
      (`<vault>/00 Meta/Scripts/sr_to_anki.py`) — same UID, same tags;
+     cards whose front or back is nothing but a media embed are left out
+     (the vault's audio is local-only, so an Action has nothing to upload);
   2. open the (cached or fresh) local collection, log in, SYNC DOWN;
   3. ensure the deck and the note type exist;
-  4. upsert one note per UID (find by the `UID` field → update, else add);
+  4. upsert one note per UID (index the note type's notes once → update the
+     ones that differ, add the missing ones);
   5. SYNC UP;
   6. write `sync/state.json` (the caller commits it).
 
@@ -26,8 +29,10 @@ import argparse
 import importlib.util
 import json
 import os
+import re
 import sys
 import traceback
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,6 +40,16 @@ from typing import Any
 
 STATE_SCHEMA_VERSION = 1
 NOTE_FIELDS = ["UID", "Front", "Back", "Source"]
+FIELD_SEPARATOR = "\x1f"  # how anki joins a note's fields in notes.flds
+PROGRESS_EVERY = 20_000
+
+# The exporter flattens wikilinks, so an Obsidian embed `![[tts_ab12.m4a]]`
+# reaches us as the text `!tts_ab12.m4a`. The files themselves are gitignored
+# in the vault (local-only audio), so they cannot be uploaded from a runner.
+MEDIA_RE = re.compile(
+    r"!\S+?\.(?:mp3|m4a|wav|ogg|opus|flac|aac|webm|mp4|mov|png|jpe?g|gif|webp|svg|pdf)(?![A-Za-z0-9])",
+    re.IGNORECASE,
+)
 
 
 # ---------------------------------------------------------------- parsing
@@ -61,24 +76,42 @@ class Card:
     tags: list[str]
 
 
-def collect_cards(vault: Path, exporter) -> tuple[list[Card], int]:
-    """Every card in the vault, UID-deduplicated like the exporter does."""
+def strip_media(text: str) -> str:
+    """Drop flattened media embeds; tidy the `<br>` joins they leave behind."""
+    if not MEDIA_RE.search(text):
+        return text
+    lines = (line.strip() for line in MEDIA_RE.sub("", text).split("<br>"))
+    return "<br>".join(line for line in lines if line)
+
+
+def collect_cards(vault: Path, exporter) -> tuple[list[Card], int, int]:
+    """Every syncable card in the vault, UID-deduplicated like the exporter does.
+
+    Returns (cards, files with cards, cards left out as media-only). Media is
+    removed before a card is identified, so a listening card never takes the
+    UID of the text card that shares its other side.
+    """
     seen: set[str] = set()
     cards: list[Card] = []
     files = 0
+    media_only = 0
     for path in sorted(vault.rglob("*.md")):
         if any(part in exporter.SKIP_DIRS for part in path.parts):
             continue
         parsed = exporter.parse_file(path, vault)
         if parsed:
             files += 1
-        for front, back, rel, tags in parsed:
+        for raw_front, raw_back, rel, tags in parsed:
+            front, back = strip_media(raw_front), strip_media(raw_back)
+            if not front or not back:
+                media_only += 1
+                continue
             uid = exporter.uid_for(rel, front)
             if uid in seen:
                 continue
             seen.add(uid)
             cards.append(Card(uid, front, back, rel, sorted(set(tags))))
-    return cards, files
+    return cards, files, media_only
 
 
 # ------------------------------------------------------------------ state
@@ -87,7 +120,8 @@ def collect_cards(vault: Path, exporter) -> tuple[list[Card], int]:
 class RunState:
     status: str = "ok"
     counts: dict[str, int] = field(default_factory=lambda: {
-        "cards": 0, "files": 0, "added": 0, "updated": 0, "unchanged": 0, "failed": 0,
+        "cards": 0, "files": 0, "skippedMedia": 0,
+        "added": 0, "updated": 0, "unchanged": 0, "failed": 0,
     })
     decks: list[dict[str, Any]] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
@@ -152,31 +186,63 @@ def ensure_model(col, name: str):
     return col.models.by_name(name)
 
 
-def upsert(col, model, deck_id: int, card: Card, state: RunState) -> None:
-    uid_query = f'"UID:{card.uid}"'
-    note_ids = col.find_notes(uid_query)
+@dataclass
+class Known:
+    """A note of our note type as the collection holds it right now."""
+    note_id: int
+    fields: dict[str, str]
+    tags: list[str]
+
+
+def same_text(a: str, b: str) -> bool:
+    # anki stores NFC; a vault note written on macOS may not be.
+    return unicodedata.normalize("NFC", a) == unicodedata.normalize("NFC", b)
+
+
+def same_tags(a: list[str], b: list[str]) -> bool:
+    # anki keeps the capitalisation of a tag it already knows.
+    return sorted(tag.casefold() for tag in a) == sorted(tag.casefold() for tag in b)
+
+
+def index_notes(col, model) -> dict[str, Known]:
+    """UID -> note for every note of the note type, read in one query.
+
+    Looking each card up with a search is a scan of the whole collection per
+    card — quadratic, and the vault holds six figures of cards.
+    """
+    names = [f["name"] for f in model["flds"]]
+    index: dict[str, Known] = {}
+    for note_id, flds, tags in col.db.all("select id, flds, tags from notes where mid = ?", model["id"]):
+        fields = dict(zip(names, flds.split(FIELD_SEPARATOR)))
+        uid = fields.get("UID", "")
+        if uid and uid not in index:
+            index[uid] = Known(note_id, fields, tags.split())
+    return index
+
+
+def upsert(col, model, deck_id: int, card: Card, state: RunState, index: dict[str, Known]) -> None:
     fields = {"UID": card.uid, "Front": card.front, "Back": card.back, "Source": card.source}
-    if note_ids:
-        note = col.get_note(note_ids[0])
-        changed = False
-        for key, value in fields.items():
-            if note[key] != value:
-                note[key] = value
-                changed = True
-        if sorted(note.tags) != card.tags:
-            note.tags = list(card.tags)
-            changed = True
-        if changed:
-            col.update_note(note)
-            state.counts["updated"] += 1
-        else:
+    known = index.get(card.uid)
+    if known is not None:
+        if same_tags(known.tags, card.tags) and all(
+            same_text(known.fields.get(key, ""), value) for key, value in fields.items()
+        ):
             state.counts["unchanged"] += 1
+            return
+        note = col.get_note(known.note_id)
+        for key, value in fields.items():
+            note[key] = value
+        note.tags = list(card.tags)
+        col.update_note(note)
+        index[card.uid] = Known(known.note_id, fields, list(card.tags))
+        state.counts["updated"] += 1
         return
     note = col.new_note(model)
     for key, value in fields.items():
         note[key] = value
     note.tags = list(card.tags)
     col.add_note(note, deck_id)
+    index[card.uid] = Known(note.id, fields, list(card.tags))
     state.counts["added"] += 1
 
 
@@ -219,12 +285,16 @@ def run_sync(args, cards: list[Card], state: RunState) -> None:
         deck_id = col.decks.id(args.deck)
 
         # 4. upsert every card; one bad card never fails the run
-        for card in cards:
+        index = index_notes(col, model)
+        print(f"sync: {len(index)} notes of '{args.note_type}' already in the collection")
+        for done, card in enumerate(cards, start=1):
             try:
-                upsert(col, model, deck_id, card, state)
+                upsert(col, model, deck_id, card, state, index)
             except Exception as error:  # noqa: BLE001
                 state.counts["failed"] += 1
                 state.errors.append(f"{card.source}: {card.front[:40]}: {error}")
+            if done % PROGRESS_EVERY == 0:
+                print(f"sync: {done}/{len(cards)} cards", flush=True)
 
         # 5. sync up
         out = col.sync_collection(auth, False)
@@ -266,10 +336,11 @@ def main() -> int:
 
     try:
         exporter = load_exporter(vault)
-        cards, files = collect_cards(vault, exporter)
+        cards, files, media_only = collect_cards(vault, exporter)
         state.counts["cards"] = len(cards)
         state.counts["files"] = files
-        print(f"parsed {len(cards)} cards from {files} files")
+        state.counts["skippedMedia"] = media_only
+        print(f"parsed {len(cards)} cards from {files} files ({media_only} media-only cards left out)")
         if args.dry_run:
             print(json.dumps(state_document(state, synced=False), ensure_ascii=False, indent=2))
             return 0

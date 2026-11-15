@@ -16,6 +16,16 @@
 > and `sync/**`); and **import mode is dropped** — the vault is the deck's source. The `anki: true`
 > flag no longer selects cards. Diagram media (ADR-019) and the `Notes` field stay for lesson kinds.
 
+> **Implementation note (2026-11-15, before the first production sync).** A dry run against the
+> vault found 159 082 cards, of which 35 562 (both directions of 17 781 listening lines) have a
+> front or back that is only an audio embed. The vault's audio is local-only (gitignored), so no
+> runner can upload it and those cards would reach Anki as a bare file name. **Media-only cards
+> are left out of the sync** and reported as `counts.skippedMedia`; the text card sharing the
+> sentence still syncs. Vault audio in Anki stays out of scope until the audio lives somewhere a
+> runner can read (the committed, content-hashed media path below is the model). Same pass: the
+> upsert reads the note type's notes once instead of searching per card, which was quadratic at
+> this size.
+
 ## Context
 
 Two live Anki decks — **Japanese** and **Tech** — must stay available on every device.

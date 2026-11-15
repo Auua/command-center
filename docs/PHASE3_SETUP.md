@@ -43,7 +43,8 @@ lists `instance_key`; `select * from public.streaks;` returns an empty set, not 
 
 1. **Allow the private action to be used from the vault repo:** command-center → Settings →
    Actions → General → Access → "Accessible from repositories owned by the user". Without this
-   the vault's workflow fails at `uses:` with "repository not found".
+   the vault's workflow fails at `uses:` with "repository not found". (The setting exists only
+   while command-center is private; a public repository's actions need no grant.)
 2. **Tag the release** on `main` once `tools/anki-sync` is merged:
 
    ```
@@ -60,6 +61,13 @@ lists `instance_key`; `select * from public.streaks;` returns an empty set, not 
    (`workflow_dispatch`). First run: full download of the collection (slow, normal), note type
    check — the existing `Japani (Obsidian)` must have fields `UID`, `Front`, `Back`, `Source` —
    then upserts by `UID`, then a `sync/state.json` commit.
+
+   **Know the size before the first run.** Every `## Kortit` card in the vault becomes a note:
+   `python3 tools/anki-sync/sync.py --repo /path/to/learning-center --dry-run` prints the count
+   (2026-11-15: 127 269 cards from 22 194 notes, plus 35 562 listening cards left out because
+   the vault's audio is local-only). They arrive as _new_ cards in deck `Japani`; Anki's daily
+   new-card limit paces them, and removing them later means deleting the deck's notes in Anki.
+
 5. **Check:** the WOTD and grammar cards' footers read "Anki synced N min ago"; AnkiWeb shows
    the notes in deck `Japani`.
 
@@ -77,6 +85,8 @@ lists `instance_key`; `select * from public.streaks;` returns an empty set, not 
 - **Widgets say "Learning vault not configured":** the env pair is missing on the deployed API,
   or set in only one environment.
 - **"GitHub token expired":** rotate the PAT (runbook step 2); the bell also carries a row.
+- **anki-sync red in "Set up job" with "unable to find version `anki-sync-v1`":** the release
+  tag was never pushed (step 4.2) — the vault's workflow pins the action by that tag.
 - **anki-sync red with "full UPLOAD required":** correct behaviour (ADR-026's guard); open
   desktop Anki, resolve the full-sync prompt there once, re-run the workflow.
 - **anki-sync red with "lacks fields":** the existing note type's field names differ from
