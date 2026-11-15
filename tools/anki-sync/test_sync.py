@@ -241,6 +241,99 @@ class UpsertTest(unittest.TestCase):
         self.assertEqual((state.counts["unchanged"], state.counts["added"]), (1, 0))
 
 
+class Out:
+    def __init__(self, required):
+        self.required = required
+
+
+class SyncingCollection:
+    """Scripts what the server answers; records what the action did about it."""
+
+    def __init__(self, answers, log=None):
+        self.answers = list(answers)
+        self.log = log if log is not None else []
+
+    def sync_collection(self, auth, sync_media):
+        self.log.append("sync")
+        return Out(self.answers.pop(0))
+
+    def close_for_full_sync(self):
+        self.log.append("close")
+
+    def full_upload_or_download(self, *, auth, server_usn, upload):
+        self.log.append("upload" if upload else "download")
+        self.log.append(f"usn={server_usn}")
+
+    def reopen(self, after_full_sync=False):
+        self.log.append("reopen")
+
+
+class FullSyncRuleTest(unittest.TestCase):
+    """ADR-026: a runner downloads freely and uploads only to an account with no cards."""
+
+    def never(self, col):
+        self.fail("the collection must not be discarded")
+
+    def test_sync_down_takes_any_full_sync_as_a_download(self):
+        for required in ("FULL_DOWNLOAD", "FULL_SYNC"):
+            col = SyncingCollection([required])
+            self.assertIs(sync.sync_down(col, "auth", self.never), col)
+            self.assertEqual(col.log, ["sync", "close", "download", "usn=None", "reopen"])
+
+    def test_sync_down_leaves_a_current_collection_alone(self):
+        for required in ("NO_CHANGES", "NORMAL_SYNC"):
+            col = SyncingCollection([required])
+            sync.sync_down(col, "auth", self.never)
+            self.assertEqual(col.log, ["sync"])
+
+    def test_sync_down_discards_a_cache_that_asks_to_upload(self):
+        log: list[str] = []
+        stale = SyncingCollection(["FULL_UPLOAD"], log)
+        fresh = SyncingCollection(["FULL_SYNC"], log)
+
+        def start_over(col):
+            self.assertIs(col, stale)
+            log.append("start-over")
+            return fresh
+
+        self.assertIs(sync.sync_down(stale, "auth", start_over), fresh)
+        self.assertEqual(log, ["sync", "start-over", "sync", "close", "download", "usn=None", "reopen"])
+
+    def test_sync_down_never_uploads_even_if_asked_twice(self):
+        stale = SyncingCollection(["FULL_UPLOAD"])
+        with self.assertRaisesRegex(RuntimeError, "refusing"):
+            sync.sync_down(stale, "auth", lambda col: SyncingCollection(["FULL_UPLOAD"]))
+        self.assertNotIn("upload", stale.log)
+
+    def test_sync_up_uploads_only_when_the_server_holds_no_cards(self):
+        col = SyncingCollection(["FULL_UPLOAD"])
+        sync.sync_up(col, "auth")
+        self.assertEqual(col.log, ["sync", "close", "upload", "usn=None", "reopen"])
+
+    def test_sync_up_refuses_a_full_sync_over_existing_cards(self):
+        for required in ("FULL_SYNC", "FULL_DOWNLOAD"):
+            col = SyncingCollection([required])
+            with self.assertRaisesRegex(RuntimeError, f"requires {required} after writing; refusing"):
+                sync.sync_up(col, "auth")
+            self.assertEqual(col.log, ["sync"])
+
+    def test_sync_up_after_an_ordinary_sync_does_nothing_more(self):
+        col = SyncingCollection(["NO_CHANGES"])
+        sync.sync_up(col, "auth")
+        self.assertEqual(col.log, ["sync"])
+
+    def test_a_failed_transfer_still_reopens_the_collection(self):
+        col = SyncingCollection([])
+
+        def boom(**kwargs):
+            raise RuntimeError("network")
+
+        col.full_upload_or_download = boom
+        with self.assertRaisesRegex(RuntimeError, "network"):
+            sync.full_transfer(col, "auth", upload=False)
+        self.assertEqual(col.log, ["close", "reopen"])
+
+
 class StateDocumentTest(unittest.TestCase):
     def test_failed_run_keeps_the_previous_lastSyncAt(self):
         os.environ["GITHUB_REPOSITORY"] = "Auua/learning-center"

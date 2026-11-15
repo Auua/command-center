@@ -164,8 +164,9 @@ type `Japani (Obsidian)`, `UID` field filled.
 
 ## Troubleshooting
 
-- **Red run, "full upload required":** correct behavior (ADR-026's guard) — open desktop
-  Anki, resolve the full-sync prompt there once, re-run the workflow.
+- **Red run, "requires FULL_SYNC after writing":** correct behavior (ADR-026's guard) — sync
+  desktop Anki, then re-run the workflow. A brand-new AnkiWeb account needs nothing: the
+  first run uploads the collection itself, because there are no cards to overwrite.
 - **Stale "Anki synced …" in the widget:** the status reads `sync/state.json`; check the
   repo's Actions tab — a run that crashed before committing state leaves it stale until the
   next run.

@@ -16,12 +16,19 @@ script ships from command-center as a composite action). Steps, in order:
   5. SYNC UP;
   6. write `sync/state.json` (the caller commits it).
 
-Full-sync rule: a required full DOWNLOAD is accepted (we only lose the
-cache); a required full UPLOAD fails the run red — a CI runner must never
-overwrite the user's real collection.
+Full-sync rule: a CI runner must never overwrite cards on AnkiWeb.
+  - Before writing, a required full sync is always taken as a DOWNLOAD: the
+    runner's collection is a cache. A cache that wants to upload (a run that
+    died before syncing up) is thrown away first.
+  - After writing, the only full sync performed is the UPLOAD anki asks for
+    when AnkiWeb holds no cards at all — the first sync of an empty account,
+    where there is nothing to overwrite. Any other full sync fails the run.
 
     python3 sync.py --repo . --vault-dir Japanese --state sync/state.json
     python3 sync.py --repo . --dry-run          # parse + plan only, no AnkiWeb
+
+`ANKI_SYNC_ENDPOINT` (or --endpoint) points the sync at another server, e.g.
+a local `python -m anki.syncserver` for an end-to-end rehearsal.
 """
 from __future__ import annotations
 
@@ -257,6 +264,49 @@ def sync_required_name(out) -> str:
         return str(required)
 
 
+def full_transfer(col, auth, upload: bool) -> None:
+    """One full upload or download, framed the way the desktop client does it."""
+    col.close_for_full_sync()
+    try:
+        # server_usn=None: no background media sync — this collection has no media.
+        col.full_upload_or_download(auth=auth, server_usn=None, upload=upload)
+    finally:
+        col.reopen(after_full_sync=True)  # the backend reopens whatever the outcome
+
+
+def sync_down(col, auth, start_over):
+    """Step 2: make the local collection current. Returns the collection to use."""
+    required = sync_required_name(col.sync_collection(auth, False))
+    if required == "FULL_UPLOAD":
+        # Only a local collection holding cards the server never received asks
+        # for this — here, the cache of a run that died before syncing up.
+        print("sync: the cached collection was never synced up — starting from an empty one")
+        col = start_over(col)
+        required = sync_required_name(col.sync_collection(auth, False))
+    if required in ("FULL_DOWNLOAD", "FULL_SYNC"):
+        print(f"sync: {required} → full download")
+        full_transfer(col, auth, upload=False)
+    elif required == "FULL_UPLOAD":
+        raise RuntimeError("AnkiWeb asks an empty collection for a full UPLOAD; refusing")
+    return col
+
+
+def sync_up(col, auth) -> None:
+    """Step 5: send what was written."""
+    required = sync_required_name(col.sync_collection(auth, False))
+    if required == "FULL_UPLOAD":
+        # anki reports FULL_UPLOAD (upload possible, download not) only when the
+        # server holds no cards and the local collection does: the first sync of
+        # an empty account. Nothing on AnkiWeb can be overwritten.
+        print("sync: AnkiWeb holds no cards — first sync of this account, uploading the collection")
+        full_transfer(col, auth, upload=True)
+    elif required in ("FULL_SYNC", "FULL_DOWNLOAD"):
+        raise RuntimeError(
+            f"AnkiWeb requires {required} after writing; refusing — its collection holds cards and "
+            "changed underneath this run. Sync desktop Anki, then re-run"
+        )
+
+
 def run_sync(args, cards: list[Card], state: RunState) -> None:
     from anki.collection import Collection  # heavy import, only when syncing
 
@@ -267,18 +317,22 @@ def run_sync(args, cards: list[Card], state: RunState) -> None:
 
     collection_path = Path(args.collection).expanduser()
     collection_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def start_over(stale):
+        stale.close()
+        for suffix in ("", "-wal", "-shm"):
+            Path(f"{collection_path}{suffix}").unlink(missing_ok=True)
+        return Collection(str(collection_path))
+
     col = Collection(str(collection_path))
     try:
-        auth = col.sync_login(username=email, password=password, endpoint=None)
+        endpoint = args.endpoint or None
+        auth = col.sync_login(username=email, password=password, endpoint=endpoint)
+        if endpoint and not auth.endpoint:
+            auth.endpoint = endpoint
 
         # 2. sync down first — never write before the collection is current.
-        out = col.sync_collection(auth, False)
-        required = sync_required_name(out)
-        if required in ("FULL_DOWNLOAD", "FULL_SYNC"):
-            print(f"sync: {required} → full download")
-            col.full_upload_or_download(auth=auth, server_usn=out.server_usn, upload=False)
-        elif required == "FULL_UPLOAD":
-            raise RuntimeError("AnkiWeb requires a full UPLOAD; refusing (resolve once in desktop Anki)")
+        col = sync_down(col, auth, start_over)
 
         # 3. deck + note type
         model = ensure_model(col, args.note_type)
@@ -297,10 +351,7 @@ def run_sync(args, cards: list[Card], state: RunState) -> None:
                 print(f"sync: {done}/{len(cards)} cards", flush=True)
 
         # 5. sync up
-        out = col.sync_collection(auth, False)
-        required = sync_required_name(out)
-        if required in ("FULL_UPLOAD", "FULL_SYNC", "FULL_DOWNLOAD"):
-            raise RuntimeError(f"AnkiWeb requires {required} after writing; refusing — re-run after resolving in desktop Anki")
+        sync_up(col, auth)
 
         # per-deck stats for the widget
         deck_id_int = int(deck_id)
@@ -325,6 +376,8 @@ def main() -> int:
     parser.add_argument("--deck", default="Japani")
     parser.add_argument("--note-type", default="Japani (Obsidian)")
     parser.add_argument("--collection", default="~/.anki-sync/collection.anki2")
+    parser.add_argument("--endpoint", default=os.environ.get("ANKI_SYNC_ENDPOINT", ""),
+                        help="sync server other than AnkiWeb (testing / self-hosted)")
     parser.add_argument("--dry-run", action="store_true", help="parse and report only; no AnkiWeb")
     args = parser.parse_args()
 
