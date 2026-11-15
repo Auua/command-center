@@ -72,6 +72,20 @@ export const EnvSchema = z
       .optional(),
     /** Fine-grained PAT, Contents read/write on that one repo. Never logged. */
     GITHUB_LEARNING_TOKEN: z.string().min(1).optional(),
+    /**
+     * Feature flag for the Anki sync surface (ADR-026): off unless `true`.
+     * Off, `GET /learning/anki-status` answers `{ configured: false }` without
+     * reading the vault, so the card footers show nothing and a red run raises
+     * no bell alert. The vault's workflow has its own switch of the same name
+     * (a repository variable) — `docs/PHASE3_SETUP.md` §4.
+     */
+    ANKI_SYNC_ENABLED: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .pipe(z.enum(['true', 'false'], { message: 'ANKI_SYNC_ENABLED must be true or false' }))
+      .default('false')
+      .transform((value) => value === 'true'),
   })
   .superRefine((env, ctx) => {
     const learningPresent = LEARNING_KEYS.filter((key) => env[key] !== undefined);
@@ -110,7 +124,19 @@ export function isLearningConfigured(env: Pick<Env, (typeof LEARNING_KEYS)[numbe
   return LEARNING_KEYS.every((key) => env[key] !== undefined);
 }
 
-const OPTIONAL_GROUP_KEYS: readonly string[] = [...SCHEDULER_KEYS, ...LEARNING_KEYS];
+/**
+ * True iff the Anki sync flag is on. Accepts the raw string too: ConfigService
+ * can fall back to process.env for a key the validator defaulted.
+ */
+export function isAnkiSyncEnabled(value: unknown): boolean {
+  return value === true || (typeof value === 'string' && value.trim().toLowerCase() === 'true');
+}
+
+const OPTIONAL_GROUP_KEYS: readonly string[] = [
+  ...SCHEDULER_KEYS,
+  ...LEARNING_KEYS,
+  'ANKI_SYNC_ENABLED',
+];
 
 export function validateEnv(config: Record<string, unknown>): Env {
   // Empty strings (an unset dashboard field, a placeholder line) count as unset.

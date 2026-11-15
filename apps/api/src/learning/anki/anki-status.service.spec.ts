@@ -1,4 +1,6 @@
 import 'reflect-metadata';
+import type { ConfigService } from '@nestjs/config';
+import type { Env } from '../../config/env';
 import type { AuthenticatedUser } from '../../auth/auth.types';
 import type { IndexCacheService } from '../index/index-cache.service';
 import type { LearningAlertsService } from '../learning-alerts.service';
@@ -27,6 +29,8 @@ const STATE = {
 
 function makeService(options: {
   configured?: boolean;
+  /** What ConfigService hands back for ANKI_SYNC_ENABLED (default: on). */
+  enabled?: unknown;
   file?: unknown;
   fileError?: Error;
   commits?: number;
@@ -46,11 +50,15 @@ function makeService(options: {
   };
   const index = { state: options.indexState ?? 'ok' } as unknown as IndexCacheService;
   const alerts = { raise: jest.fn().mockResolvedValue(undefined), clear: jest.fn() };
+  const config = {
+    get: jest.fn().mockReturnValue('enabled' in options ? options.enabled : true),
+  } as unknown as ConfigService<Env, true>;
   return {
     service: new AnkiStatusService(
       vault as unknown as VaultClient,
       index,
       alerts as unknown as LearningAlertsService,
+      config,
     ),
     alerts,
     vault,
@@ -61,6 +69,25 @@ describe('AnkiStatusService', () => {
   it('answers configured: false without the vault pair', async () => {
     const { service } = makeService({ configured: false });
     await expect(service.status(user)).resolves.toEqual({ configured: false });
+  });
+
+  it('answers configured: false with the flag off, without reading the vault or alerting', async () => {
+    for (const enabled of [false, undefined, 'false', '']) {
+      const { service, vault, alerts } = makeService({
+        enabled,
+        file: { ...STATE, lastRun: { ...STATE.lastRun, status: 'failed' }, errors: ['boom'] },
+      });
+      await expect(service.status(user)).resolves.toEqual({ configured: false });
+      expect(vault.getFile).not.toHaveBeenCalled();
+      expect(alerts.raise).not.toHaveBeenCalled();
+    }
+  });
+
+  it('reads the flag as on from the validated boolean and from a raw "true"', async () => {
+    for (const enabled of [true, 'true', ' TRUE ']) {
+      const { service } = makeService({ enabled });
+      await expect(service.status(user)).resolves.toMatchObject({ configured: true });
+    }
   });
 
   it('composes state.json with the pending commit count', async () => {

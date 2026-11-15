@@ -42,6 +42,7 @@ Secrets never live in the repo (ADR §5.2). Local dev needs two gitignored files
 | `VAPID_SUBJECT`            | `mailto:` your email (or an `https:` contact URL)                                                                                         |
 | `GITHUB_LEARNING_REPO`     | `owner/learning-center` — the Obsidian vault repo (Phase 3, ADR-024/040; optional pair, see below)                                        |
 | `GITHUB_LEARNING_TOKEN`    | fine-grained PAT, **Contents read/write on that one repo only** (runbook step 2)                                                          |
+| `ANKI_SYNC_ENABLED`        | `true` to show Anki sync status (ADR-026); unset or `false` = off, the default (see below)                                                |
 
 Every user-facing endpoint runs RLS-scoped under the caller's JWT (ADR §5.1).
 The one exception is the ADR-039 carve-out: `SUPABASE_SECRET_KEY` is the
@@ -97,6 +98,13 @@ fine-grained PAT scoped to the vault repo with Contents read/write (≤ 1 y expi
 `docs/runbook-learning-center.md` step 2). Consumed only by `LearningModule`'s vault client;
 never logged, never `NEXT_PUBLIC_*`. Unit and e2e tests never need real values — the e2e app
 blanks the pair so it can never reach GitHub.
+
+`ANKI_SYNC_ENABLED` is the **feature flag for Anki sync** and is off unless set to `true`. Off,
+`/api/v1/learning/anki-status` answers `{ "configured": false }` without reading the vault: the
+learning cards' footers show no sync line and a failed run raises no bell alert, whatever
+`sync/state.json` in the vault says. Nothing is removed — `tools/anki-sync`, the endpoint and
+the footer component stay. The sync itself runs in the vault's GitHub Actions and has its own
+switch of the same name there (a repository variable); `docs/PHASE3_SETUP.md` §4 has both.
 
 **Local dev rule:** a local API with the production pair writes real progress and day pins into
 the real vault (front-matter + `.cc/state.json`). That is by design for dogfooding, but be aware a

@@ -1,4 +1,4 @@
-import { isLearningConfigured, isSchedulerConfigured, validateEnv } from './env';
+import { isAnkiSyncEnabled, isLearningConfigured, isSchedulerConfigured, validateEnv } from './env';
 
 const VALID_ENV = {
   SUPABASE_URL: 'https://example.supabase.co',
@@ -109,6 +109,20 @@ describe('validateEnv', () => {
         GITHUB_LEARNING_TOKEN: 'x',
       }),
     ).toThrow(/owner\/name/);
+  });
+
+  it('keeps Anki sync off unless ANKI_SYNC_ENABLED is true', () => {
+    expect(validateEnv(VALID_ENV).ANKI_SYNC_ENABLED).toBe(false);
+    expect(validateEnv({ ...VALID_ENV, ANKI_SYNC_ENABLED: '' }).ANKI_SYNC_ENABLED).toBe(false);
+    expect(validateEnv({ ...VALID_ENV, ANKI_SYNC_ENABLED: 'false' }).ANKI_SYNC_ENABLED).toBe(false);
+    expect(validateEnv({ ...VALID_ENV, ANKI_SYNC_ENABLED: 'true' }).ANKI_SYNC_ENABLED).toBe(true);
+    expect(validateEnv({ ...VALID_ENV, ANKI_SYNC_ENABLED: ' True ' }).ANKI_SYNC_ENABLED).toBe(true);
+    expect(() => validateEnv({ ...VALID_ENV, ANKI_SYNC_ENABLED: 'yes' })).toThrow(
+      /ANKI_SYNC_ENABLED must be true or false/,
+    );
+    expect(isAnkiSyncEnabled(true)).toBe(true);
+    expect(isAnkiSyncEnabled('true')).toBe(true);
+    expect(isAnkiSyncEnabled(undefined)).toBe(false);
   });
 
   it('rejects a short TICK_SECRET', () => {

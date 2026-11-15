@@ -26,6 +26,10 @@ the machinery, released by moving the `anki-sync-v1` tag.
 - `requirements.txt` — the pinned `anki` version (bump deliberately; see the runbook).
 - `test_sync.py` — unit tests against a fake collection: `python3 -m unittest tools/anki-sync/test_sync.py`.
 
+The sync is behind a flag and off by default: the vault's caller job runs only while the
+repository variable `ANKI_SYNC_ENABLED` is `true`, and the API shows sync status only while its
+env var of the same name is `true` (`docs/PHASE3_SETUP.md` §4).
+
 Local dry run against a vault clone (no AnkiWeb):
 
 ```
