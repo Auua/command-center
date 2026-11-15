@@ -9,6 +9,12 @@ vi.mock('@/lib/layout-api', () => ({
   fetchLayout: vi.fn(),
   putLayout: vi.fn(),
 }));
+vi.mock('@/lib/appreciation-api', () => ({
+  fetchAppreciations: vi.fn().mockResolvedValue({ items: [] }),
+  createAppreciation: vi.fn(),
+  deleteAppreciation: vi.fn(),
+  fetchAppreciationPrompt: vi.fn().mockRejectedValue(new Error('no prompt in tests')),
+}));
 vi.mock('@/lib/braindump-api', () => ({
   fetchBraindumpNotes: vi.fn().mockResolvedValue({ items: [] }),
   createBraindumpNote: vi.fn(),

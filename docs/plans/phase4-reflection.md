@@ -23,8 +23,8 @@ Delivery is one PR per step, each leaving `main` deployable:
 
 | Step | PR                    | Ships                                                                                                             | Depends on                        |
 | ---- | --------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| 4A   | `phase4-layout-ui`    | Layout editor: `packLayout`, edit mode (move / size / remove), Add-widget picker, reset. No API change.           | ADR-042                           |
-| 4B   | `phase4-appreciation` | `AppreciationModule` (Postgres, migration 0012), server-served daily prompt, `appreciation` widget.               | 4A, ADR-017                       |
+| 4A ✓ | `phase4-layout-ui`    | Layout editor: `packLayout`, edit mode (move / size / remove), Add-widget picker, reset. No API change.           | ADR-042                           |
+| 4B ✓ | `phase4-appreciation` | `AppreciationModule` (Postgres, migration 0012), server-served daily prompt, `appreciation` widget.               | 4A, ADR-017                       |
 | 4C   | `phase4-journal`      | `JournalModule` (Mongo), TipTap editor on a `/journal` route, local-first drafts, `journal` widget.               | 4A, ADR-016                       |
 | 4D   | `phase4-calendar`     | `CalendarModule`: own events, server-expanded RRULE, shared recurrence utility, `/calendar` route, agenda widget. | 4A, ADR-018                       |
 | 4E   | `phase4-recurrence`   | Recurring tasks on the shared recurrence utility; public holidays in the calendar.                                | 4D, ADR-036, ADR-033 (+amendment) |
@@ -35,7 +35,14 @@ Delivery is one PR per step, each leaving `main` deployable:
 column of the dashboard exists before the journal's larger build. Each later step gets its own
 section here when it starts — only 4A is detailed now.
 
-## 4A — Layout editor (ADR-042)
+## 4B — Appreciation (ADR-017) ✓
+
+Built 2026-11-15. Migration `0012_appreciation.sql` (entries + seeded prompts), `AppreciationModule`
+(list / create / delete / export / prompt of the day), contracts `schemas/appreciation.ts`, widget
+`widgets/appreciation/`. Details settled in the build are recorded as an implementation note in
+ADR-017. One-time setup (the migration) is `docs/PHASE4_SETUP.md`.
+
+## 4A — Layout editor (ADR-042) ✓
 
 No backend work: `PUT /layout` already replaces the whole list.
 

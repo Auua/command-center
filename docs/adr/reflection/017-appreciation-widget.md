@@ -3,6 +3,32 @@
 - **Status:** Accepted
 - **Date:** 2026-07-13
 - **Review:** claude-reviewed, PO-reviewed
+- **Built:** 2026-11-15 as Phase 4B — see the implementation note below.
+
+> **Implementation note (2026-11-15, Phase 4B).** Built as decided, with these details settled in
+> the build:
+>
+> - **Migration `0012_appreciation.sql`:** the tag limits (≤ 5 tags of 1–24 characters) are a
+>   check constraint through an immutable `appreciation_tags_valid(text[])` function; prompts
+>   are `{ id (slug), text jsonb {"en": …}, active }` with RLS on and one `select` policy for
+>   `authenticated`, and twelve English prompts are seeded `on conflict do nothing` so a prompt
+>   edited by hand survives a re-run.
+> - **`GET /appreciation/prompts/today?locale=`** answers `{ id, text, date }` — `date` is the
+>   local day the pick was made for, in the home timezone from `ProfileModule` (UTC before it
+>   is captured); the pick is `sha256(userId|date)` over the active prompts sorted by id;
+>   `text` falls back to English; 404 when no prompt is active (the widget keeps its neutral
+>   placeholder).
+> - **The widget fetches 20 entries once** and shows `recentCount` of them; "Show more"
+>   reveals the rest without another request.
+> - **`appreciation.added` is not emitted yet:** nothing subscribes to it, and emitting makes
+>   the name a public contract (Consequences). It arrives with its first listener.
+> - **Tags:** the API accepts them; the widget has no tag input in v1, keeping capture to one
+>   line.
+> - **Default layout:** Journal does not exist yet, so the card sits after Streaks — the spot
+>   that keeps the default gap-free at 6 and 12 columns (ADR-042). It moves beside Journal when
+>   Journal lands.
+> - **Copy:** the neutral placeholder is "One small good thing…", so it does not repeat the
+>   visible label "Add an appreciation".
 
 ## Context
 

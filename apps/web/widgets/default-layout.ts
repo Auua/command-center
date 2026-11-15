@@ -15,6 +15,9 @@ const DEFAULT_ORDER: ReadonlyArray<{ widgetId: string; w: number; h: number }> =
   { widgetId: 'tasks', w: 2, h: 2 },
   { widgetId: 'reminders', w: 4, h: 2 },
   { widgetId: 'streaks', w: 2, h: 3 },
+  // ADR-017 puts appreciation beside Journal; until Journal exists it sits here,
+  // where the default stays gap-free at 6 and 12 columns.
+  { widgetId: 'appreciation', w: 2, h: 2 },
   { widgetId: 'japanese-wotd', w: 2, h: 2 },
   { widgetId: 'japanese-kanji', w: 2, h: 2 },
   { widgetId: 'japanese-grammar', w: 3, h: 2 },

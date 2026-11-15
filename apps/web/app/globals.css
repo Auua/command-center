@@ -663,6 +663,112 @@ p {
   margin-top: 1px;
 }
 
+/* ---- Appreciation widget (ADR-017) ---- */
+
+.cc-appreciation {
+  gap: 10px;
+}
+
+.cc-appreciation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cc-appreciation-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--cc-text-muted);
+}
+
+.cc-appreciation-input {
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--cc-text);
+  background: var(--cc-bg-inset);
+  border: 1px solid var(--cc-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-width: 0;
+}
+
+.cc-appreciation-input::placeholder {
+  color: var(--cc-text-faint);
+}
+
+.cc-appreciation-input:focus-visible {
+  outline: 2px solid var(--cc-wc, var(--cc-accent));
+  outline-offset: 1px;
+}
+
+.cc-appreciation-entries {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.cc-appreciation-item {
+  align-items: flex-start;
+  padding: 7px 0;
+}
+
+.cc-appreciation-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cc-appreciation-item-text {
+  margin: 0;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.cc-appreciation-item-time {
+  display: block;
+  color: var(--cc-text-muted);
+  font-size: 11px;
+  margin-top: 1px;
+}
+
+.cc-appreciation-item-pending .cc-appreciation-item-text {
+  color: var(--cc-text-muted);
+}
+
+.cc-appreciation-more {
+  align-self: flex-start;
+}
+
+.cc-appreciation-undo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--cc-text-muted);
+  background: var(--cc-bg-inset);
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  padding: 4px 6px 4px 12px;
+}
+
+.cc-appreciation-undo > span {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cc-appreciation-item-pending {
+    animation: cc-appreciation-in 0.25s ease-out;
+  }
+
+  @keyframes cc-appreciation-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+}
+
 /* ---- Tasks widget ----
    Translation of the mock's "Today's tasks" card (.task-list/.task/.cbx/
    .pill/.due/.quick-add). */
