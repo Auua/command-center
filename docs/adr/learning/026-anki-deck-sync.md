@@ -26,6 +26,21 @@
 > upsert reads the note type's notes once instead of searching per card, which was quadratic at
 > this size.
 
+> **Amended 2026-11-15 (product-owner decision at the first production sync).** The
+> never-full-upload rule gains one exception. The AnkiWeb account in the secrets was new and held
+> no collection, so the first run could only end in a full upload, which the rule refused; an
+> empty desktop profile cannot seed the account either (it has nothing to upload). The rule
+> exists to protect cards and review history on AnkiWeb, and here there are none: the `anki`
+> library reports `FULL_UPLOAD` (upload possible, download not) only when the server holds zero
+> cards and the local collection holds some. **In exactly that case the action uploads** — the
+> first sync of an empty account. Every other full sync after writing (`FULL_SYNC`: both sides
+> hold cards and the schema diverged) still fails the run red. Before writing, a required full
+> sync is always answered with a download, and a cached collection that asks to upload (the
+> leftover of a run that died before syncing up) is discarded rather than trusted; the cache is
+> saved only after a successful run. Residual risk, accepted: a desktop collection that was
+> never synced to this account will meet Anki's own upload-or-download prompt on its first sync
+> — a visible choice, not a silent overwrite.
+
 ## Context
 
 Two live Anki decks — **Japanese** and **Tech** — must stay available on every device.

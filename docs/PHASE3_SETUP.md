@@ -87,16 +87,13 @@ lists `instance_key`; `select * from public.streaks;` returns an empty set, not 
 - **"GitHub token expired":** rotate the PAT (runbook step 2); the bell also carries a row.
 - **anki-sync red in "Set up job" with "unable to find version `anki-sync-v1`":** the release
   tag was never pushed (step 4.2) — the vault's workflow pins the action by that tag.
-- **anki-sync red with "requires FULL_UPLOAD" / "full UPLOAD required":** correct behaviour
-  (ADR-026's guard — a runner never overwrites a collection). Two causes, one fix:
-  - _The AnkiWeb account has never been synced_ (a new account, or a desktop collection that
-    only lives on the computer). The first run then logs in, finds nothing to download, builds
-    every note locally and is refused at the upload. Nothing reaches AnkiWeb.
-  - _The schema changed in desktop Anki_ (a note type was edited) since the last sync.
-
-  Fix: open desktop Anki signed in to the same AnkiWeb account, press Sync and let it upload
-  once, then re-run the workflow. The next run downloads that collection and adds the notes
-  with an ordinary sync.
+- **First run against a new AnkiWeb account:** nothing to prepare. The run finds no collection
+  to download, builds every note and uploads the collection — the one full upload the action
+  performs, allowed only because AnkiWeb holds no cards (ADR-026 as amended 2026-11-15). The log
+  says "AnkiWeb holds no cards — first sync of this account".
+- **anki-sync red with "requires FULL_SYNC after writing":** correct behaviour (ADR-026's guard
+  — a runner never uploads over cards). AnkiWeb's collection changed its schema while the run
+  was writing (a note type edited in desktop Anki). Sync desktop Anki, then re-run the workflow.
 
 - **anki-sync red with "lacks fields":** the existing note type's field names differ from
   `UID/Front/Back/Source`; rename them in Anki (Tools → Manage Note Types) to match the TSV

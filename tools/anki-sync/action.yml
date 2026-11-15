@@ -2,7 +2,8 @@ name: anki-sync
 description: >
   Sync the learning-center vault's `## Kortit` cards to AnkiWeb (ADR-026 as
   amended by ADR-040). Runs in the vault checkout; sync down → upsert → sync
-  up → write sync/state.json → commit it. Never full-uploads.
+  up → write sync/state.json → commit it. Never uploads over cards on AnkiWeb:
+  the one full upload it performs is the first sync of an account with none.
 inputs:
   ankiweb-email:
     description: AnkiWeb account email (repo secret)
@@ -66,8 +67,10 @@ runs:
           --note-type "${{ inputs.note-type }}"
         echo "exit=$?" >> "$GITHUB_OUTPUT"
 
+    # Only a collection that reached AnkiWeb is worth keeping: caching a failed
+    # run's copy hands the next run notes the server never received.
     - name: Save the collection for the next run
-      if: always()
+      if: always() && steps.sync.outputs.exit == '0'
       uses: actions/cache/save@v4
       with:
         path: ~/.anki-sync

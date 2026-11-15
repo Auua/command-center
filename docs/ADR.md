@@ -407,7 +407,7 @@ never disagree (ADR-015).
 
 **Smart reminder ("after finishing a task"):** `TasksModule` marks task complete → emits `task.completed` → `AutomationModule` matches event-kind automations → dispatches inline through the same claim → bell → push tail, with slot = the event timestamp (ADR-039 — no tick hop, delivery is immediate).
 
-**Anki integration (ADR-024/026):** the backend never talks to Anki, and neither does the browser. every vault note carries a `## Kortit` card (ADR-040); the learning repo's GitHub Action parses them and runs the official `anki` library against AnkiWeb — sync down, upsert notes keyed on the vault's sha1 UID (guid = UID, note type `Japani (Obsidian)`), sync up (**never full-upload** — a CI runner must never overwrite mobile review history), then commit results and deck stats to `sync/state.json`, which the API reads for the status surface. AnkiWeb credentials live only in the learning repo's Actions secrets, never on our hosts.
+**Anki integration (ADR-024/026):** the backend never talks to Anki, and neither does the browser. every vault note carries a `## Kortit` card (ADR-040); the learning repo's GitHub Action parses them and runs the official `anki` library against AnkiWeb — sync down, upsert notes keyed on the vault's sha1 UID (guid = UID, note type `Japani (Obsidian)`), sync up (**never a full upload over cards on AnkiWeb** — a CI runner must never overwrite mobile review history; the one upload it performs is the first sync of an account that holds none, ADR-026 as amended 2026-11-15), then commit results and deck stats to `sync/state.json`, which the API reads for the status surface. AnkiWeb credentials live only in the learning repo's Actions secrets, never on our hosts.
 
 ---
 
