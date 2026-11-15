@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   SyncStateFileSchema,
   type AnkiStatusResponse,
   type SyncStateFile,
 } from '@command-center/contracts';
 import type { AuthenticatedUser } from '../../auth/auth.types';
+import { isAnkiSyncEnabled, type Env } from '../../config/env';
 import { IndexCacheService } from '../index/index-cache.service';
 import { LearningAlertsService } from '../learning-alerts.service';
 import { VaultClient, VaultNotFoundError, VaultTokenInvalidError } from '../vault/vault.client';
@@ -25,20 +27,28 @@ interface Cached {
  * from the vault's `sync/state.json` (written only by the anki-sync Action)
  * plus a commits count for "N waiting for sync", both cached ~60 s. A failed
  * run surfaces in the bell as a learning alert.
+ *
+ * The whole surface sits behind `ANKI_SYNC_ENABLED` (off by default): off, it
+ * answers `{ configured: false }` and never touches the vault, whatever a
+ * leftover `sync/state.json` says.
  */
 @Injectable()
 export class AnkiStatusService {
   private readonly logger = new Logger(AnkiStatusService.name);
   private cached: Cached | null = null;
+  private readonly enabled: boolean;
 
   constructor(
     private readonly vault: VaultClient,
     private readonly index: IndexCacheService,
     private readonly alerts: LearningAlertsService,
-  ) {}
+    configService: ConfigService<Env, true>,
+  ) {
+    this.enabled = isAnkiSyncEnabled(configService.get('ANKI_SYNC_ENABLED', { infer: true }));
+  }
 
   async status(user: AuthenticatedUser): Promise<AnkiStatusResponse> {
-    if (!this.vault.configured) return { configured: false };
+    if (!this.enabled || !this.vault.configured) return { configured: false };
     let snapshot: Cached;
     try {
       snapshot = await this.read();

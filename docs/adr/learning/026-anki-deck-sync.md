@@ -41,6 +41,11 @@
 > never synced to this account will meet Anki's own upload-or-download prompt on its first sync
 > — a visible choice, not a silent overwrite.
 
+> **Switchable (2026-11-15).** The sync is behind a feature flag named `ANKI_SYNC_ENABLED`, off
+> by default, so the machinery can stay in place while unused: a repository variable gates the
+> vault's caller job, and the API env var of the same name gates the status surface
+> (`{ configured: false }` when off — no footer line, no bell alert).
+
 ## Context
 
 Two live Anki decks — **Japanese** and **Tech** — must stay available on every device.

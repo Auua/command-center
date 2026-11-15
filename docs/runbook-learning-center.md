@@ -125,6 +125,8 @@ permissions:
   contents: write
 jobs:
   sync:
+    # Feature flag: runs only while the repository variable ANKI_SYNC_ENABLED is 'true'.
+    if: vars.ANKI_SYNC_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

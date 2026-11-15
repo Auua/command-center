@@ -41,6 +41,18 @@ lists `instance_key`; `select * from public.streaks;` returns an empty set, not 
 
 ## 4. AnkiWeb sync (ADR-026 as amended by ADR-040)
 
+**Anki sync is switched off by default, in two places with the same name.** Everything below
+can be set up and left dormant.
+
+| Switch              | Where                                                                                     | Off (unset / not `true`)                                            |
+| ------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `ANKI_SYNC_ENABLED` | learning-center → Settings → Secrets and variables → Actions → **Variables** (repository) | the `anki-sync` workflow's job is skipped: no run, no AnkiWeb       |
+| `ANKI_SYNC_ENABLED` | Vercel → API project → Environment Variables (then redeploy)                              | the app shows no sync status and raises no "Anki sync failed" alert |
+
+To use the sync, set both to `true`; to pause it, delete them or set `false`. Turn the vault
+one off first when pausing, and on last when resuming, so the app never reports on a sync that
+is not running.
+
 1. **Allow the private action to be used from the vault repo:** command-center → Settings →
    Actions → General → Access → "Accessible from repositories owned by the user". Without this
    the vault's workflow fails at `uses:` with "repository not found". (The setting exists only
