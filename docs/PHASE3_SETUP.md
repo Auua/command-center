@@ -91,6 +91,10 @@ lists `instance_key`; `select * from public.streaks;` returns an empty set, not 
   to download, builds every note and uploads the collection — the one full upload the action
   performs, allowed only because AnkiWeb holds no cards (ADR-026 as amended 2026-11-15). The log
   says "AnkiWeb holds no cards — first sync of this account".
+- **anki-sync red with `HttpError … "missing original size"` (or code 308) during a full upload
+  or download:** the transfer went to AnkiWeb's default host instead of the account's own.
+  Fixed in `tools/anki-sync` on 2026-11-15 — make sure the `anki-sync-v1` tag is at or after
+  that commit.
 - **anki-sync red with "requires FULL_SYNC after writing":** correct behaviour (ADR-026's guard
   — a runner never uploads over cards). AnkiWeb's collection changed its schema while the run
   was writing (a note type edited in desktop Anki). Sync desktop Anki, then re-run the workflow.

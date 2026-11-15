@@ -264,6 +264,22 @@ def sync_required_name(out) -> str:
         return str(required)
 
 
+def sync_round(col, auth) -> str:
+    """One ordinary sync; returns what the server requires next.
+
+    AnkiWeb answers the first request with the account's own sync host. The
+    ordinary sync follows that by itself, but a full upload or download does
+    not — it goes wherever `auth` points — so the new host is kept on `auth`,
+    as the desktop client keeps it in the profile.
+    """
+    out = col.sync_collection(auth, False)
+    moved_to = getattr(out, "new_endpoint", "")
+    if moved_to:
+        auth.endpoint = moved_to
+        print(f"sync: this account syncs with {moved_to}")
+    return sync_required_name(out)
+
+
 def full_transfer(col, auth, upload: bool) -> None:
     """One full upload or download, framed the way the desktop client does it."""
     col.close_for_full_sync()
@@ -276,13 +292,13 @@ def full_transfer(col, auth, upload: bool) -> None:
 
 def sync_down(col, auth, start_over):
     """Step 2: make the local collection current. Returns the collection to use."""
-    required = sync_required_name(col.sync_collection(auth, False))
+    required = sync_round(col, auth)
     if required == "FULL_UPLOAD":
         # Only a local collection holding cards the server never received asks
         # for this — here, the cache of a run that died before syncing up.
         print("sync: the cached collection was never synced up — starting from an empty one")
         col = start_over(col)
-        required = sync_required_name(col.sync_collection(auth, False))
+        required = sync_round(col, auth)
     if required in ("FULL_DOWNLOAD", "FULL_SYNC"):
         print(f"sync: {required} → full download")
         full_transfer(col, auth, upload=False)
@@ -293,7 +309,7 @@ def sync_down(col, auth, start_over):
 
 def sync_up(col, auth) -> None:
     """Step 5: send what was written."""
-    required = sync_required_name(col.sync_collection(auth, False))
+    required = sync_round(col, auth)
     if required == "FULL_UPLOAD":
         # anki reports FULL_UPLOAD (upload possible, download not) only when the
         # server holds no cards and the local collection does: the first sync of
