@@ -180,7 +180,7 @@ Vault secrets `ANKIWEB_EMAIL`/`ANKIWEB_PASSWORD` are the product owner's step.
 ADR-041 accepted and built 2026-11-14 (`docs/adr/learning/041-japanese-kanji-widget.md`). Selection
 is WOTD's over the kanji shard (seed `|kanji`); linked words come from the vocab/verb records'
 `kanji` wikilinks at index load (no `words[]` field); the mnemonic is an optional additive
-`mnemonic` index field the vault's `cc_index.py` still has to emit (runbook step 6 note);
+`mnemonic` index field the vault's `cc_index.py` emits since 2026-11-15 (runbook step 6 note);
 `kanji.acknowledged` → streak key `japanese-kanji`. The widget was built on the shared widget
 primitives added to `@command-center/ui` in the same PR, and every earlier widget was moved onto
 them.

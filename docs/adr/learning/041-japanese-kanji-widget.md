@@ -191,6 +191,12 @@ vocab/verb shards; the mnemonic is an additive index field. The app never touche
 - **Vault hygiene surfaced:** 2 kun-only kanji are skipped by the indexer because `onyomi` is
   required; the fix is `onyomi: []` in those notes, or relaxing `REQUIRED` — a vault decision,
   recorded here so the manifest's `skipped.kanji: 2` is understood.
+- **Vault side closed (2026-11-15, vault PR #4):** `cc_index.py` emits `mnemonic` (527 of the
+  2 288 kanji notes have one; the rest are `null`), as plain text with the note's line breaks
+  kept — the card renders it `white-space: pre-line`. The skipped kanji turned out to be eight,
+  all already carrying `onyomi: []`: the indexer treated the empty list as missing. It now
+  accepts an empty `onyomi`, so `skipped.kanji` is 0 and kun-only kanji are eligible like any
+  other.
 - **Docs applied at acceptance (2026-11-14):** ADR-014 — header note adding `kanji.acknowledged`
   → `japanese-kanji` to the learning sources; ADR-040 — kind table row `japanese-kanji` points
   here, and the index record shape gains the optional `mnemonic`; `docs/ADR.md` §7 row 041;
