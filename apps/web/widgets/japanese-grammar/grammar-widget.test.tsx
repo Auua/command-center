@@ -46,8 +46,8 @@ const ITEM = {
   status: 'new',
   confidence: 1,
   examples: [
-    { ja: '春になると、花が咲きます。', fi: 'Kun tulee kevät, kukat kukkivat.' },
-    { ja: 'ボタンを押すと、水が出ます。', fi: 'Kun painat nappia, vesi tulee.' },
+    { ja: '春になると、花が咲きます。', fi: 'Kun tulee kevät, kukat kukkivat.', en: null },
+    { ja: 'ボタンを押すと、水が出ます。', fi: 'Kun painat nappia, vesi tulee.', en: null },
   ],
   sourceUrl: 'https://github.com/auua/learning-center/blob/main/x.md',
 };

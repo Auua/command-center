@@ -28,6 +28,7 @@ import {
 import { AnkiSyncStatus } from '@/components/anki-sync-status';
 import { LearningState } from '@/components/learning-state';
 import { StreakPill } from '@/components/streak-pill';
+import { exampleTranslation } from '@/lib/example-translation';
 import { t } from '@/lib/i18n';
 import { advanceGrammar, fetchGrammarToday, studyGrammar } from '@/lib/learning-api';
 import { STREAKS_QUERY_KEY } from '@/lib/use-streaks';
@@ -56,16 +57,24 @@ function Examples({
   const [revealed, setRevealed] = useState(false);
   const examples = item.examples.slice(0, count);
   if (examples.length === 0) return <Hint>{t('learning.noExample')}</Hint>;
-  const showFi = reveal === 'always' || revealed;
+  const showTranslation = reveal === 'always' || revealed;
+  const translations = examples.map(exampleTranslation);
   return (
     <div className="cc-examples">
-      {examples.map((example) => (
-        <div key={example.ja} className="cc-example">
-          <p lang="ja">{example.ja}</p>
-          {example.fi && showFi && <p className="cc-example-fi">{example.fi}</p>}
-        </div>
-      ))}
-      {reveal === 'tap' && examples.some((example) => example.fi) && (
+      {examples.map((example, index) => {
+        const translation = translations[index];
+        return (
+          <div key={example.ja} className="cc-example">
+            <p lang="ja">{example.ja}</p>
+            {translation && showTranslation && (
+              <p className="cc-example-fi" lang={translation.lang}>
+                {translation.text}
+              </p>
+            )}
+          </div>
+        );
+      })}
+      {reveal === 'tap' && translations.some(Boolean) && (
         <Button
           variant="link"
           size="sm"

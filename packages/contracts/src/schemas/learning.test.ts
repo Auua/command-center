@@ -49,6 +49,23 @@ describe('IndexRecordSchema', () => {
     expect((parsed as Record<string, unknown>).pitch).toEqual([]);
   });
 
+  it('defaults an example without the en field to null and keeps an inline one', () => {
+    const parsed = IndexRecordSchema.parse(vocabLine);
+    expect(parsed.examples[0]?.en).toBeNull();
+    const inline = IndexRecordSchema.parse({
+      ...vocabLine,
+      examples: [
+        {
+          ja: '今日は何曜日ですか。',
+          fi: null,
+          en: 'What day is it today?',
+          ref: '何曜日#Esimerkit',
+        },
+      ],
+    });
+    expect(inline.examples[0]?.en).toBe('What day is it today?');
+  });
+
   it('parses the other kinds by their discriminator', () => {
     expect(
       IndexRecordSchema.parse({

@@ -35,7 +35,7 @@ const ITEM = {
   transitivity: 'intransitive',
   status: 'new',
   confidence: 1,
-  examples: [{ ja: '試合に負けました。', fi: 'Hävisin ottelun.' }],
+  examples: [{ ja: '試合に負けました。', fi: 'Hävisin ottelun.', en: null }],
   sourceUrl: 'https://github.com/auua/learning-center/blob/main/x.md',
 };
 
@@ -87,6 +87,20 @@ describe('needsRuby / pickMeaning', () => {
 });
 
 describe('WotdWidget', () => {
+  it('shows an English example translation when the note has no Finnish one', async () => {
+    fetchMock.mockResolvedValue(
+      ok({
+        item: {
+          ...ITEM,
+          examples: [{ ja: '試合に負けました。', fi: null, en: 'I lost the match.' }],
+        },
+      }),
+    );
+    renderWidget();
+
+    expect(await screen.findByText('I lost the match.')).toHaveAttribute('lang', 'en');
+  });
+
   it('renders the word with furigana, the Finnish meaning, and the example', async () => {
     fetchMock.mockResolvedValue(ok());
     renderWidget();
