@@ -43,15 +43,7 @@ export function CheckIcon(props: IconProps = {}): ReactElement {
   );
 }
 
-export function SkipIcon(props: IconProps = {}): ReactElement {
-  return (
-    <Svg {...props}>
-      <path d="M5 4l10 8-10 8z" />
-      <path d="M19 5v14" />
-    </Svg>
-  );
-}
-
+/** The one "move on" glyph: skip / next / already-knew-it share it (ADR §4.2). */
 export function NextIcon(props: IconProps = {}): ReactElement {
   return (
     <Svg {...props}>

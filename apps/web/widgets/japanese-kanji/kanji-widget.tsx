@@ -17,7 +17,7 @@ import {
   ChipRow,
   DoneState,
   Hint,
-  SkipIcon,
+  NextIcon,
   SourceLink,
   useAnnouncer,
   useQuickAction,
@@ -265,6 +265,7 @@ export function KanjiWidget({ settings, size }: WidgetProps<KanjiSettings>): Rea
             <>
               <Button
                 icon={<CheckIcon />}
+                title={t('kanji.acknowledge.hint')}
                 onClick={acknowledge}
                 disabled={busy}
                 busy={acknowledgeMutation.isPending}
@@ -273,7 +274,8 @@ export function KanjiWidget({ settings, size }: WidgetProps<KanjiSettings>): Rea
               </Button>
               <Button
                 variant="ghost"
-                icon={<SkipIcon />}
+                icon={<NextIcon />}
+                title={t('kanji.skip.hint')}
                 onClick={skip}
                 disabled={busy}
                 busy={skipMutation.isPending}

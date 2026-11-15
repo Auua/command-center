@@ -1,6 +1,6 @@
-import type { WidgetDefinition } from '@command-center/ui';
+import { CheckIcon, NextIcon, type WidgetDefinition } from '@command-center/ui';
 import { t } from '@/lib/i18n';
-import { checkIcon, grammarIcon, nextIcon } from './icon';
+import { grammarIcon } from './icon';
 import { GrammarWidget, grammarSettingsSchema, type GrammarSettings } from './grammar-widget';
 
 export const grammarWidgetDefinition: WidgetDefinition<GrammarSettings> = {
@@ -16,7 +16,17 @@ export const grammarWidgetDefinition: WidgetDefinition<GrammarSettings> = {
   settingsSchema: grammarSettingsSchema,
   defaultSettings: {},
   quickActions: [
-    { id: 'grammar-studied', label: t('grammar.studied'), icon: checkIcon() },
-    { id: 'grammar-advance', label: t('grammar.next'), icon: nextIcon() },
+    {
+      id: 'grammar-studied',
+      label: t('grammar.studied'),
+      description: t('grammar.studied.hint'),
+      icon: CheckIcon(),
+    },
+    {
+      id: 'grammar-advance',
+      label: t('grammar.next'),
+      description: t('grammar.next.hint'),
+      icon: NextIcon(),
+    },
   ],
 };

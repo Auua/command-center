@@ -17,7 +17,7 @@ import {
   ChipRow,
   DoneState,
   Hint,
-  SkipIcon,
+  NextIcon,
   SourceLink,
   useAnnouncer,
   useQuickAction,
@@ -201,6 +201,7 @@ export function WotdWidget({ settings }: WidgetProps<WotdSettings>): ReactElemen
             <>
               <Button
                 icon={<CheckIcon />}
+                title={t('wotd.acknowledge.hint')}
                 onClick={acknowledge}
                 disabled={busy}
                 busy={acknowledgeMutation.isPending}
@@ -209,7 +210,8 @@ export function WotdWidget({ settings }: WidgetProps<WotdSettings>): ReactElemen
               </Button>
               <Button
                 variant="ghost"
-                icon={<SkipIcon />}
+                icon={<NextIcon />}
+                title={t('wotd.skip.hint')}
                 onClick={skip}
                 disabled={busy}
                 busy={skipMutation.isPending}

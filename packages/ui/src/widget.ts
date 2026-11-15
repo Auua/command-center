@@ -16,6 +16,12 @@ export interface QuickAction {
    * text inside the header button; the label becomes the aria-label.
    */
   icon?: ReactNode;
+  /**
+   * One-line explanation shown as the button's native tooltip on hover
+   * (falls back to the label). Icon-only header buttons need it: the glyph
+   * alone does not tell a new user what "skip" does to their progress.
+   */
+  description?: string;
 }
 
 export interface WidgetProps<TSettings = unknown> {

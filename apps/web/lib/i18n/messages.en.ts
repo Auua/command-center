@@ -68,6 +68,8 @@ export const messages = {
   'common.retry': 'Try again',
 
   'kanji.acknowledge': 'Learned it',
+  'kanji.acknowledge.hint':
+    'Mark today’s kanji learned and count it towards your streak. A new kanji comes tomorrow.',
   'kanji.acknowledged.announce': 'Marked learned — next kanji tomorrow.',
   'kanji.acknowledged.state': 'Learned — next kanji tomorrow',
   'kanji.components': 'Parts',
@@ -79,6 +81,7 @@ export const messages = {
   'kanji.noWords': 'No linked words yet.',
   'kanji.onyomi': 'on',
   'kanji.skip': 'Already knew it',
+  'kanji.skip.hint': 'Mark this kanji as already known and show a different one right now.',
   'kanji.skipped.announce': 'Marked known. New kanji: {kanji}.',
   'kanji.strokes': '{count} strokes',
   'kanji.title': 'Kanji of the day',
@@ -195,10 +198,13 @@ export const messages = {
   'grammar.exhausted': 'Nothing left under this JLPT ceiling — raise it in settings.',
   'grammar.hideTranslation': 'Hide translation',
   'grammar.next': 'Next point',
+  'grammar.next.hint': 'Show the next grammar point now, without marking this one studied.',
   'grammar.progress': '{level} · {seen}/{total} seen',
   'grammar.review': 'Review',
   'grammar.showTranslation': 'Show translation',
   'grammar.studied': 'Mark studied',
+  'grammar.studied.hint':
+    'Mark today’s grammar point studied and count it towards your streak. The next point comes tomorrow.',
   'grammar.studied.announce': 'Marked studied — next point tomorrow.',
   'grammar.studied.state': 'Studied — next point tomorrow',
   'grammar.title': 'Grammar point',
@@ -237,6 +243,8 @@ export const messages = {
   'shell.unknownWidget': 'Unknown widget "{id}". It may have been removed or not registered yet.',
 
   'wotd.acknowledge': 'Learned it',
+  'wotd.acknowledge.hint':
+    'Mark today’s word learned and count it towards your streak. A new word comes tomorrow.',
   'wotd.acknowledged.announce': 'Marked learned — next word tomorrow.',
   'wotd.acknowledged.state': 'Learned — next word tomorrow',
   'wotd.error.load': 'Couldn’t load today’s word.',
@@ -245,6 +253,7 @@ export const messages = {
   'wotd.kind.verb': 'verb',
   'wotd.kind.vocab': 'word',
   'wotd.skip': 'Already knew it',
+  'wotd.skip.hint': 'Mark this word as already known and show a different one right now.',
   'wotd.skipped.announce': 'Marked known. New word: {word}.',
   'wotd.title': 'Word of the day',
 } as const satisfies Record<string, string>;
