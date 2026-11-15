@@ -1524,6 +1524,8 @@ p {
 
 .cc-kanji-mnemonic {
   margin: 0;
+  /* The index keeps the note's line breaks and joins paragraphs with a blank line. */
+  white-space: pre-line;
   border-left: 3px solid color-mix(in srgb, var(--cc-wc, var(--cc-accent)) 45%, transparent);
   padding-left: 10px;
   font-size: 0.9rem;
