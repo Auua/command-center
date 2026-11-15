@@ -87,8 +87,17 @@ lists `instance_key`; `select * from public.streaks;` returns an empty set, not 
 - **"GitHub token expired":** rotate the PAT (runbook step 2); the bell also carries a row.
 - **anki-sync red in "Set up job" with "unable to find version `anki-sync-v1`":** the release
   tag was never pushed (step 4.2) — the vault's workflow pins the action by that tag.
-- **anki-sync red with "full UPLOAD required":** correct behaviour (ADR-026's guard); open
-  desktop Anki, resolve the full-sync prompt there once, re-run the workflow.
+- **anki-sync red with "requires FULL_UPLOAD" / "full UPLOAD required":** correct behaviour
+  (ADR-026's guard — a runner never overwrites a collection). Two causes, one fix:
+  - _The AnkiWeb account has never been synced_ (a new account, or a desktop collection that
+    only lives on the computer). The first run then logs in, finds nothing to download, builds
+    every note locally and is refused at the upload. Nothing reaches AnkiWeb.
+  - _The schema changed in desktop Anki_ (a note type was edited) since the last sync.
+
+  Fix: open desktop Anki signed in to the same AnkiWeb account, press Sync and let it upload
+  once, then re-run the workflow. The next run downloads that collection and adds the notes
+  with an ordinary sync.
+
 - **anki-sync red with "lacks fields":** the existing note type's field names differ from
   `UID/Front/Back/Source`; rename them in Anki (Tools → Manage Note Types) to match the TSV
   import the vault's `sr_to_anki.py` already targets.
