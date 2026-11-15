@@ -1,6 +1,6 @@
-import type { WidgetDefinition } from '@command-center/ui';
+import { CheckIcon, NextIcon, type WidgetDefinition } from '@command-center/ui';
 import { t } from '@/lib/i18n';
-import { checkIcon, skipIcon, wotdIcon } from './icon';
+import { wotdIcon } from './icon';
 import { WotdWidget, wotdSettingsSchema, type WotdSettings } from './wotd-widget';
 
 export const wotdWidgetDefinition: WidgetDefinition<WotdSettings> = {
@@ -16,7 +16,12 @@ export const wotdWidgetDefinition: WidgetDefinition<WotdSettings> = {
   settingsSchema: wotdSettingsSchema,
   defaultSettings: {},
   quickActions: [
-    { id: 'wotd-acknowledge', label: t('wotd.acknowledge'), icon: checkIcon() },
-    { id: 'wotd-skip', label: t('wotd.skip'), icon: skipIcon() },
+    {
+      id: 'wotd-acknowledge',
+      label: t('wotd.acknowledge'),
+      description: t('wotd.acknowledge.hint'),
+      icon: CheckIcon(),
+    },
+    { id: 'wotd-skip', label: t('wotd.skip'), description: t('wotd.skip.hint'), icon: NextIcon() },
   ],
 };

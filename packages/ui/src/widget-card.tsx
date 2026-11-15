@@ -76,6 +76,7 @@ export function WidgetCard({
                 type="button"
                 className="cc-widget-card-action"
                 aria-label={action.label}
+                title={action.description ?? action.label}
                 onClick={() => bus.dispatch(action.id)}
               >
                 {action.icon ? <span aria-hidden="true">{action.icon}</span> : action.label}
@@ -86,6 +87,7 @@ export function WidgetCard({
                 type="button"
                 className="cc-widget-card-action cc-widget-card-settings"
                 aria-label={settingsLabel ?? `Settings for ${title}`}
+                title={settingsLabel ?? `Settings for ${title}`}
                 aria-haspopup="dialog"
                 onClick={onOpenSettings}
               >

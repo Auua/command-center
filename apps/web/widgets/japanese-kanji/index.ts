@@ -1,4 +1,4 @@
-import { CheckIcon, SkipIcon, type WidgetDefinition } from '@command-center/ui';
+import { CheckIcon, NextIcon, type WidgetDefinition } from '@command-center/ui';
 import { t } from '@/lib/i18n';
 import { kanjiIcon } from './icon';
 import { KanjiWidget, kanjiSettingsSchema, type KanjiSettings } from './kanji-widget';
@@ -17,7 +17,17 @@ export const kanjiWidgetDefinition: WidgetDefinition<KanjiSettings> = {
   settingsSchema: kanjiSettingsSchema,
   defaultSettings: {},
   quickActions: [
-    { id: 'kanji-acknowledge', label: t('kanji.acknowledge'), icon: CheckIcon() },
-    { id: 'kanji-skip', label: t('kanji.skip'), icon: SkipIcon() },
+    {
+      id: 'kanji-acknowledge',
+      label: t('kanji.acknowledge'),
+      description: t('kanji.acknowledge.hint'),
+      icon: CheckIcon(),
+    },
+    {
+      id: 'kanji-skip',
+      label: t('kanji.skip'),
+      description: t('kanji.skip.hint'),
+      icon: NextIcon(),
+    },
   ],
 };

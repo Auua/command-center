@@ -195,6 +195,7 @@ export function GrammarWidget({ settings, size }: WidgetProps<GrammarSettings>):
           ) : (
             <Button
               icon={<CheckIcon />}
+              title={t('grammar.studied.hint')}
               onClick={study}
               disabled={busy}
               busy={studyMutation.isPending}
@@ -205,6 +206,7 @@ export function GrammarWidget({ settings, size }: WidgetProps<GrammarSettings>):
           <Button
             variant="ghost"
             icon={<NextIcon />}
+            title={t('grammar.next.hint')}
             onClick={advance}
             disabled={busy}
             busy={advanceMutation.isPending}

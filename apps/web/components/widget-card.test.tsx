@@ -45,6 +45,28 @@ describe('WidgetCard quickActions', () => {
     expect(screen.getByRole('button', { name: 'Add reminder' })).toBeInTheDocument();
   });
 
+  it('explains icon-only header buttons on hover via the description', () => {
+    render(
+      <WidgetCard
+        title="Word of the day"
+        quickActions={[
+          { id: 'skip', label: 'Already knew it', description: 'Show a different word now.' },
+          { id: 'ack', label: 'Learned it' },
+        ]}
+      >
+        <p>body</p>
+      </WidgetCard>,
+    );
+    expect(screen.getByRole('button', { name: 'Already knew it' })).toHaveAttribute(
+      'title',
+      'Show a different word now.',
+    );
+    expect(screen.getByRole('button', { name: 'Learned it' })).toHaveAttribute(
+      'title',
+      'Learned it',
+    );
+  });
+
   it('dispatches the action to a widget-body subscriber on click', async () => {
     const user = userEvent.setup();
     const handler = vi.fn();
