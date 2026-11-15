@@ -64,6 +64,11 @@ No backend work: `PUT /layout` already replaces the whole list.
 - Copy under `layout.*` in the i18n catalog; announcements through `useAnnouncer`.
 - Styles in `globals.css` using the shared button/chip primitives — no per-widget CSS.
 
+**Added after the first review (2026-11-15, PO):** the column count follows the width —
+`columnsForWidth` (columns ≥ 160 px, even, 4–12) + a `ResizeObserver` hook; the page width cap
+goes from 1240 px to 2400 px. Rendering always packs the ordered list at the measured count;
+saves stay packed at the reference 6.
+
 ### Tests
 
 - `packLayout`: mixed sizes, a card that does not fit the row, no back-fill, clamp to grid width,

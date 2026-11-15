@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { GRID_COLUMNS, moveItem, orderOfLayout, packLayout } from '@command-center/ui';
+import {
+  columnsForWidth,
+  GRID_COLUMNS,
+  MAX_GRID_COLUMNS,
+  MIN_GRID_COLUMNS,
+  moveItem,
+  orderOfLayout,
+  packLayout,
+} from '@command-center/ui';
 
 interface Item {
   id: string;
@@ -142,6 +150,57 @@ describe('moveItem', () => {
       const result = moveItem(list, from, to);
       expect(result).toEqual(list);
       expect(result).not.toBe(list);
+    }
+  });
+});
+
+describe('columnsForWidth', () => {
+  const GAP = 18;
+
+  it('fits as many columns as keep each at least 160 px wide', () => {
+    // 1240 px page minus padding: the old fixed width, still six columns.
+    expect(columnsForWidth(1184, GAP)).toBe(6);
+    // Wider screens get more cards per row.
+    expect(columnsForWidth(1657, GAP)).toBe(8);
+    expect(columnsForWidth(1864, GAP)).toBe(10);
+    expect(columnsForWidth(2300, GAP)).toBe(12);
+  });
+
+  it('rounds down to an even count, so rows of 2- and 4-wide cards end flush', () => {
+    // 1384 px fits 7 columns of 160 px; 6 are used, each a little wider.
+    expect(columnsForWidth(1384, GAP)).toBe(6);
+    expect(columnsForWidth(1657, GAP)).toBe(8); // fits 9
+    for (let width = 600; width <= 3000; width += 37) {
+      expect(columnsForWidth(width, GAP) % 2).toBe(0);
+    }
+  });
+
+  it('never goes below the widest declared size or above the cap', () => {
+    expect(columnsForWidth(500, GAP)).toBe(MIN_GRID_COLUMNS);
+    expect(columnsForWidth(5000, GAP)).toBe(MAX_GRID_COLUMNS);
+  });
+
+  it('answers the reference width when the width is unknown', () => {
+    for (const width of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(columnsForWidth(width, GAP)).toBe(GRID_COLUMNS);
+    }
+  });
+
+  it('treats a missing gap as none', () => {
+    expect(columnsForWidth(1600, Number.NaN)).toBe(10);
+  });
+
+  it('keeps the order whatever the column count', () => {
+    const list = [
+      item('a', 2, 1),
+      item('b', 2, 2),
+      item('c', 4, 2),
+      item('d', 2, 2),
+      item('e', 3, 2),
+    ];
+    for (const columns of [4, 6, 8, 10, 12]) {
+      const packed = packLayout(list, columns);
+      expect(orderOfLayout(packed).map((i) => i.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
     }
   });
 });

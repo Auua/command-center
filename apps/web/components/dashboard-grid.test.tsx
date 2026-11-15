@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardGrid } from './dashboard-grid';
 
 vi.mock('@/lib/layout-api', () => ({
@@ -155,5 +155,93 @@ describe('DashboardGrid', () => {
     renderGrid();
 
     expect(await screen.findByRole('region', { name: 'Braindump' })).toBeInTheDocument();
+  });
+});
+
+describe('DashboardGrid columns (ADR-042: columns follow the width)', () => {
+  /** A ResizeObserver that reports one fixed width — jsdom has no layout engine. */
+  function stubResizeObserver(width: number): void {
+    class FixedWidthObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(target: Element): void {
+        this.callback(
+          [{ target, contentRect: { width } } as unknown as ResizeObserverEntry],
+          this as unknown as ResizeObserver,
+        );
+      }
+      unobserve(): void {}
+      disconnect(): void {}
+    }
+    vi.stubGlobal('ResizeObserver', FixedWidthObserver);
+  }
+
+  function cellOf(name: string): HTMLElement {
+    const cell = screen.getByRole('region', { name }).closest<HTMLElement>('.cc-grid-item');
+    if (!cell) throw new Error(`no grid cell for ${name}`);
+    return cell;
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('stays at six columns when the width cannot be measured', async () => {
+    fetchLayoutMock.mockRejectedValue(new Error('API down'));
+    renderGrid();
+    await screen.findByRole('region', { name: 'Clock' });
+    const grid = cellOf('Clock').parentElement as HTMLElement;
+    expect(grid.dataset.columns).toBe('6');
+    expect(grid.style.getPropertyValue('--cc-columns')).toBe('6');
+  });
+
+  it('adds columns on a wide screen and packs more cards into the first row', async () => {
+    // No CSS in jsdom, so the gap reads as 0: 1600 px / 160 px = 10 columns.
+    stubResizeObserver(1600);
+    fetchLayoutMock.mockRejectedValue(new Error('API down'));
+    renderGrid();
+    await screen.findByRole('region', { name: 'Clock' });
+
+    const grid = cellOf('Clock').parentElement as HTMLElement;
+    expect(grid.dataset.columns).toBe('10');
+    // Default order clock, braindump, mood, tasks: at six columns tasks starts
+    // the second row; at ten it is the fourth card of the first row.
+    expect(cellOf("Today's tasks").style.getPropertyValue('--cc-col')).toBe('7 / span 2');
+    expect(cellOf("Today's tasks").style.getPropertyValue('--cc-row')).toBe('1 / span 2');
+  });
+
+  it('re-flows a hand-placed stored layout by its reading order', async () => {
+    stubResizeObserver(1600);
+    fetchLayoutMock.mockResolvedValue({
+      items: [
+        // Stored out of order and with a gap; rendered in reading order, packed.
+        { widgetId: 'mood', instanceKey: '', gridPos: { x: 4, y: 3, w: 2, h: 2 }, settings: {} },
+        { widgetId: 'clock', instanceKey: '', gridPos: { x: 0, y: 0, w: 2, h: 1 }, settings: {} },
+      ],
+    });
+    renderGrid();
+    await screen.findByRole('region', { name: 'Clock' });
+    expect(cellOf('Clock').style.getPropertyValue('--cc-col')).toBe('1 / span 2');
+    expect(cellOf('Mood check-in').style.getPropertyValue('--cc-col')).toBe('3 / span 2');
+    expect(cellOf('Mood check-in').style.getPropertyValue('--cc-row')).toBe('1 / span 2');
+  });
+
+  it('saves at the reference width whatever the screen shows', async () => {
+    const user = userEvent.setup();
+    stubResizeObserver(1600);
+    fetchLayoutMock.mockRejectedValue(new Error('API down'));
+    putLayoutMock.mockImplementation((next) => Promise.resolve({ items: next }));
+    renderGrid();
+    await screen.findByRole('region', { name: 'Clock' });
+
+    await user.click(screen.getByRole('button', { name: 'Edit layout' }));
+    await user.click(screen.getByRole('button', { name: 'Move Clock later' }));
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+
+    expect(putLayoutMock).toHaveBeenCalledTimes(1);
+    const saved = putLayoutMock.mock.calls[0]?.[0] ?? [];
+    expect(saved.map((item) => item.widgetId).slice(0, 2)).toEqual(['braindump', 'clock']);
+    for (const item of saved) {
+      expect(item.gridPos.x + item.gridPos.w).toBeLessThanOrEqual(6);
+    }
   });
 });

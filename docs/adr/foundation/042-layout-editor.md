@@ -17,7 +17,7 @@ app can change that layout. Facts as of 2026-11-15:
 | Fact                  | Value                                                                                                                                           |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Registered widgets    | 9; every one declares 1–3 `sizes` (clock: one; the rest: two or three)                                                                          |
-| Grid                  | 6 columns, rows `minmax(150px, auto)`; each placement carries explicit `gridPos { x, y, w, h }`                                                 |
+| Grid                  | 6 columns on a page capped at 1240 px, rows `minmax(150px, auto)`; each placement carries explicit `gridPos { x, y, w, h }`                     |
 | Narrow screens        | one column, in **array order** — `x`/`y` are ignored below 720 px                                                                               |
 | Writers of the layout | one: the settings panel, which `PUT`s the whole list with one item's settings changed                                                           |
 | Empty layout          | `GET /layout` answers `{ items: [] }` both for "never saved" and "saved empty"; the client then renders `DEFAULT_LAYOUT`                        |
@@ -48,9 +48,33 @@ numbers, of which `x`/`y` are now derived and `w`/`h` are the user's choice. `it
 the user's order, which is also the order narrow screens already render.
 
 A layout written before this ADR (hand-placed coordinates) is read into order by sorting on
-`(y, x)` when the editor opens; it is repacked only when the user saves an edit.
+`(y, x)`. Packing never moves a card back in reading order, so sorting a packed layout by
+`(y, x)` gives back its list order at any column count.
 → _PO-review (2026-11-15):_ "ordered, with move buttons" chosen over "ordered, plus
 drag-and-drop" and "free placement on the grid".
+
+### Columns follow the width
+
+The number of columns is not fixed. `columnsForWidth(width, gap)` gives as many columns as keep
+each at least **160 px** wide, **rounded down to an even number** and clamped to **4–12**; the
+dashboard measures its grid (a `ResizeObserver`) and packs the ordered list at that count every
+time it renders. A wide screen therefore shows more cards per row instead of wide margins, a
+small laptop fewer, and the order is the same on all of them. Below 720 px the single-column
+phone layout is unchanged.
+
+- **Even counts:** almost every declared width is 2 or 4, so an odd count leaves a one-column
+  strip empty at the end of most rows.
+- **4 at least:** the widest declared size is 4, so above the phone layout no card is ever
+  narrowed.
+- **12 at most,** with the page capped at 2400 px: beyond that, columns widen rather than
+  multiply.
+- **What is stored:** the list in the user's order, packed at the reference width of **6**
+  (`GRID_COLUMNS`) — the same on every device, whatever screen saved it. The stored `x`/`y`
+  are never used to place a card; only their order is.
+
+→ _PO-review (2026-11-15), after seeing the built editor:_ "increase the columns, use dynamic —
+now it feels that sides have too much space, 6 seems too low". The page's 1240 px width cap
+went with it.
 
 ### Edit mode in the shell
 
@@ -110,8 +134,11 @@ client-side).
 - **Harder / accepted:** no deliberate gaps and no pixel-exact arrangement — a card sits where
   the order puts it. A row can end with a hole when the next card does not fit; the fix is to
   reorder or resize.
-- **Harder / accepted:** a layout hand-placed before this ADR may shift the first time it is
-  edited and saved.
+- **Harder / accepted:** a layout hand-placed before this ADR re-flows the first time it is
+  shown: cards keep their reading order but lose deliberate gaps.
+- **Harder / accepted:** a layout cannot be gap-free at every width. Rows of 2- and 4-wide
+  cards end flush at any even count, but a 3-wide card (grammar) leaves gaps at some widths;
+  the default layout is gap-free at 6 and 12 columns and has a few empty cells at 4, 8 and 10.
 - **Harder / accepted:** settings of a removed widget are gone; there is no undo after **Done**
   (Cancel covers everything before it).
 - **Committed to:** `gridPos.x`/`y` being derived data. A future free-placement mode would have
