@@ -1,4 +1,5 @@
 import { WidgetRegistry } from '@command-center/ui';
+import { appreciationWidgetDefinition } from './appreciation';
 import { braindumpWidgetDefinition } from './braindump';
 import { clockWidgetDefinition } from './clock';
 import { grammarWidgetDefinition } from './japanese-grammar';
@@ -15,6 +16,7 @@ import { tasksWidgetDefinition } from './tasks';
  */
 export const widgetRegistry = new WidgetRegistry();
 
+widgetRegistry.register(appreciationWidgetDefinition);
 widgetRegistry.register(braindumpWidgetDefinition);
 widgetRegistry.register(clockWidgetDefinition);
 widgetRegistry.register(grammarWidgetDefinition);

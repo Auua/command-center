@@ -38,16 +38,18 @@ done, Phase 1 is underway, and the Phase 2 automations backend has landed
 (ADR-039: reminders fired by an inline scheduler tick behind an external
 pinger — no worker process, no queue; Web Push + in-app notification bell).
 Widgets so far: clock, braindump, tasks, mood, reminders, Japanese word of the day,
-grammar point, kanji of the day, streaks (Phase 3 — the learning widgets read the product owner's
+grammar point, kanji of the day, streaks, appreciations (Phase 3 — the learning widgets read the product owner's
 Obsidian vault, ADR-040/041; streaks credit deliberate study and completed tasks, ADR-014). All
 widgets share one set of UI primitives from `@command-center/ui` (buttons, chips, states,
 skeletons, live regions, lists) so the dashboard reads as one design. Phase 4 has started: the
 dashboard has a layout editor — add, remove, resize and reorder widgets from the app — and the
-grid adds columns as the screen widens (ADR-042). Braindump is the first
+grid adds columns as the screen widens (ADR-042); the appreciation tracker is the first
+reflection widget of the phase (ADR-017). Braindump is the first
 MongoDB-backed module; everything else lives in Supabase Postgres
 (`supabase/migrations/`). One-time Phase 2 external setup:
 [docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md); Phase 3's (vault token, Anki sync) is
-[docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md). See ADR §9 for Phases 1–4.
+[docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md); Phase 4's is
+[docs/PHASE4_SETUP.md](docs/PHASE4_SETUP.md). See ADR §9 for Phases 1–4.
 
 Design decisions are recorded as ADRs under `docs/adr/` in domain subfolders
 (foundation / productivity / reflection / learning / external-data / lifestyle),

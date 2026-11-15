@@ -1,3 +1,4 @@
+export * from './schemas/appreciation';
 export * from './schemas/automations';
 export * from './schemas/braindump';
 export * from './schemas/events';
