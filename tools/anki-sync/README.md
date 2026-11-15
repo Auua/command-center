@@ -10,6 +10,10 @@ the machinery, released by moving the `anki-sync-v1` tag.
     collection is a cache; one that asks to upload is thrown away first). After writing, the
     only full sync performed is the upload `anki` asks for when AnkiWeb holds no cards at all —
     the first sync of an empty account. Anything else fails the run.
+  - **The account's own sync host.** AnkiWeb answers the first request with the host the
+    account lives on. The ordinary sync follows that by itself; a full upload or download does
+    not, so the script keeps the host on the auth it passes on (as desktop Anki keeps it in the
+    profile). Without it the transfer goes to the default host and fails.
   - **Media-only cards are left out.** A card whose front or back is nothing but an embed
     (`![[tts_….m4a]]`, flattened by the exporter to `!tts_….m4a`) cannot work in Anki: the
     vault's audio folders are gitignored, so a runner has no file to upload. They are counted

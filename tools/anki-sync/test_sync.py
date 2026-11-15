@@ -242,8 +242,13 @@ class UpsertTest(unittest.TestCase):
 
 
 class Out:
-    def __init__(self, required):
+    def __init__(self, required, new_endpoint=""):
         self.required = required
+        self.new_endpoint = new_endpoint
+
+
+class Auth:
+    endpoint = ""
 
 
 class SyncingCollection:
@@ -255,7 +260,8 @@ class SyncingCollection:
 
     def sync_collection(self, auth, sync_media):
         self.log.append("sync")
-        return Out(self.answers.pop(0))
+        answer = self.answers.pop(0)
+        return answer if isinstance(answer, Out) else Out(answer)
 
     def close_for_full_sync(self):
         self.log.append("close")
@@ -263,6 +269,7 @@ class SyncingCollection:
     def full_upload_or_download(self, *, auth, server_usn, upload):
         self.log.append("upload" if upload else "download")
         self.log.append(f"usn={server_usn}")
+        self.transfer_endpoint = getattr(auth, "endpoint", None)
 
     def reopen(self, after_full_sync=False):
         self.log.append("reopen")
@@ -309,6 +316,26 @@ class FullSyncRuleTest(unittest.TestCase):
         col = SyncingCollection(["FULL_UPLOAD"])
         sync.sync_up(col, "auth")
         self.assertEqual(col.log, ["sync", "close", "upload", "usn=None", "reopen"])
+
+    def test_full_transfers_go_to_the_host_the_server_moved_the_account_to(self):
+        # AnkiWeb names the account's own host in the first answer; an upload or
+        # download sent to the default host instead is answered with a redirect.
+        moved = "https://sync9.example.net/"
+        auth = Auth()
+        col = SyncingCollection([Out("FULL_UPLOAD", new_endpoint=moved)])
+        sync.sync_up(col, auth)
+        self.assertEqual(col.transfer_endpoint, moved)
+
+        auth = Auth()
+        col = SyncingCollection([Out("FULL_DOWNLOAD", new_endpoint=moved)])
+        sync.sync_down(col, auth, self.never)
+        self.assertEqual(col.transfer_endpoint, moved)
+
+    def test_an_answer_without_a_new_host_leaves_the_endpoint_alone(self):
+        auth = Auth()
+        auth.endpoint = "http://127.0.0.1:27701/"
+        sync.sync_up(SyncingCollection([Out("FULL_UPLOAD")]), auth)
+        self.assertEqual(auth.endpoint, "http://127.0.0.1:27701/")
 
     def test_sync_up_refuses_a_full_sync_over_existing_cards(self):
         for required in ("FULL_SYNC", "FULL_DOWNLOAD"):
