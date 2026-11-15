@@ -44,19 +44,22 @@ function titleOf(widgetId: string): string {
 }
 
 /**
- * The draft a stored layout opens as: reading order of its (possibly
+ * A stored layout as an ordered list: reading order of its (possibly
  * hand-placed) coordinates, each registered widget snapped to a declared
- * size, packed.
+ * size. Packing it — at whatever column count — gives the cards' cells.
  */
+export function inLayoutOrder(items: readonly WidgetLayoutItem[]): WidgetLayoutItem[] {
+  return orderOfLayout(items).map((item) => {
+    const definition = widgetRegistry.get(item.widgetId);
+    if (!definition) return item;
+    const size = clampToDeclaredSize({ w: item.gridPos.w, h: item.gridPos.h }, definition.sizes);
+    return { ...item, gridPos: { ...item.gridPos, w: size.w, h: size.h } };
+  });
+}
+
+/** The draft a stored layout opens as: in order, packed at the reference width. */
 function toDraft(items: readonly WidgetLayoutItem[]): WidgetLayoutItem[] {
-  return packLayout(
-    orderOfLayout(items).map((item) => {
-      const definition = widgetRegistry.get(item.widgetId);
-      if (!definition) return item;
-      const size = clampToDeclaredSize({ w: item.gridPos.w, h: item.gridPos.h }, definition.sizes);
-      return { ...item, gridPos: { ...item.gridPos, w: size.w, h: size.h } };
-    }),
-  );
+  return packLayout(inLayoutOrder(items));
 }
 
 interface DraftState {

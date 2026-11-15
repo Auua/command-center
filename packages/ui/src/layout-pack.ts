@@ -6,8 +6,40 @@
  * layout and the save path.
  */
 
-/** Columns of the dashboard grid (globals.css `.cc-grid`). */
+/**
+ * Reference column count: the width stored coordinates and the default
+ * layout are packed at. What the dashboard shows is packed again at the
+ * column count that fits the screen (`columnsForWidth`) — positions are
+ * derived from the order, so any width gives the same order.
+ */
 export const GRID_COLUMNS = 6;
+
+/** Fewest columns above the one-column phone layout: the widest declared size is 4. */
+export const MIN_GRID_COLUMNS = 4;
+/** Most columns on very wide screens; beyond this the columns just widen. */
+export const MAX_GRID_COLUMNS = 12;
+/** Narrowest a column gets before the grid drops one, in px. */
+export const GRID_COLUMN_MIN_WIDTH = 160;
+
+/**
+ * How many columns fit a grid of `width` px with `gap` px between columns:
+ * as many as keep each column at least `minColumnWidth` wide, rounded down
+ * to an even number and clamped to [MIN_GRID_COLUMNS, MAX_GRID_COLUMNS].
+ * Even, because almost every declared width is 2 or 4: an odd count leaves
+ * a one-column strip empty at the end of most rows. An unknown width (not
+ * measured yet, no layout engine) answers the reference GRID_COLUMNS.
+ */
+export function columnsForWidth(
+  width: number,
+  gap: number,
+  minColumnWidth: number = GRID_COLUMN_MIN_WIDTH,
+): number {
+  if (!Number.isFinite(width) || width <= 0) return GRID_COLUMNS;
+  const safeGap = Number.isFinite(gap) && gap > 0 ? gap : 0;
+  const fit = Math.floor((width + safeGap) / (minColumnWidth + safeGap));
+  const even = fit - (fit % 2);
+  return Math.min(MAX_GRID_COLUMNS, Math.max(MIN_GRID_COLUMNS, even));
+}
 
 /** A placement's footprint: `x`/`y` derived by packing, `w`/`h` chosen. */
 export interface PackGridPos {

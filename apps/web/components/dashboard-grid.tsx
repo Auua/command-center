@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  useCallback,
   useMemo,
   useState,
   type ComponentType,
@@ -12,7 +13,7 @@ import type { LayoutResponse, WidgetLayoutItem } from '@command-center/contracts
 import {
   clampToDeclaredSize,
   describeSettingsSchema,
-  GRID_COLUMNS,
+  packLayout,
   useAnnouncer,
   WidgetCard,
   WidgetErrorBoundary,
@@ -21,10 +22,12 @@ import {
 } from '@command-center/ui';
 import { fetchLayout, putLayout } from '@/lib/layout-api';
 import { t } from '@/lib/i18n';
+import { useGridColumns } from '@/lib/use-grid-columns';
 import { DEFAULT_LAYOUT } from '@/widgets/default-layout';
 import { widgetRegistry } from '@/widgets/registry';
 import {
   AddWidgetDialog,
+  inLayoutOrder,
   LayoutItemBar,
   LayoutToolbar,
   placementKey,
@@ -37,11 +40,11 @@ const LAYOUT_QUERY_KEY = ['layout'];
 /**
  * Grid placement via CSS custom properties (consumed in globals.css) so a
  * mobile media query can collapse to a single column without fighting
- * inline styles. Spans are clamped to the 6-column track list.
+ * inline styles. Spans are clamped to the current track list.
  */
-function gridPlacement(item: WidgetLayoutItem): CSSProperties {
-  const x = Math.min(Math.max(item.gridPos.x, 0), GRID_COLUMNS - 1);
-  const w = Math.min(Math.max(item.gridPos.w, 1), GRID_COLUMNS - x);
+function gridPlacement(item: WidgetLayoutItem, columns: number): CSSProperties {
+  const x = Math.min(Math.max(item.gridPos.x, 0), columns - 1);
+  const w = Math.min(Math.max(item.gridPos.w, 1), columns - x);
   const y = Math.max(item.gridPos.y, 0);
   const h = Math.max(item.gridPos.h, 1);
 
@@ -138,6 +141,19 @@ export function DashboardGrid(): ReactElement {
   const say = (message: string): void => announce('polite', message);
   const editor = useLayoutDraft(say);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // Columns follow the grid's width (ADR-042); measured here, before the
+  // early return, so the hook order never changes.
+  const [columns, measureGrid] = useGridColumns();
+  // One stable ref for both consumers: the editor's focus handling and the
+  // width measurement (an inline callback would re-attach on every render).
+  const { gridRef: editorGridRef } = editor;
+  const gridRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      editorGridRef.current = node;
+      measureGrid(node);
+    },
+    [editorGridRef, measureGrid],
+  );
 
   // Both writers PUT the whole list and hand the server's echo to the query
   // cache, so every card re-reads its validated settings and placement:
@@ -202,9 +218,11 @@ export function DashboardGrid(): ReactElement {
     });
   };
 
-  // Outside edit mode the stored coordinates render as they are; in edit
-  // mode the packed draft does (ADR-042).
-  const shown = editor.draft ?? items;
+  // The order is the layout (ADR-042): the stored list (or the draft while
+  // editing) is packed at the column count that fits this screen, so a wide
+  // screen shows more cards per row and a narrow one fewer — same order.
+  const shown = packLayout(editor.draft ?? inLayoutOrder(items), columns);
+  const gridStyle = { '--cc-columns': columns } as CSSProperties;
 
   return (
     <div className="cc-dashboard">
@@ -218,9 +236,18 @@ export function DashboardGrid(): ReactElement {
         onCancel={handleCancel}
         onDone={handleDone}
       />
-      <div ref={editor.gridRef} className={editor.editing ? 'cc-grid cc-grid-editing' : 'cc-grid'}>
+      <div
+        ref={gridRef}
+        className={editor.editing ? 'cc-grid cc-grid-editing' : 'cc-grid'}
+        style={gridStyle}
+        data-columns={columns}
+      >
         {shown.map((item, index) => (
-          <div key={placementKey(item)} className="cc-grid-item" style={gridPlacement(item)}>
+          <div
+            key={placementKey(item)}
+            className="cc-grid-item"
+            style={gridPlacement(item, columns)}
+          >
             {editor.editing && (
               <LayoutItemBar
                 item={item}
