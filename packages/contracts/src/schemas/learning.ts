@@ -31,6 +31,13 @@ const stringList = z.array(z.string());
 export const IndexExampleSchema = z.object({
   ja: nullableString,
   fi: nullableString,
+  /**
+   * English translation when the note's inline example is in English (many
+   * Tofugu-sourced sentences are). Absent in indexes built before the field
+   * existed, hence the default.
+   */
+  en: nullableString.default(null),
+  /** Sentence-bank block (`Stem#^id`) or the note's own list (`Stem#Esimerkit`). */
   ref: z.string(),
 });
 export type IndexExample = z.infer<typeof IndexExampleSchema>;
@@ -168,6 +175,8 @@ export const MeaningSchema = z.object({
 export const WotdExampleSchema = z.object({
   ja: z.string(),
   fi: nullableString,
+  /** Shown when there is no Finnish translation. */
+  en: nullableString.default(null),
 });
 
 export const WotdItemSchema = z.object({

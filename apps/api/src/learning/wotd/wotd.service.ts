@@ -220,7 +220,7 @@ export class WotdService {
         .filter(
           (example): example is typeof example & { ja: string } => typeof example.ja === 'string',
         )
-        .map((example) => ({ ja: example.ja, fi: example.fi })),
+        .map((example) => ({ ja: example.ja, fi: example.fi, en: example.en })),
       sourceUrl: this.vault.noteUrl(effective.path),
     };
   }

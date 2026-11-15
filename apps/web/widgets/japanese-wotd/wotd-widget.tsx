@@ -28,6 +28,7 @@ import {
 import { AnkiSyncStatus } from '@/components/anki-sync-status';
 import { LearningState } from '@/components/learning-state';
 import { StreakPill } from '@/components/streak-pill';
+import { exampleTranslation } from '@/lib/example-translation';
 import { t } from '@/lib/i18n';
 import { acknowledgeWotd, fetchWotd, skipWotd } from '@/lib/learning-api';
 import { STREAKS_QUERY_KEY } from '@/lib/use-streaks';
@@ -92,10 +93,15 @@ function Headword({
 function Example({ item }: { item: WotdItem }): ReactElement {
   const example = item.examples[0];
   if (!example) return <Hint>{t('learning.noExample')}</Hint>;
+  const translation = exampleTranslation(example);
   return (
     <div className="cc-example">
       <p lang="ja">{example.ja}</p>
-      {example.fi && <p className="cc-example-fi">{example.fi}</p>}
+      {translation && (
+        <p className="cc-example-fi" lang={translation.lang}>
+          {translation.text}
+        </p>
+      )}
     </div>
   );
 }
