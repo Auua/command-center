@@ -57,4 +57,5 @@ decided with the Architecture Reference (2026-07-11) and written out as full ADR
 | 038 | [Nutrition widget (food log, personal food library, calorie tracking)](lifestyle/038-nutrition-widget.md)                          | lifestyle     | accepted |
 | 039 | [Automation delivery — inline tick behind an external pinger (MVP)](productivity/039-automation-delivery-pinger.md)                | productivity  | accepted |
 | 040 | [The Obsidian vault is the learning store — ADR-024's repo layout superseded](learning/040-obsidian-vault-learning-store.md)       | learning      | accepted |
-| 041 | [Japanese Kanji-of-the-Day widget](learning/041-japanese-kanji-widget.md)                                                          | learning      | proposed |
+| 041 | [Japanese Kanji-of-the-Day widget](learning/041-japanese-kanji-widget.md)                                                          | learning      | accepted |
+| 042 | [Dashboard layout editor — ordered placements, packed grid, edit mode](foundation/042-layout-editor.md)                            | foundation    | accepted |

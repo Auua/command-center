@@ -20,6 +20,9 @@ vi.mock('@/lib/learning-api', () => ({
   fetchGrammarToday: vi.fn().mockResolvedValue({ configured: false }),
   advanceGrammar: vi.fn(),
   studyGrammar: vi.fn(),
+  fetchKanji: vi.fn().mockResolvedValue({ configured: false }),
+  acknowledgeKanji: vi.fn(),
+  skipKanji: vi.fn(),
   fetchAnkiStatus: vi.fn().mockResolvedValue({ configured: false }),
   fetchStreaks: vi.fn().mockResolvedValue({ timezone: 'UTC', streaks: [] }),
 }));

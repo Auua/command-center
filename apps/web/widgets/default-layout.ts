@@ -1,56 +1,30 @@
 import type { WidgetLayoutItem } from '@command-center/contracts';
+import { packLayout } from '@command-center/ui';
 
 /**
- * Fallback layout used when the API is unreachable or the user has no
- * persisted layout yet.
+ * The default dashboard, in order (ADR-042): every registered widget at one
+ * of its declared sizes. Coordinates are derived by `packLayout`, the same
+ * function the layout editor saves with — only the order and the sizes are
+ * chosen here. Rendered when the API is unreachable or the user has no
+ * persisted layout yet; the editor's "Reset to default" restores it.
  */
-export const DEFAULT_LAYOUT: WidgetLayoutItem[] = [
-  {
-    widgetId: 'clock',
-    gridPos: { x: 0, y: 0, w: 2, h: 1 },
-    instanceKey: '',
-    settings: {},
-  },
-  {
-    widgetId: 'braindump',
-    gridPos: { x: 2, y: 0, w: 2, h: 2 },
-    instanceKey: '',
-    settings: {},
-  },
-  {
-    widgetId: 'tasks',
-    gridPos: { x: 0, y: 1, w: 2, h: 2 },
-    instanceKey: '',
-    settings: {},
-  },
-  {
-    widgetId: 'mood',
-    gridPos: { x: 4, y: 0, w: 2, h: 2 },
-    instanceKey: '',
-    settings: {},
-  },
-  {
-    widgetId: 'reminders',
-    gridPos: { x: 2, y: 2, w: 4, h: 2 },
-    instanceKey: '',
-    settings: {},
-  },
-  {
-    widgetId: 'japanese-wotd',
-    gridPos: { x: 0, y: 3, w: 2, h: 2 },
-    instanceKey: '',
-    settings: {},
-  },
-  {
-    widgetId: 'japanese-grammar',
-    gridPos: { x: 2, y: 4, w: 3, h: 2 },
-    instanceKey: '',
-    settings: {},
-  },
-  {
-    widgetId: 'streaks',
-    gridPos: { x: 0, y: 5, w: 2, h: 2 },
-    instanceKey: '',
-    settings: {},
-  },
+const DEFAULT_ORDER: ReadonlyArray<{ widgetId: string; w: number; h: number }> = [
+  { widgetId: 'clock', w: 2, h: 1 },
+  { widgetId: 'braindump', w: 2, h: 2 },
+  { widgetId: 'mood', w: 2, h: 2 },
+  { widgetId: 'tasks', w: 2, h: 2 },
+  { widgetId: 'reminders', w: 4, h: 2 },
+  { widgetId: 'streaks', w: 2, h: 3 },
+  { widgetId: 'japanese-wotd', w: 2, h: 2 },
+  { widgetId: 'japanese-kanji', w: 2, h: 2 },
+  { widgetId: 'japanese-grammar', w: 3, h: 2 },
 ];
+
+export const DEFAULT_LAYOUT: WidgetLayoutItem[] = packLayout(
+  DEFAULT_ORDER.map(({ widgetId, w, h }) => ({
+    widgetId,
+    instanceKey: '',
+    gridPos: { x: 0, y: 0, w, h },
+    settings: {},
+  })),
+);
