@@ -277,6 +277,37 @@ export const JournalListResponseSchema = z.object({
 });
 export type JournalListResponse = z.infer<typeof JournalListResponseSchema>;
 
+// ── Search (4C-2) ──────────────────────────────────────────────────────────
+
+export const JOURNAL_SEARCH_QUERY_MAX = 200;
+
+/**
+ * `GET /journal/search?q&from&to&tag&cursor&limit` — Atlas Search over the
+ * server-derived `plainText` and the tags. Every word must match; results
+ * are newest first and page with the timeline's cursor. A 503 means search
+ * is not available (the index is missing or still building).
+ */
+export const JournalSearchQuerySchema = JournalListQuerySchema.extend({
+  q: z.string().trim().min(1).max(JOURNAL_SEARCH_QUERY_MAX),
+}).strict();
+export type JournalSearchQuery = z.infer<typeof JournalSearchQuerySchema>;
+
+/** One run of a highlighted passage; `hit` runs are the matched words. */
+export const JournalSearchFragmentSchema = z.object({ text: z.string(), hit: z.boolean() });
+export type JournalSearchFragment = z.infer<typeof JournalSearchFragmentSchema>;
+
+/** A timeline row plus the passages of `plainText` that matched, best first. */
+export const JournalSearchHitSchema = JournalEntrySummarySchema.extend({
+  highlights: z.array(z.array(JournalSearchFragmentSchema)),
+});
+export type JournalSearchHit = z.infer<typeof JournalSearchHitSchema>;
+
+export const JournalSearchResponseSchema = z.object({
+  items: z.array(JournalSearchHitSchema),
+  nextCursor: z.string().nullable(),
+});
+export type JournalSearchResponse = z.infer<typeof JournalSearchResponseSchema>;
+
 // ── Prompts and the launcher ───────────────────────────────────────────────
 
 export const JOURNAL_PROMPT_CATEGORIES = ['reflect', 'gratitude', 'growth', 'feelings'] as const;

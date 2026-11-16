@@ -2,12 +2,14 @@ import {
   JournalEntrySchema,
   JournalExportSchema,
   JournalListResponseSchema,
+  JournalSearchResponseSchema,
   JournalTodaySchema,
   type CreateJournalEntryRequest,
   type JournalEntry,
   type JournalExport,
   type JournalListResponse,
   type JournalPromptCategory,
+  type JournalSearchResponse,
   type JournalToday,
   type PatchJournalEntryRequest,
 } from '@command-center/contracts';
@@ -31,16 +33,27 @@ export interface JournalTimelineQuery {
   limit?: number;
 }
 
-export async function fetchJournalEntries(
-  query: JournalTimelineQuery = {},
-): Promise<JournalListResponse> {
+function queryString(query: object): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {
     if (value !== undefined && value !== '') params.set(key, String(value));
   }
-  const suffix = params.size > 0 ? `?${params.toString()}` : '';
-  const response = await apiFetch(`/api/v1/journal/entries${suffix}`);
+  return params.size > 0 ? `?${params.toString()}` : '';
+}
+
+export async function fetchJournalEntries(
+  query: JournalTimelineQuery = {},
+): Promise<JournalListResponse> {
+  const response = await apiFetch(`/api/v1/journal/entries${queryString(query)}`);
   return JournalListResponseSchema.parse(await response.json());
+}
+
+/** Full-text search (4C-2). A 503 `ApiError` means search is not available yet. */
+export async function fetchJournalSearch(
+  query: JournalTimelineQuery & { q: string },
+): Promise<JournalSearchResponse> {
+  const response = await apiFetch(`/api/v1/journal/search${queryString(query)}`);
+  return JournalSearchResponseSchema.parse(await response.json());
 }
 
 export async function fetchJournalEntry(id: string): Promise<JournalEntry> {

@@ -35,16 +35,18 @@ Delivery is one PR per step, each leaving `main` deployable:
 column of the dashboard exists before the journal's larger build. Each later step gets its own
 section here when it starts — only 4A is detailed now.
 
-## 4C — Journal (ADR-016) ✓ (search: 4C-2)
+## 4C — Journal (ADR-016) ✓ (search: 4C-2 ✓)
 
 Built 2026-11-16. The largest Phase 4 step; split in two PRs so each stays reviewable:
 
 - **4C (this PR) — write and keep.** `JournalModule` (Mongo `journal_entries` + seeded
   `journal_prompts`), the editor routes, local-first drafts, the timeline (date range + tag
   filters), export, the `journal` launcher widget and a `journal` streak.
-- **4C-2 — search.** `GET /journal/search` over an Atlas Search index. Separate because the index
-  is created by hand in Atlas (one-time setup) and `$search` cannot run on mongodb-memory-server,
-  so it needs its own test seam.
+- **4C-2 — search.** `GET /journal/search` over an Atlas Search index. Separate because
+  `$search` cannot run on mongodb-memory-server, so it needs its own test seam. Built
+  2026-11-16: the API creates the index itself (no manual Atlas step after all), results are
+  newest first with the timeline's cursor and highlighted passages, and the endpoint answers 503
+  until the index is queryable. Details in ADR-016's second implementation note.
 
 ### Decisions settled in the build (recorded in ADR-016's implementation note)
 

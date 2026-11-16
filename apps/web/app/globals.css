@@ -2332,6 +2332,23 @@ a.cc-btn {
   line-height: 1.5;
 }
 
+/* The search field takes its own row; date, tag and the buttons follow. */
+.cc-journal-search {
+  flex: 1 1 100%;
+}
+
+.cc-journal-search input {
+  width: 100%;
+}
+
+/* A search hit's passage: the matched words carry the journal's violet. */
+.cc-journal-passage mark {
+  background: color-mix(in srgb, var(--cc-violet) 26%, transparent);
+  color: var(--cc-text);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
 .cc-journal-meta {
   display: flex;
   flex-wrap: wrap;
