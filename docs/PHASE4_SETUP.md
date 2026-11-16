@@ -114,10 +114,11 @@ never changes an index that exists, so a later definition change is applied here
 
 ### Manual checklist
 
-- [ ] `journal_search` shows **Ready** in Atlas.
-- [ ] On `/journal`, searching a word from an entry lists it with the word highlighted; the
+- [x] `journal_search` shows **Ready** in Atlas.
+- [x] On `/journal`, searching a word from an entry lists it with the word highlighted; the
       address becomes `/journal?q=…`.
-- [ ] Two words find only entries that contain both; a tag name finds entries with that tag.
-- [ ] Search with a date range or a tag narrows the results; **Clear** returns to the timeline.
-- [ ] Opening a result and going back returns to the same search.
-- [ ] A word that appears nowhere says "No entries contain …".
+- [x] Two words find only entries that contain both; a tag name finds entries with that tag.
+- [x] Search with a date range or a tag narrows the results; **Clear** returns to the timeline.
+- [ ] Opening a result and going back returns to the same search — with the browser's Back and
+      with the editor's **← Journal** button.
+- [x] A word that appears nowhere says "No entries contain …".

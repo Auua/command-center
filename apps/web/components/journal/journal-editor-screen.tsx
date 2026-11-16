@@ -39,6 +39,7 @@ import {
   formatSavedAt,
   parseTags,
 } from '@/lib/journal-format';
+import { journalListHref } from '@/lib/journal-return';
 import { useOtherTabEditing } from '@/lib/use-other-tab';
 import { DeleteEntryDialog } from './delete-entry-dialog';
 import { journalExtensions } from './editor-extensions';
@@ -120,7 +121,10 @@ export default function JournalEditorScreen(props: JournalEditorScreenProps): Re
     };
   }, [drafts, ready, key]);
 
-  const backHref = props.from === 'dashboard' ? '/' : '/journal';
+  // Back to where the entry was opened from: the dashboard, or the timeline
+  // as it was left (a search included). Read once, so it never shifts.
+  const [listHref] = useState(journalListHref);
+  const backHref = props.from === 'dashboard' ? '/' : listHref;
   const search = props.from === 'dashboard' ? '?from=dashboard' : '';
 
   // Once the editor is open it stays open: later query refetches (an
@@ -357,9 +361,11 @@ function JournalWorkspace({
         </p>
       )}
 
-      {editor && <EditorToolbar editor={editor} onLink={() => setLinkOpen(true)} />}
-      {editor && linkOpen && <LinkForm editor={editor} onClose={() => setLinkOpen(false)} />}
-      <EditorContent editor={editor} className="cc-journal-surface" />
+      <div className="cc-journal-writing">
+        {editor && <EditorToolbar editor={editor} onLink={() => setLinkOpen(true)} />}
+        {editor && linkOpen && <LinkForm editor={editor} onClose={() => setLinkOpen(false)} />}
+        <EditorContent editor={editor} className="cc-journal-surface" />
+      </div>
 
       <div className="cc-field cc-journal-tags">
         <label htmlFor={tagsId}>{t('journal.tags.label')}</label>
