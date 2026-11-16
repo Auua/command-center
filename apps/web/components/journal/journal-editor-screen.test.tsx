@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JournalDoc, JournalEntry } from '@command-center/contracts';
 import { ApiError } from '@/lib/api';
 import { createMemoryDraftStore, type DraftStore } from '@/lib/journal-drafts';
+import { rememberJournalList } from '@/lib/journal-return';
 import JournalEditorScreen, { type JournalEditorScreenProps } from './journal-editor-screen';
 
 const push = vi.fn();
@@ -78,6 +79,7 @@ async function editorInstance(): Promise<Editor> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
   store = createMemoryDraftStore();
   vi.mocked(fetchJournalToday).mockResolvedValue({
     date: '2026-11-16',
@@ -244,6 +246,17 @@ describe('JournalEditorScreen — saved entry', () => {
     expect(await screen.findByText(/doesn’t exist/)).toBeInTheDocument();
   });
 
+  it('goes back to the search the entry was opened from', async () => {
+    rememberJournalList('/journal?q=heron');
+    vi.mocked(fetchJournalEntry).mockResolvedValue(entry('Saw the heron', 2));
+    renderScreen({ entryId: ID });
+    await editorInstance();
+    expect(screen.getByRole('link', { name: 'Journal' })).toHaveAttribute(
+      'href',
+      '/journal?q=heron',
+    );
+  });
+
   it('deletes behind a confirmation and goes back', async () => {
     const user = userEvent.setup();
     vi.mocked(fetchJournalEntry).mockResolvedValue(entry('Short-lived', 2));
@@ -257,6 +270,18 @@ describe('JournalEditorScreen — saved entry', () => {
 
     expect(deleteJournalEntry).toHaveBeenCalledWith(ID);
     await waitFor(() => expect(push).toHaveBeenCalledWith('/journal'));
+  });
+
+  it('after a delete, returns to the search it came from', async () => {
+    const user = userEvent.setup();
+    rememberJournalList('/journal?q=heron&tag=birds');
+    vi.mocked(fetchJournalEntry).mockResolvedValue(entry('Short-lived', 2));
+    vi.mocked(deleteJournalEntry).mockResolvedValue();
+    renderScreen({ entryId: ID });
+    await editorInstance();
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Delete entry' }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/journal?q=heron&tag=birds'));
   });
 });
 

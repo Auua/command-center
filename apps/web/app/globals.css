@@ -2091,7 +2091,28 @@ a.cc-btn {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  padding-top: 2rem;
   --cc-wc: var(--cc-violet);
+}
+
+/* The two journal pages: their sections stand apart. */
+.cc-journal-editor,
+.cc-journal-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* "Load older entries" keeps its own width under the list. */
+.cc-journal-timeline > .cc-btn {
+  align-self: flex-start;
+}
+
+/* The toolbar belongs to the text it formats: kept close to it. */
+.cc-journal-writing {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .cc-journal-bar {
@@ -2143,9 +2164,10 @@ a.cc-btn {
 .cc-journal-prompt {
   font-style: italic;
   font-size: 1.05rem;
+  line-height: 1.5;
   color: var(--cc-text-muted);
   border-left: 3px solid var(--cc-violet);
-  padding-left: 12px;
+  padding: 4px 0 4px 14px;
 }
 
 .cc-journal-toolbar {
@@ -2219,7 +2241,7 @@ a.cc-btn {
 
 .cc-journal-prose {
   min-height: 50vh;
-  padding: 20px 24px;
+  padding: 28px 32px;
   font-size: 1.05rem;
   line-height: 1.65;
   outline: none;
@@ -2232,6 +2254,11 @@ a.cc-btn {
 
 .cc-journal-prose > * + * {
   margin-top: 0.7em;
+}
+
+/* A heading that opens an entry sits at the top, not a heading's gap below it. */
+.cc-journal-prose > :first-child {
+  margin-top: 0;
 }
 
 .cc-journal-prose h3 {
@@ -2281,9 +2308,15 @@ a.cc-btn {
   margin: 1.2em 0;
 }
 
+.cc-journal-tags input {
+  max-width: 28rem;
+}
+
 .cc-journal-tags input,
 .cc-journal-filters input {
-  padding: 6px 10px;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 7px 12px;
   border: 1px solid var(--cc-border);
   border-radius: 8px;
   background: var(--cc-bg-raised);
@@ -2323,7 +2356,11 @@ a.cc-btn {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 10px 14px;
+  gap: 16px 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius-card);
+  background: var(--cc-bg-raised);
 }
 
 .cc-journal-filters .cc-field {
@@ -2335,17 +2372,17 @@ a.cc-btn {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .cc-journal-entry {
   border: 1px solid var(--cc-border);
   border-radius: var(--cc-radius-card);
   background: var(--cc-bg-raised);
-  padding: 14px 18px;
+  padding: 18px 22px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
 }
 
 .cc-journal-entry h2 {
@@ -2395,7 +2432,15 @@ a.cc-btn {
 }
 
 @media (max-width: 640px) {
+  .cc-journal-main {
+    padding-top: 1rem;
+  }
+
   .cc-journal-prose {
-    padding: 16px;
+    padding: 18px;
+  }
+
+  .cc-journal-filters {
+    padding: 14px;
   }
 }

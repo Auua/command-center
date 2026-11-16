@@ -24,6 +24,7 @@ import { ApiError } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { fetchJournalEntries, fetchJournalExport, fetchJournalSearch } from '@/lib/journal-api';
 import { browserToday, formatEntryDate } from '@/lib/journal-format';
+import { rememberJournalList } from '@/lib/journal-return';
 import { rememberReturnFocus, takeReturnFocus } from '@/lib/return-focus';
 
 export interface JournalFilters {
@@ -69,9 +70,13 @@ export function JournalTimeline({
   const [exporting, setExporting] = useState(false);
   const [exportFailed, setExportFailed] = useState(false);
 
-  // Back/forward changes the URL under a mounted timeline.
+  // Back/forward changes the URL under a mounted timeline; the editor's
+  // "← Journal" returns to this address, search included.
   const { q, from, to, tag } = filters;
-  useEffect(() => setDraft({ q, from, to, tag }), [q, from, to, tag]);
+  useEffect(() => {
+    setDraft({ q, from, to, tag });
+    rememberJournalList(journalHref({ q, from, to, tag }));
+  }, [q, from, to, tag]);
 
   const searching = filters.q !== '';
   const query = useInfiniteQuery({
