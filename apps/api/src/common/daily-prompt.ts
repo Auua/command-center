@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 
 /**
- * The daily prompt (ADR-017, formula from ADR-016): the same prompt all day
+ * The daily prompt, shared by the appreciation tracker (ADR-017) and the
+ * journal (ADR-016, which defines the formula): the same prompt all day
  * and on every device — sha256(`${userId}|${localDate}`) mod n over the
  * active prompts sorted by id. Pure, so the pick is testable without a
  * clock or a database.

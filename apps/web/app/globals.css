@@ -1999,3 +1999,350 @@ p {
 .cc-anki-status-failed {
   color: var(--cc-danger);
 }
+
+/* ---- Journal (ADR-016): launcher card, timeline, editor ---- */
+
+/* Links that look like buttons (the journal's navigation CTAs). */
+a.cc-btn {
+  text-decoration: none;
+}
+
+.cc-journal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.cc-journal-card-prompt {
+  font-size: 1.02rem;
+  line-height: 1.45;
+  font-style: italic;
+  color: var(--cc-text);
+}
+
+.cc-journal-card-preview {
+  color: var(--cc-text-muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cc-journal-card-actions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  --cc-wc: var(--cc-violet);
+}
+
+.cc-header-home {
+  color: var(--cc-text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.cc-header h1 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cc-journal-main {
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  --cc-wc: var(--cc-violet);
+}
+
+.cc-journal-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.cc-journal-date {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 12rem;
+}
+
+.cc-journal-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.82rem;
+  color: var(--cc-text-muted);
+}
+
+.cc-journal-status[data-status='offline'],
+.cc-journal-status[data-status='conflict'],
+.cc-journal-status[data-status='rejected'] {
+  color: var(--cc-amber-ink);
+  font-weight: 600;
+}
+
+.cc-journal-conflict {
+  border: 1px solid var(--cc-amber);
+  background: rgba(238, 162, 0, 0.1);
+  border-radius: var(--cc-radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cc-journal-conflict-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cc-journal-prompt {
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--cc-text-muted);
+  border-left: 3px solid var(--cc-violet);
+  padding-left: 12px;
+}
+
+.cc-journal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius);
+  background: var(--cc-bg-raised);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.cc-journal-tool {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cc-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cc-journal-tool:hover {
+  background: var(--cc-bg-inset);
+}
+
+.cc-journal-tool[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--cc-violet) 16%, transparent);
+  color: var(--cc-violet);
+}
+
+.cc-journal-tool:focus-visible {
+  outline: 2px solid var(--cc-violet);
+  outline-offset: 1px;
+}
+
+.cc-journal-link-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cc-journal-link-form input {
+  flex: 1;
+  min-width: 12rem;
+  padding: 6px 10px;
+  border: 1px solid var(--cc-border);
+  border-radius: 8px;
+  background: var(--cc-bg-inset);
+  color: var(--cc-text);
+  font: inherit;
+}
+
+.cc-journal-link-form .cc-error {
+  flex-basis: 100%;
+}
+
+.cc-journal-surface {
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius-card);
+  background: var(--cc-bg-raised);
+  box-shadow: var(--cc-shadow);
+}
+
+.cc-journal-prose {
+  min-height: 50vh;
+  padding: 20px 24px;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.cc-journal-surface:focus-within {
+  border-color: color-mix(in srgb, var(--cc-violet) 55%, var(--cc-border));
+}
+
+.cc-journal-prose > * + * {
+  margin-top: 0.7em;
+}
+
+.cc-journal-prose h3 {
+  font-size: 1.4rem;
+}
+.cc-journal-prose h4 {
+  font-size: 1.2rem;
+}
+.cc-journal-prose h5 {
+  font-size: 1.05rem;
+}
+
+.cc-journal-prose ul,
+.cc-journal-prose ol {
+  padding-left: 1.4em;
+}
+
+.cc-journal-prose ul {
+  list-style: disc;
+}
+
+.cc-journal-prose ol {
+  list-style: decimal;
+}
+
+.cc-journal-prose blockquote {
+  border-left: 3px solid var(--cc-border);
+  padding-left: 12px;
+  color: var(--cc-text-muted);
+}
+
+.cc-journal-prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--cc-bg-inset);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.cc-journal-prose a {
+  color: var(--cc-sky);
+}
+
+.cc-journal-prose hr {
+  border: 0;
+  border-top: 1px solid var(--cc-border);
+  margin: 1.2em 0;
+}
+
+.cc-journal-tags input,
+.cc-journal-filters input {
+  padding: 6px 10px;
+  border: 1px solid var(--cc-border);
+  border-radius: 8px;
+  background: var(--cc-bg-raised);
+  color: var(--cc-text);
+  font: inherit;
+}
+
+.cc-journal-shortcuts summary {
+  cursor: pointer;
+  color: var(--cc-text-muted);
+  font-size: 0.85rem;
+}
+
+.cc-journal-shortcuts dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 6px 18px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.cc-journal-shortcuts dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cc-journal-shortcuts kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  border: 1px solid var(--cc-border);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.cc-journal-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.cc-journal-filters .cc-field {
+  margin-bottom: 0;
+}
+
+.cc-journal-entries {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cc-journal-entry {
+  border: 1px solid var(--cc-border);
+  border-radius: var(--cc-radius-card);
+  background: var(--cc-bg-raised);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cc-journal-entry h2 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cc-journal-entry h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cc-journal-entry h2 a:hover,
+.cc-journal-entry h2 a:focus-visible {
+  text-decoration: underline;
+}
+
+.cc-journal-preview {
+  color: var(--cc-text-muted);
+  line-height: 1.5;
+}
+
+.cc-journal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 0.8rem;
+  color: var(--cc-text-faint);
+}
+
+@media (max-width: 640px) {
+  .cc-journal-prose {
+    padding: 16px;
+  }
+}

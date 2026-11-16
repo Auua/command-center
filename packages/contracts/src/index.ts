@@ -10,3 +10,5 @@ export * from './schemas/profile';
 export * from './schemas/tasks';
 export * from './schemas/learning';
 export * from './schemas/streaks';
+export * from './schemas/journal';
+export * from './schemas/journal-doc';

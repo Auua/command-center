@@ -3,7 +3,7 @@ import type { AuthenticatedUser } from '../auth/auth.types';
 import type { ProfileService } from '../profile/profile.service';
 import type { AppreciationRepository } from './appreciation.repository';
 import { AppreciationService } from './appreciation.service';
-import { pickPrompt } from './prompt';
+import { pickPrompt } from '../common/daily-prompt';
 
 const user: AuthenticatedUser = { id: '00000000-0000-0000-0000-0000000000aa', token: 'jwt' };
 const ENTRY = {

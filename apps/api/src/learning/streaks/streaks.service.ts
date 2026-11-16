@@ -2,11 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import {
   GRAMMAR_STUDIED_EVENT,
+  JOURNAL_ENTRY_CREATED_EVENT,
   KANJI_ACKNOWLEDGED_EVENT,
   STREAK_KEYS,
   TASK_COMPLETED_EVENT,
   WOTD_ACKNOWLEDGED_EVENT,
   type GrammarStudiedEvent,
+  type JournalEntryCreatedEvent,
   type KanjiAcknowledgedEvent,
   type StreakKey,
   type StreaksResponse,
@@ -60,6 +62,14 @@ export class StreaksService {
   @OnEvent(KANJI_ACKNOWLEDGED_EVENT)
   async onKanjiAcknowledged(event: KanjiAcknowledgedEvent, context?: EventContext): Promise<void> {
     await this.record(context, 'japanese-kanji', event.acknowledgedAt);
+  }
+
+  @OnEvent(JOURNAL_ENTRY_CREATED_EVENT)
+  async onJournalEntryCreated(
+    event: JournalEntryCreatedEvent,
+    context?: EventContext,
+  ): Promise<void> {
+    await this.record(context, 'journal', event.createdAt);
   }
 
   /** Never throws: a streak failure must not fail the action that earned it. */

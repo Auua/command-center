@@ -49,6 +49,10 @@ export function configureApp(app: NestExpressApplication): void {
   });
   app.disable('x-powered-by');
 
+  // Express's 100 kB default is below a full journal entry (ADR-016 caps the
+  // doc at 256 kB); the contract enforces the real limit with a clear 400.
+  app.useBodyParser('json', { limit: '320kb' });
+
   app.useGlobalFilters(new ZodExceptionFilter());
   app.enableShutdownHooks();
 }

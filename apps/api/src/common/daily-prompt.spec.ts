@@ -1,4 +1,4 @@
-import { localDateIn, pickPrompt, promptText } from './prompt';
+import { localDateIn, pickPrompt, promptText } from './daily-prompt';
 
 const PROMPTS = [{ id: 'smile' }, { id: 'body' }, { id: 'comfort' }, { id: 'learned' }];
 const USER = '00000000-0000-0000-0000-0000000000aa';

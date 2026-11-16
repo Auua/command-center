@@ -10,7 +10,7 @@ import type {
 import type { AuthenticatedUser } from '../auth/auth.types';
 import { ProfileService } from '../profile/profile.service';
 import { AppreciationRepository } from './appreciation.repository';
-import { localDateIn, pickPrompt, promptText } from './prompt';
+import { localDateIn, pickPrompt, promptText } from '../common/daily-prompt';
 
 /**
  * Business rules for the appreciation tracker (ADR-017; controllers stay

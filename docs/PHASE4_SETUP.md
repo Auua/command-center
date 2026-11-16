@@ -50,3 +50,31 @@ where id = 'smile';
 - [ ] Enter adds a line instantly; deleting one shows Undo, and Undo brings it back.
 - [ ] An existing dashboard gets the card through **Edit layout → Add widget → Appreciations**
       (the default layout includes it for new users).
+
+## 4C — Journal (ADR-016)
+
+Nothing to run: entries live in MongoDB (the same `MONGODB_CONNECT` as braindump), the
+collections and indexes are created on first use, and the 16 prompts in `journal_prompts` are
+seeded when the API boots. Search (4C-2) will add an Atlas Search index here.
+
+### Editing prompts
+
+In Atlas → Browse Collections → `journal_prompts`. A prompt is
+`{ _id: "slug", text: { en: "…" }, category: "reflect" | "gratitude" | "growth" | "feelings", active: true }`.
+Set `active: false` to retire one; edits are never overwritten by the boot-time seed (it only
+inserts missing ids).
+
+### Manual checklist
+
+- [ ] The Journal card shows today's prompt and "Write today's entry"; the button opens
+      `/journal/new` with the prompt above the editor.
+- [ ] Typing saves on its own ("Saving…" → "Saved"); the address changes to `/journal/<id>`
+      after the first save without the caret jumping.
+- [ ] With the network off (DevTools → Offline), typing continues and the status reads "Saving
+      locally — will sync"; back online, it saves.
+- [ ] Reloading mid-sentence while offline brings the text back.
+- [ ] Back on the dashboard the card reads "Edit today's entry" with the preview, and focus is on
+      that button.
+- [ ] `/journal` lists the entry; Export downloads a JSON file with `markdown` per entry.
+- [ ] Delete asks first, and the entry is gone from the timeline.
+- [ ] Existing dashboards get the card through **Edit layout → Add widget → Journal**.

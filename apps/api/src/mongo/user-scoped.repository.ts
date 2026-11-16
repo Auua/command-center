@@ -64,6 +64,10 @@ export abstract class UserScopedRepository<TDoc extends UserOwnedDocument> {
     );
   }
 
+  protected countForUser(userId: string, filter: Filter<TDoc> = {}): Promise<number> {
+    return this.collection.countDocuments(this.scope(userId, filter));
+  }
+
   /** Index creation is a collection-level concern, not user-scoped. */
   protected createIndex(spec: IndexSpecification): Promise<string> {
     return this.collection.createIndex(spec);

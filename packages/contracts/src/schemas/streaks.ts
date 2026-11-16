@@ -10,6 +10,7 @@ export const STREAK_KEYS = [
   'japanese-wotd',
   'japanese-grammar',
   'japanese-kanji',
+  'journal',
 ] as const;
 export const StreakKeySchema = z.enum(STREAK_KEYS);
 export type StreakKey = z.infer<typeof StreakKeySchema>;
