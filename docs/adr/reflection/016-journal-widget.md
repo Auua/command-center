@@ -3,15 +3,13 @@
 - **Status:** Accepted
 - **Date:** 2026-07-13
 - **Review:** claude-reviewed, PO-reviewed
-- **Built:** 2026-11-16 as Phase 4C (search follows as 4C-2) — see the implementation note below.
+- **Built:** 2026-11-16 as Phase 4C, search as 4C-2 — see the implementation notes below.
 
 > **Implementation note (2026-11-16, Phase 4C).** Built as decided, with these details settled in
 > the build:
 >
-> - **Search is a separate step (4C-2).** `GET /journal/search` needs an Atlas Search index
->   created by hand in Atlas, and `$search` cannot run on mongodb-memory-server, so it ships
->   with its own test seam. The timeline filters by date range and tag now; `plainText` is
->   stored from the first save, so the index covers every existing entry when it lands.
+> - **Search is a separate step (4C-2)** — see the next note. `plainText` is stored from the
+>   first save, so the index covers every entry written before it.
 > - **One launcher read:** `GET /journal/today?locale=&categories=` returns the home-timezone
 >   date, the day's prompt (the shared `common/daily-prompt.ts` pick: sha256(userId|date) over
 >   the active prompts in the chosen categories) and today's latest entry preview — it
@@ -53,6 +51,42 @@
 > - **Export** is also a button on the timeline (a JSON download), not only the endpoint.
 > - **Default layout:** the card sits after Streaks with Appreciation beside it (ADR-017's
 >   placement); existing dashboards add it through Edit layout → Add widget.
+
+> **Implementation note (2026-11-16, Phase 4C-2 — search).** Built as decided, with these
+> details settled in the build:
+>
+> - **The API creates the index.** `JournalSearchService` creates `journal_search` when it is
+>   missing — on boot and again on a search while it is not ready — with
+>   `createSearchIndex` (the app's database user has `readWrite`, which carries
+>   `createSearchIndexes`). The "created by hand in Atlas" step is gone; the definition lives
+>   in code (`apps/api/src/journal/search.ts`) and the setup guide keeps a by-hand fallback.
+>   An index that exists is left alone, so a later definition change must be applied in Atlas.
+> - **Static mapping:** `userId` and `entryDate` as `token` (equality, range, sort), `_id` as
+>   `objectId` (the tie-break), `plainText` as `string` with `lucene.standard`, and `tags` as
+>   both `token` (exact filter) and `string` (a word query matches a tag). `lucene.standard` is
+>   language-neutral without stemming, so an inflected Finnish word matches only that form —
+>   the per-locale analyzer stays a later change.
+> - **Every word must match** (`text` with `matchCriteria: "all"` over `plainText` + `tags`);
+>   date range, tag and the cursor are non-scoring `compound.filter` clauses.
+> - **Newest first, not by relevance.** Results sort by `entryDate` desc, `_id` desc in
+>   `$search`, so they page with the timeline's own `entryDate|_id` cursor (as the contract
+>   below asks) and read as a filtered timeline; the highlights show why each matched.
+> - **User scoping twice.** `UserScopedRepository.searchForUser` adds an `equals` on `userId` to
+>   the compound filter and a `$match: { userId }` straight after `$search` (which must be the
+>   first stage), so a search can no more skip the user than a `find` can.
+> - **503, never a silent empty list.** `$search` against a missing index returns no documents
+>   rather than an error, so the service checks `$listSearchIndexes` first: until the index is
+>   queryable — and where Atlas Search does not exist (the e2e mongodb-memory-server) — the
+>   endpoint answers 503 and the timeline says search is not ready. A ready answer is trusted
+>   for the process lifetime; a not-ready one is re-asked at most every 30 s.
+> - **Highlights** come back as passages of `{text, hit}` fragments (best three, `plainText`
+>   only) and render as text nodes with `<mark>` — never HTML.
+> - **The query lives in the URL** (`/journal?q=&from=&to=&tag=`, the filters too), so going
+>   back from an entry returns to the same search.
+> - **Test seam:** the pipeline, the index definition, the highlight mapping and the readiness
+>   logic are unit-tested against a fake collection; the e2e suite asserts the 503 and the
+>   validation on mongodb-memory-server. A real `$search` is checked by hand once deployed
+>   (`docs/PHASE4_SETUP.md`).
 
 ## Context
 
@@ -139,7 +173,7 @@ All under `/api/v1/journal`, JWT-guarded, zod-validated (ADR-004/007):
 | POST   | `/entries`                    | create; emits `journal.entry_created`                                     |
 | PATCH  | `/entries/:id`                | autosave; body carries `baseVersion`; `409` on mismatch                   |
 | DELETE | `/entries/:id`                | delete (hard delete; drafts are client-side)                              |
-| GET    | `/search?q=&tags=&from=&to=`  | Atlas Search over `plainText`+`tags`, returns previews + match highlights |
+| GET    | `/search?q=&tag=&from=&to=`   | Atlas Search over `plainText`+`tags`, returns previews + match highlights |
 | GET    | `/export`                     | full JSON dump: raw docs **and** a Markdown rendering per entry (NFR-7)   |
 
 Contract details:

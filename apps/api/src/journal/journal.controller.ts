@@ -15,14 +15,17 @@ import {
   JournalListQuerySchema,
   JournalPromptCategoriesQuerySchema,
   JournalPromptLocaleSchema,
+  JournalSearchQuerySchema,
   PatchJournalEntryRequestSchema,
   type JournalEntry,
   type JournalExport,
   type JournalListResponse,
+  type JournalSearchResponse,
   type JournalToday,
 } from '@command-center/contracts';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/auth.types';
+import { JournalSearchService } from './journal-search.service';
 import { JournalService } from './journal.service';
 
 /**
@@ -33,7 +36,10 @@ import { JournalService } from './journal.service';
  */
 @Controller('journal')
 export class JournalController {
-  constructor(private readonly service: JournalService) {}
+  constructor(
+    private readonly service: JournalService,
+    private readonly searchService: JournalSearchService,
+  ) {}
 
   @Get('today')
   today(
@@ -51,6 +57,15 @@ export class JournalController {
   @Get('export')
   export(@CurrentUser() user: AuthenticatedUser): Promise<JournalExport> {
     return this.service.export(user);
+  }
+
+  /** 503 while the search index is missing or building (see JournalSearchService). */
+  @Get('search')
+  search(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: Record<string, unknown>,
+  ): Promise<JournalSearchResponse> {
+    return this.searchService.search(user, JournalSearchQuerySchema.parse(query));
   }
 
   @Get('entries')

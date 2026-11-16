@@ -1,9 +1,25 @@
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import type { JournalDoc, JournalEntry, JournalEntrySummary } from '@command-center/contracts';
-import { ObjectId, type Filter, type WithId } from 'mongodb';
+import type {
+  JournalDoc,
+  JournalEntry,
+  JournalEntrySummary,
+  JournalSearchHit,
+} from '@command-center/contracts';
+import { ObjectId, type Document, type Filter, type WithId } from 'mongodb';
 import { MongoService } from '../mongo/mongo.service';
 import { UserScopedRepository, type UserOwnedDocument } from '../mongo/user-scoped.repository';
 import type { TimelinePosition } from './cursor';
+import {
+  JOURNAL_SEARCH_DEFINITION,
+  JOURNAL_SEARCH_INDEX,
+  JOURNAL_SEARCH_PASSAGES,
+  JOURNAL_SEARCH_SORT,
+  searchCompound,
+  searchIndexState,
+  toHighlights,
+  type SearchFilter,
+  type SearchIndexState,
+} from './search';
 
 const COLLECTION = 'journal_entries';
 
@@ -130,6 +146,47 @@ export class JournalRepository
       limit: filter.limit + 1,
     });
     return docs.map(toSummary);
+  }
+
+  /**
+   * Atlas Search over `plainText` + tags, newest first; one more than
+   * `limit` is read so the caller knows if a page follows.
+   */
+  async search(
+    userId: string,
+    filter: SearchFilter & { limit: number },
+  ): Promise<JournalSearchHit[]> {
+    const rows = await this.searchForUser(
+      userId,
+      {
+        index: JOURNAL_SEARCH_INDEX,
+        compound: searchCompound(filter),
+        sort: JOURNAL_SEARCH_SORT,
+        highlight: { path: 'plainText', maxNumPassages: JOURNAL_SEARCH_PASSAGES },
+      },
+      [
+        { $limit: filter.limit + 1 },
+        { $addFields: { highlights: { $meta: 'searchHighlights' } } },
+        { $project: { doc: 0, plainText: 0 } },
+      ],
+    );
+    return rows.map((row) => ({
+      ...toSummary(row as WithId<JournalEntryDocument>),
+      highlights: toHighlights((row as Document).highlights),
+    }));
+  }
+
+  /** The search index's state; throws where search is not supported (non-Atlas). */
+  async searchIndexState(): Promise<SearchIndexState> {
+    return searchIndexState(await this.listSearchIndexes(JOURNAL_SEARCH_INDEX));
+  }
+
+  /** Creates the search index (Atlas builds it in the background). */
+  async createJournalSearchIndex(): Promise<void> {
+    await this.createSearchIndex({
+      name: JOURNAL_SEARCH_INDEX,
+      definition: JOURNAL_SEARCH_DEFINITION,
+    });
   }
 
   async latestOn(userId: string, entryDate: string): Promise<JournalEntrySummary | null> {

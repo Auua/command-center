@@ -55,7 +55,7 @@ where id = 'smile';
 
 Nothing to run: entries live in MongoDB (the same `MONGODB_CONNECT` as braindump), the
 collections and indexes are created on first use, and the 16 prompts in `journal_prompts` are
-seeded when the API boots. Search (4C-2) will add an Atlas Search index here.
+seeded when the API boots. Search (4C-2) adds an Atlas Search index — see below.
 
 ### Editing prompts
 
@@ -78,3 +78,46 @@ inserts missing ids).
 - [ ] `/journal` lists the entry; Export downloads a JSON file with `markdown` per entry.
 - [ ] Delete asks first, and the entry is gone from the timeline.
 - [ ] Existing dashboards get the card through **Edit layout → Add widget → Journal**.
+
+## 4C-2 — Journal search (ADR-016)
+
+Nothing to run either: the API creates the Atlas Search index `journal_search` on
+`journal_entries` when it boots (and again on a search, while it is missing). Atlas then builds
+it in the background — a minute or two for a small journal. Until it is ready, search answers
+503 and `/journal` says "Search isn't ready yet".
+
+To confirm, in Atlas → the cluster → **Search & Vector Search**: `journal_search` on
+`journal_entries` shows **Ready**. A free (M0) cluster allows three search indexes; this is the
+first.
+
+**If it is not there** — the API log says `Journal search unavailable …` (for example the
+database user lacks `readWrite`) — create it by hand: Create Search Index → JSON editor →
+database from `MONGODB_CONNECT`, collection `journal_entries`, name `journal_search`, definition:
+
+```json
+{
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "_id": { "type": "objectId" },
+      "userId": { "type": "token" },
+      "entryDate": { "type": "token" },
+      "plainText": { "type": "string", "analyzer": "lucene.standard" },
+      "tags": [{ "type": "token" }, { "type": "string", "analyzer": "lucene.standard" }]
+    }
+  }
+}
+```
+
+The code is the source of truth for this definition (`apps/api/src/journal/search.ts`); the API
+never changes an index that exists, so a later definition change is applied here by hand.
+
+### Manual checklist
+
+- [ ] `journal_search` shows **Ready** in Atlas.
+- [ ] On `/journal`, searching a word from an entry lists it with the word highlighted; the
+      address becomes `/journal?q=…`.
+- [ ] Two words find only entries that contain both; a tag name finds entries with that tag.
+- [ ] Search with a date range or a tag narrows the results; **Clear** returns to the timeline.
+- [ ] Opening a result and going back returns to the same search.
+- [ ] A word that appears nowhere says "No entries contain …".

@@ -264,4 +264,24 @@ describe('Journal (e2e)', () => {
     await request(server).get(`/api/v1/journal/entries/${id}`).set(asOther).expect(404);
     await request(server).delete(`/api/v1/journal/entries/${id}`).set(asOther).expect(404);
   });
+
+  // `$search` cannot run on mongodb-memory-server: there, search must say
+  // it is unavailable (503) — never answer with a silently empty list. The
+  // query itself is covered by src/journal/search.spec.ts.
+  it('validates a search, and answers 503 where Atlas Search is unavailable', async () => {
+    await request(server).get('/api/v1/journal/search?q=heron').expect(401);
+    await request(server).get('/api/v1/journal/search').set(asAnna).expect(400);
+    await request(server).get('/api/v1/journal/search?q=%20').set(asAnna).expect(400);
+    await request(server)
+      .get(`/api/v1/journal/search?q=${'x'.repeat(201)}`)
+      .set(asAnna)
+      .expect(400);
+    await request(server).get('/api/v1/journal/search?q=x&nope=1').set(asAnna).expect(400);
+    await request(server).get('/api/v1/journal/search?q=x&cursor=bad').set(asAnna).expect(400);
+    const unavailable = await request(server)
+      .get('/api/v1/journal/search?q=heron&tag=rest&from=2026-11-01')
+      .set(asAnna)
+      .expect(503);
+    expect(unavailable.body.message).toBe('Journal search is not available yet');
+  });
 });
