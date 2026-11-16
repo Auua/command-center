@@ -26,7 +26,7 @@ Delivery is one PR per step, each leaving `main` deployable:
 | 4A ✓ | `phase4-layout-ui`    | Layout editor: `packLayout`, edit mode (move / size / remove), Add-widget picker, reset. No API change.           | ADR-042                           |
 | 4B ✓ | `phase4-appreciation` | `AppreciationModule` (Postgres, migration 0012), server-served daily prompt, `appreciation` widget.               | 4A, ADR-017                       |
 | 4C   | `phase4-journal`      | `JournalModule` (Mongo), TipTap editor on a `/journal` route, local-first drafts, `journal` widget.               | 4A, ADR-016                       |
-| 4D   | `phase4-calendar`     | `CalendarModule`: own events, server-expanded RRULE, shared recurrence utility, `/calendar` route, agenda widget. | 4A, ADR-018                       |
+| 4D ✓ | `phase4-calendar`     | `CalendarModule`: own events, server-expanded RRULE, shared recurrence utility, `/calendar` route, agenda widget. | 4A, ADR-018                       |
 | 4E   | `phase4-recurrence`   | Recurring tasks on the shared recurrence utility; public holidays in the calendar.                                | 4D, ADR-036, ADR-033 (+amendment) |
 | 4F   | `phase4-gcal`         | Google Calendar sync: OAuth custody, per-calendar mode, mirror over a rolling horizon.                            | 4D, ADR-037 (+amendment)          |
 | 4G   | `phase4-export`       | Per-module JSON export (NFR-7).                                                                                   | 4B–4D                             |
@@ -34,6 +34,23 @@ Delivery is one PR per step, each leaving `main` deployable:
 4B and 4C are independent of each other; 4B is the smaller and goes first so the reflection
 column of the dashboard exists before the journal's larger build. Each later step gets its own
 section here when it starts — only 4A is detailed now.
+
+## 4D — Calendar (ADR-018) ✓ (day/week views: 4D-2)
+
+Built 2026-11-16, split like 4C:
+
+- **4D (this PR) — events and the two list-shaped views.** `CalendarModule` (Postgres
+  `calendar_events`, migration 0013), recurrence expansion on the server (`calendar/expansion.ts`,
+  rrule 2.8.1 + luxon; the DST suite in `expansion.spec.ts`), the `calendar` card (agenda: today
+  at 2×2, the rolling week at 4×2), `/calendar` with Agenda and Month (roving-tabindex grid, day
+  panel), the event dialog with a Repeat form, delete with undo ("only this one / the whole
+  series"), the task-deadline overlay, and a Calendar link in the header.
+- **4D-2 — Day and Week.** The hour-track views (all-day strip on top, chronological DOM order),
+  then `defaultView` gains `day | week`.
+
+The shared recurrence utility named for 4E is the API's `calendar/expansion.ts` (pure, takes any
+row with a start and an RRULE); 4E extends it to task rows. Decisions settled in the build are in
+ADR-018's implementation note (series timezone, text exdates, date ranges, saves not optimistic).
 
 ## 4C — Journal (ADR-016) ✓ (search: 4C-2 ✓)
 

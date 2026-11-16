@@ -3,6 +3,50 @@
 - **Status:** Accepted
 - **Date:** 2026-07-13
 - **Review:** claude-reviewed, PO-reviewed
+- **Built:** 2026-11-16 as Phase 4D (agenda + month; day and week views follow as 4D-2) — see
+  the implementation note below.
+
+> **Implementation note (2026-11-16, Phase 4D).** Built as decided, with these details settled
+> in the build:
+>
+> - **Split in two steps.** 4D ships the module, migration 0013, the card, and `/calendar` with
+>   the Agenda and Month views; the Day and Week hour-track views are step 4D-2. The
+>   `defaultView` setting offers `agenda | month` until then.
+> - **A series remembers its timezone.** `calendar_events.time_zone` (not in the table below)
+>   holds the IANA zone a timed series repeats in — the home zone when it was last written.
+>   Expansion runs in that zone's wall clock (`rrule` in floating time, then each occurrence
+>   placed in the zone with luxon), so "Tuesdays 09:00" stays 09:00 across DST and across a later
+>   change of home timezone. Reads still render in the current home zone.
+> - **`exdates` are text keys**, not `timestamptz[]`: an occurrence's key is its
+>   `occurrenceStart` — an ISO instant for a timed event, a `YYYY-MM-DD` date for an all-day one —
+>   so an all-day exception never becomes a midnight timestamp. An edit that changes the rule,
+>   the start or the series zone clears them (they would name slots that no longer exist).
+> - **The range is dates.** `GET /calendar/events?from=YYYY-MM-DD&to=YYYY-MM-DD` — days in the
+>   home timezone, `to` exclusive, ≤ 366 days; the response names the zone it used. The 500 cap
+>   is on occurrences that land in the range; a separate guard stops a runaway rule's candidates.
+>   A rule finer than hourly, carrying DTSTART/TZID, or that never occurs is a 400 at write time;
+>   `DELETE …/occurrences/:start` 404s a start that is not an occurrence of the series.
+> - **PATCH takes the whole event** (the dialog always sends the full form), validated by the
+>   same schema as POST — editing a recurring event edits the series.
+> - **Saves wait for the server; only delete is optimistic.** Showing a new or edited series
+>   before the server expands it would mean expanding RRULEs in the client, which this ADR
+>   rules out — so the dialog shows a busy Save and closes on success, with errors inside it.
+>   Delete hides at once, announces and focuses Undo, and sends the DELETE when the 5 s window
+>   closes (sooner on another delete or on leaving the view); a failure brings the event back
+>   with an alert.
+> - **Task deadlines reuse `GET /tasks`** — the tasks card's own `['tasks']` query, filtered to
+>   open tasks due in the range — instead of a `dueFrom/dueTo` endpoint; the markers stay
+>   read-only. The `/calendar` page reads the card's settings from the layout, and waits for them
+>   before requesting tasks or picking the landing view.
+> - **Week start is a named day** (`monday | sunday | saturday`) rather than `0..6`, so the
+>   generated settings form shows words.
+> - **The dialog** writes rules from a Repeat form — daily / weekly on chosen days / monthly /
+>   yearly, every N, ending never / on a date / after N times (`lib/calendar-recurrence.ts`); a
+>   stored rule outside that set shows as "Custom repeat" and is kept unchanged.
+> - **Navigation:** the header nav links to `/calendar` next to Journal; the page's paging and view
+>   switches push history entries (`/calendar?view=&date=`).
+> - **The rrule library is pinned at 2.8.1**; `apps/api/src/calendar/expansion.spec.ts` is the DST
+>   regression suite to re-run on any upgrade.
 
 ## Context
 
