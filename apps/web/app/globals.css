@@ -154,6 +154,42 @@ p {
   gap: 0.75rem;
 }
 
+.cc-header-start {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.cc-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cc-header-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--cc-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cc-header-link span {
+  display: inline-flex;
+  color: var(--cc-violet);
+}
+
+.cc-header-link:hover,
+.cc-header-link:focus-visible {
+  color: var(--cc-text);
+  background: color-mix(in srgb, var(--cc-violet) 14%, transparent);
+}
+
 .cc-user-email {
   color: var(--cc-text-muted);
   font-size: 0.85rem;

@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { DashboardBootstrap } from '@/components/dashboard-bootstrap';
 import { DashboardGrid } from '@/components/dashboard-grid';
+import { DashboardNav } from '@/components/dashboard-nav';
 import { NotificationBell } from '@/components/notification-bell';
 import { signOut } from './auth/actions';
 
@@ -21,7 +22,10 @@ export default async function DashboardPage(): Promise<ReactElement> {
   return (
     <div className="cc-shell">
       <header className="cc-header">
-        <h1>Command Center</h1>
+        <div className="cc-header-start">
+          <h1>Command Center</h1>
+          <DashboardNav />
+        </div>
         <div className="cc-header-actions">
           <NotificationBell />
           <span className="cc-user-email">{user.email}</span>
