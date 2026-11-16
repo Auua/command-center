@@ -14,6 +14,7 @@ const DEFAULT_ORDER: ReadonlyArray<{ widgetId: string; w: number; h: number }> =
   { widgetId: 'mood', w: 2, h: 2 },
   { widgetId: 'tasks', w: 2, h: 2 },
   { widgetId: 'reminders', w: 4, h: 2 },
+  { widgetId: 'calendar', w: 4, h: 2 },
   { widgetId: 'streaks', w: 2, h: 3 },
   // The reflection pair (ADR-017: appreciation beside Journal).
   { widgetId: 'journal', w: 2, h: 2 },

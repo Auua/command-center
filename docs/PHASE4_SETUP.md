@@ -45,10 +45,10 @@ where id = 'smile';
 
 ### 3. Manual checklist
 
-- [ ] The Appreciations card shows the day's prompt as its placeholder; after the first entry
+- [x] The Appreciations card shows the day's prompt as its placeholder; after the first entry
       of the day it reads "One small good thing…".
-- [ ] Enter adds a line instantly; deleting one shows Undo, and Undo brings it back.
-- [ ] An existing dashboard gets the card through **Edit layout → Add widget → Appreciations**
+- [x] Enter adds a line instantly; deleting one shows Undo, and Undo brings it back.
+- [x] An existing dashboard gets the card through **Edit layout → Add widget → Appreciations**
       (the default layout includes it for new users).
 
 ## 4C — Journal (ADR-016)
@@ -66,18 +66,18 @@ inserts missing ids).
 
 ### Manual checklist
 
-- [ ] The Journal card shows today's prompt and "Write today's entry"; the button opens
+- [x] The Journal card shows today's prompt and "Write today's entry"; the button opens
       `/journal/new` with the prompt above the editor.
-- [ ] Typing saves on its own ("Saving…" → "Saved"); the address changes to `/journal/<id>`
+- [x] Typing saves on its own ("Saving…" → "Saved"); the address changes to `/journal/<id>`
       after the first save without the caret jumping.
-- [ ] With the network off (DevTools → Offline), typing continues and the status reads "Saving
+- [x] With the network off (DevTools → Offline), typing continues and the status reads "Saving
       locally — will sync"; back online, it saves.
-- [ ] Reloading mid-sentence while offline brings the text back.
-- [ ] Back on the dashboard the card reads "Edit today's entry" with the preview, and focus is on
+- [x] Reloading mid-sentence while offline brings the text back.
+- [x] Back on the dashboard the card reads "Edit today's entry" with the preview, and focus is on
       that button.
-- [ ] `/journal` lists the entry; Export downloads a JSON file with `markdown` per entry.
-- [ ] Delete asks first, and the entry is gone from the timeline.
-- [ ] Existing dashboards get the card through **Edit layout → Add widget → Journal**.
+- [x] `/journal` lists the entry; Export downloads a JSON file with `markdown` per entry.
+- [x] Delete asks first, and the entry is gone from the timeline.
+- [x] Existing dashboards get the card through **Edit layout → Add widget → Journal**.
 
 ## 4C-2 — Journal search (ADR-016)
 
@@ -122,3 +122,27 @@ never changes an index that exists, so a later definition change is applied here
 - [ ] Opening a result and going back returns to the same search — with the browser's Back and
       with the editor's **← Journal** button.
 - [x] A word that appears nowhere says "No entries contain …".
+
+## 4D — Calendar (ADR-018)
+
+### 1. Run migration 0013
+
+In Supabase → SQL editor, run `supabase/migrations/0013_calendar_events.sql` (idempotent — safe to
+run twice). It creates `calendar_events` with own-row RLS. Until it is run, the Calendar card and
+`/calendar` show "Couldn't load the calendar."
+
+### 2. Manual checklist
+
+- [ ] The header shows **Calendar** next to Journal; existing dashboards get the card through
+      **Edit layout → Add widget → Calendar** (the default layout includes it for new users).
+- [ ] **New event** (card or page) opens the dialog at the next whole hour, an hour long; saving
+      shows it in the card and on `/calendar`.
+- [ ] A weekly event at 09:00 created before 29 March (or 25 October) is still at 09:00 the week
+      after the clocks change.
+- [ ] An all-day event (e.g. a birthday, repeating every year) sits on its date in Agenda and Month.
+- [ ] Month view: arrow keys move between days, Page Up/Down change month, Enter opens the day's
+      list; typing a letter on a day opens a new event with that letter as its title.
+- [ ] Deleting a repeating event asks **Only this one / The whole series**; Undo brings it back;
+      left alone for 5 s, it stays gone after a reload.
+- [ ] With **Show task deadlines** on (card settings), an open task with a deadline appears as
+      "Task due" on its day.

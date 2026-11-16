@@ -7,6 +7,7 @@ import { AppreciationModule } from './appreciation/appreciation.module';
 import { AuthModule } from './auth/auth.module';
 import { AutomationModule } from './automation/automation.module';
 import { BraindumpModule } from './braindump/braindump.module';
+import { CalendarModule } from './calendar/calendar.module';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import { validateEnv } from './config/env';
 import { HealthModule } from './health/health.module';
@@ -51,6 +52,7 @@ import { WidgetRegistryModule } from './widget-registry/widget-registry.module';
     AuthModule,
     AutomationModule,
     BraindumpModule,
+    CalendarModule,
     HealthModule,
     JournalModule,
     LearningModule,
