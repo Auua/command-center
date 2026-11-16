@@ -119,7 +119,7 @@ never changes an index that exists, so a later definition change is applied here
       address becomes `/journal?q=…`.
 - [x] Two words find only entries that contain both; a tag name finds entries with that tag.
 - [x] Search with a date range or a tag narrows the results; **Clear** returns to the timeline.
-- [ ] Opening a result and going back returns to the same search — with the browser's Back and
+- [x] Opening a result and going back returns to the same search — with the browser's Back and
       with the editor's **← Journal** button.
 - [x] A word that appears nowhere says "No entries contain …".
 
@@ -133,16 +133,16 @@ run twice). It creates `calendar_events` with own-row RLS. Until it is run, the 
 
 ### 2. Manual checklist
 
-- [ ] The header shows **Calendar** next to Journal; existing dashboards get the card through
+- [x] The header shows **Calendar** next to Journal; existing dashboards get the card through
       **Edit layout → Add widget → Calendar** (the default layout includes it for new users).
-- [ ] **New event** (card or page) opens the dialog at the next whole hour, an hour long; saving
+- [x] **New event** (card or page) opens the dialog at the next whole hour, an hour long; saving
       shows it in the card and on `/calendar`.
-- [ ] A weekly event at 09:00 created before 29 March (or 25 October) is still at 09:00 the week
+- [x] A weekly event at 09:00 created before 29 March (or 25 October) is still at 09:00 the week
       after the clocks change.
-- [ ] An all-day event (e.g. a birthday, repeating every year) sits on its date in Agenda and Month.
-- [ ] Month view: arrow keys move between days, Page Up/Down change month, Enter opens the day's
+- [x] An all-day event (e.g. a birthday, repeating every year) sits on its date in Agenda and Month.
+- [x] Month view: arrow keys move between days, Page Up/Down change month, Enter opens the day's
       list; typing a letter on a day opens a new event with that letter as its title.
-- [ ] Deleting a repeating event asks **Only this one / The whole series**; Undo brings it back;
+- [x] Deleting a repeating event asks **Only this one / The whole series**; Undo brings it back;
       left alone for 5 s, it stays gone after a reload.
-- [ ] With **Show task deadlines** on (card settings), an open task with a deadline appears as
+- [x] With **Show task deadlines** on (card settings), an open task with a deadline appears as
       "Task due" on its day.
