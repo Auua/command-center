@@ -54,6 +54,21 @@ describe('StreaksService.record', () => {
     expect(repository.insertDay).toHaveBeenCalledWith(user, 'japanese-kanji', '2026-11-14');
   });
 
+  it('maps journal.entry_created to the journal key on the day it was written (ADR-016)', async () => {
+    const { service, repository } = makeService();
+    await service.onJournalEntryCreated(
+      {
+        userId: user.id,
+        entryId: '6740a1b2c3d4e5f601234567',
+        // Back-dated entry: the streak counts the day of writing, not entryDate.
+        entryDate: '2026-11-01',
+        createdAt: '2026-11-14T10:00:00.000Z',
+      },
+      { user },
+    );
+    expect(repository.insertDay).toHaveBeenCalledWith(user, 'journal', '2026-11-14');
+  });
+
   it('skips (and does not throw) when the event carries no request context', async () => {
     const { service, repository } = makeService();
     await service.onTaskCompleted(

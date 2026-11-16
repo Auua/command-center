@@ -35,6 +35,52 @@ Delivery is one PR per step, each leaving `main` deployable:
 column of the dashboard exists before the journal's larger build. Each later step gets its own
 section here when it starts — only 4A is detailed now.
 
+## 4C — Journal (ADR-016) ✓ (search: 4C-2)
+
+Built 2026-11-16. The largest Phase 4 step; split in two PRs so each stays reviewable:
+
+- **4C (this PR) — write and keep.** `JournalModule` (Mongo `journal_entries` + seeded
+  `journal_prompts`), the editor routes, local-first drafts, the timeline (date range + tag
+  filters), export, the `journal` launcher widget and a `journal` streak.
+- **4C-2 — search.** `GET /journal/search` over an Atlas Search index. Separate because the index
+  is created by hand in Atlas (one-time setup) and `$search` cannot run on mongodb-memory-server,
+  so it needs its own test seam.
+
+### Decisions settled in the build (recorded in ADR-016's implementation note)
+
+- **One read for the launcher:** `GET /journal/today?locale=&categories=` returns the home-timezone
+  date, the day's prompt and today's latest entry preview — it subsumes the ADR's
+  `/prompts/today`, so the card makes one request.
+- **No title field** — the data model has none; a heading inside the doc is the title. Focus lands
+  in the content area.
+- **Server-derived text without TipTap on the server:** `plainText` / `textPreview` / `wordCount`
+  and the export's Markdown come from a small pure walker over the validated tree in
+  `packages/contracts` (`journal-doc.ts`) — the vocabulary is 10 nodes and 5 marks, so the API
+  takes no editor dependency.
+- **Exact attrs:** TipTap 3 (pinned 3.32.2) emits `link {href,target,rel,class,title}`,
+  `orderedList {start,type}`, `heading {level}`; the contract allows exactly those. A web test
+  runs the real editor's `getJSON()` through the contract so an editor upgrade that adds an attr
+  fails CI instead of failing saves.
+- **Idempotent retry:** a `PATCH` whose `baseVersion` is one behind and whose doc and tags equal
+  the stored ones returns the stored entry (200), so a retried timeout is never a false 409.
+- **Body limit:** the API's JSON body limit rises from Express's 100 kB to 320 kB (doc cap 256 kB).
+- **Prompts seed on boot:** `journal_prompts` is upserted with `$setOnInsert` on module init —
+  idempotent, never overwrites a prompt edited in Atlas.
+- **Streak:** `journal.entry_created` (on create) → streak key `journal` (ADR-014 names it).
+
+### Pieces
+
+- Contracts `schemas/journal.ts` (doc allowlist, entries, list/cursor, today, export, event) and
+  `journal-doc.ts` (text, preview, word count, Markdown).
+- API `apps/api/src/journal/`: repository (user-scoped; indexes `userId+entryDate+_id`,
+  `userId+tags`), service (create / patch with version check / delete / list / get / today /
+  export), prompts repository + seed, controller.
+- Web: `app/journal/` (layout with back link, timeline page, `new` and `[entryId]` editor pages
+  loading the editor via `next/dynamic`), `components/journal/` (editor, toolbar with roving
+  tabindex, save status, delete dialog), `lib/journal-drafts.ts` (IndexedDB draft store behind an
+  interface), `lib/journal-autosave.ts` (the save engine: 2 s debounce, 10 s max, flush on blur /
+  hide / leave, 409 handling, backoff while offline), `lib/journal-api.ts`, `widgets/journal/`.
+
 ## 4B — Appreciation (ADR-017) ✓
 
 Built 2026-11-15. Migration `0012_appreciation.sql` (entries + seeded prompts), `AppreciationModule`

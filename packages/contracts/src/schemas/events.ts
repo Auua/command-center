@@ -57,3 +57,17 @@ export const KanjiAcknowledgedEventSchema = z.object({
   acknowledgedAt: z.string().datetime(),
 });
 export type KanjiAcknowledgedEvent = z.infer<typeof KanjiAcknowledgedEventSchema>;
+
+/**
+ * Emitted by JournalModule when an entry is first saved (ADR-016) — the
+ * journal streak source (ADR-014).
+ */
+export const JOURNAL_ENTRY_CREATED_EVENT = 'journal.entry_created';
+
+export const JournalEntryCreatedEventSchema = z.object({
+  userId: z.string().min(1),
+  entryId: z.string().min(1),
+  entryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  createdAt: z.string().datetime(),
+});
+export type JournalEntryCreatedEvent = z.infer<typeof JournalEntryCreatedEventSchema>;

@@ -24,6 +24,10 @@
 > `kanji.acknowledged` → streak key `japanese-kanji` (one map entry in `StreaksService`, the
 > key added to `STREAK_KEYS`; no migration — keys are data). Skip never credits, as for WOTD.
 
+> **Journal joins (2026-11-16, ADR-016 / Phase 4C).** `journal.entry_created` → streak key
+> `journal`, counted on the day the entry was first saved (its `createdAt`), not its `entryDate` —
+> back-filling yesterday's entry is engagement today. No migration.
+
 ## Context
 
 Phase 3 introduces streaks (ADR §9): consecutive-day counters for habits like Japanese study,

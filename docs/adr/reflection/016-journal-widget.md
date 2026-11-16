@@ -3,6 +3,56 @@
 - **Status:** Accepted
 - **Date:** 2026-07-13
 - **Review:** claude-reviewed, PO-reviewed
+- **Built:** 2026-11-16 as Phase 4C (search follows as 4C-2) — see the implementation note below.
+
+> **Implementation note (2026-11-16, Phase 4C).** Built as decided, with these details settled in
+> the build:
+>
+> - **Search is a separate step (4C-2).** `GET /journal/search` needs an Atlas Search index
+>   created by hand in Atlas, and `$search` cannot run on mongodb-memory-server, so it ships
+>   with its own test seam. The timeline filters by date range and tag now; `plainText` is
+>   stored from the first save, so the index covers every existing entry when it lands.
+> - **One launcher read:** `GET /journal/today?locale=&categories=` returns the home-timezone
+>   date, the day's prompt (the shared `common/daily-prompt.ts` pick: sha256(userId|date) over
+>   the active prompts in the chosen categories) and today's latest entry preview — it
+>   subsumes `/prompts/today`, so the card makes one request.
+> - **No title field.** The data model has none; a heading inside the doc is the title, and
+>   focus lands in the content area.
+> - **Exact vocabulary, enforced both ways.** TipTap is pinned at 3.32.2. Its JSON carries
+>   `link {href, target, rel, class, title}`, `orderedList {start, type}` and `heading {level}`;
+>   `JournalDocSchema` allows exactly those and rejects anything else (400). A web test runs the
+>   real editor's `getJSON()` through the contract, so an editor upgrade that adds an attr fails
+>   CI instead of failing saves. Pasted HTML outside the vocabulary is dropped by the editor's
+>   schema; links are http(s) only on both sides.
+> - **Derived text without TipTap on the server.** `plainText` / `textPreview` / `wordCount`
+>   and the export's Markdown come from a pure walker in `packages/contracts`
+>   (`journal-doc.ts`) — the vocabulary is small enough that the API needs no editor
+>   dependency. Words are counted with `Intl.Segmenter`, so Japanese text is not one word.
+> - **Idempotent retry, concretely.** A `PATCH` whose `baseVersion` is one behind and whose doc
+>   and tags equal the stored ones answers 200 with the stored entry; anything else on a stale
+>   version is a 409 with `currentVersion`.
+> - **Body limit:** the API's JSON body limit is 320 kB (Express's default 100 kB is below the
+>   256 kB doc cap); the contract enforces the real cap with a clear 400.
+> - **Prompts seed on boot:** `journal_prompts` (16 English prompts in four categories:
+>   reflect, gratitude, growth, feelings) is upserted with `$setOnInsert` on module init —
+>   idempotent, and a prompt edited or deactivated in Atlas is never overwritten.
+> - **Autosave engine:** `apps/web/lib/journal-autosave.ts`, framework-free and tested with fake
+>   timers — draft on every edit, 2 s debounce / 10 s max, one request in flight, flush on blur
+>   / tab hidden / page hide / leave / back online, backoff 2 s → 60 s while offline, a refused
+>   save (400) is kept locally and retried on the next edit, and the draft is deleted only after
+>   the server confirms its content. A new entry's URL becomes `/journal/<id>` via
+>   `history.replaceState`, so the editor never remounts mid-sentence. Where IndexedDB is
+>   unavailable the editor says drafts cannot be kept.
+> - **Conflict UI:** a draft edited from an older version than the server's opens as a conflict
+>   (both times shown) with "Keep my version" (saves on top of the server's version) and "Use
+>   the saved version".
+> - **Focus return** across routes uses one sessionStorage key: the widget CTA and timeline rows
+>   record themselves and take focus back when shown again.
+> - **Streak:** `journal.entry_created` → streak key `journal` (ADR-014), counted on the day of
+>   writing, not the entry's date.
+> - **Export** is also a button on the timeline (a JSON download), not only the endpoint.
+> - **Default layout:** the card sits after Streaks with Appreciation beside it (ADR-017's
+>   placement); existing dashboards add it through Edit layout → Add widget.
 
 ## Context
 
