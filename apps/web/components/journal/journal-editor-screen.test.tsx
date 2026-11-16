@@ -63,8 +63,16 @@ function renderScreen(props: JournalEditorScreenProps): QueryClient {
 }
 
 /** TipTap keeps its instance on the ProseMirror DOM node. */
+/**
+ * The mounted editor, once its `autofocus` has settled. TipTap focuses in a
+ * setTimeout and again in a requestAnimationFrame after mount; a test that
+ * moves focus before that frame lands has it stolen back (a real modal
+ * dialog makes the editor inert, jsdom does not).
+ */
 async function editorInstance(): Promise<Editor> {
   const textbox = await screen.findByRole('textbox', { name: 'Journal entry' });
+  await waitFor(() => expect(textbox).toHaveFocus());
+  await act(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
   return (textbox as HTMLElement & { editor: Editor }).editor;
 }
 
