@@ -251,6 +251,8 @@ export const messages = {
   'mood.trend': '7-day trend',
   'mood.undo': 'Undo',
 
+  'nav.journal': 'Journal',
+  'nav.label': 'Pages',
   'reminders.add': 'Add reminder',
   'reminders.banner.dismiss': 'Dismiss notification prompt',
   'reminders.banner.enable': 'Enable notifications',
